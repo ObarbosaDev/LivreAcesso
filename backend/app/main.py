@@ -3,27 +3,41 @@
 import logging
 from typing import Any
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from backend.app.core.config import Settings, get_settings
 from backend.app.core.container import ApplicationContainer, build_container
-from backend.app.modules.students.domain.exceptions import (
-    DuplicateCPFError,
-    StudentDomainError,
+from backend.app.modules.identity.application.authentication import (
+    TokenVerifier,
+    UnavailableTokenVerifier,
 )
+from backend.app.modules.identity.infrastructure.supabase_jwt import SupabaseJWTVerifier
 from backend.app.modules.students.presentation.routes import build_students_router
+from backend.app.shared.presentation.problem_details import (
+    RequestIdMiddleware,
+    install_problem_handlers,
+)
 
 
 def create_app(
     *,
     settings: Settings | None = None,
     container: ApplicationContainer | None = None,
+    token_verifier: TokenVerifier | None = None,
 ) -> FastAPI:
+    """Compõe adaptadores e políticas sem esconder dependências em módulos globais."""
+
     current_settings = settings or get_settings()
     current_container = container or build_container()
+    current_token_verifier = token_verifier or (
+        SupabaseJWTVerifier(current_settings.supabase_url)
+        if current_settings.supabase_url
+        else UnavailableTokenVerifier()
+    )
 
+    # Logs operacionais usam estrutura mínima nesta fase. Nenhum endpoint deve
+    # incluir corpo de requisição, token ou dado pessoal em mensagens de log.
     logging.basicConfig(
         level=logging.DEBUG if current_settings.debug else logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
@@ -36,6 +50,7 @@ def create_app(
         debug=current_settings.debug,
     )
     application.state.container = current_container
+    application.state.token_verifier = current_token_verifier
 
     application.add_middleware(
         CORSMiddleware,
@@ -43,30 +58,17 @@ def create_app(
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["X-Request-ID"],
     )
-
-    @application.exception_handler(StudentDomainError)
-    async def handle_student_domain_error(
-        _request: Request,
-        exception: StudentDomainError,
-    ) -> JSONResponse:
-        response_status = (
-            status.HTTP_409_CONFLICT
-            if isinstance(exception, DuplicateCPFError)
-            else status.HTTP_422_UNPROCESSABLE_ENTITY
-        )
-        return JSONResponse(
-            status_code=response_status,
-            content={
-                "error": {
-                    "code": exception.code,
-                    "message": str(exception),
-                }
-            },
-        )
+    # O middleware é adicionado por último para envolver também respostas CORS
+    # e garantir um identificador rastreável em qualquer resultado HTTP.
+    application.add_middleware(RequestIdMiddleware)
+    install_problem_handlers(application)
 
     @application.get("/", include_in_schema=False)
     def root() -> dict[str, str]:
+        """Aponta para a documentação sem expor detalhes internos do runtime."""
+
         return {
             "name": current_settings.app_name,
             "version": current_settings.version,
@@ -75,6 +77,8 @@ def create_app(
 
     @application.get("/health", tags=["Operacional"], summary="Verificar disponibilidade")
     def health() -> dict[str, Any]:
+        """Confirma que o processo responde; dependências terão probes separados."""
+
         return {
             "status": "ok",
             "service": current_settings.app_name,

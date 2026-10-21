@@ -1,7 +1,7 @@
 """Configurações lidas exclusivamente das variáveis do processo."""
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 
 
@@ -21,6 +21,8 @@ class Settings:
     debug: bool
     api_prefix: str
     cors_origins: tuple[str, ...]
+    supabase_url: str | None = None
+    supabase_publishable_key: str | None = field(default=None, repr=False)
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -34,6 +36,8 @@ class Settings:
             debug=_as_bool(os.getenv("APP_DEBUG")),
             api_prefix="/api/v1",
             cors_origins=tuple(origin.strip() for origin in origins.split(",") if origin.strip()),
+            supabase_url=os.getenv("SUPABASE_URL") or None,
+            supabase_publishable_key=os.getenv("SUPABASE_PUBLISHABLE_KEY") or None,
         )
 
 
