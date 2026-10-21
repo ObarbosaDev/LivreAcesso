@@ -7,22 +7,24 @@ name = "livre-acesso"
 version = "0.1.0"
 description = "Plataforma de gestão de alunos, turmas e frequência do Instituto Livre Acesso."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 authors = [{ name = "HumaniTec" }]
 dependencies = [
-    "email-validator==2.2.0",
-    "fastapi==0.116.1",
-    "pydantic==2.11.7",
-    "uvicorn[standard]==0.35.0",
+    "email-validator==2.3.0",
+    "fastapi==0.158.1",
+    "httpx2==2.16.0",
+    "pydantic==2.14.1",
+    "PyJWT[crypto]==2.15.1",
+    "uvicorn==0.54.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "httpx==0.28.1",
-    "mypy==1.17.1",
-    "pytest==8.4.1",
-    "pytest-cov==6.2.1",
-    "ruff==0.12.7",
+    "mypy==2.4.0",
+    "pglast==8.7",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.17.1",
 ]
 
 [tool.setuptools.packages.find]
@@ -43,14 +45,14 @@ skip_covered = true
 fail_under = 80
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 strict = true
 warn_unreachable = true
 plugins = ["pydantic.mypy"]
