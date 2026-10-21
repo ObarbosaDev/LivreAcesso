@@ -25,9 +25,7 @@ class EventBus:
     """Publica eventos em memória para listeners registrados no processo."""
 
     def __init__(self) -> None:
-        self._handlers: dict[type[DomainEvent], list[EventHandler[DomainEvent]]] = defaultdict(
-            list
-        )
+        self._handlers: dict[type[DomainEvent], list[EventHandler[DomainEvent]]] = defaultdict(list)
 
     def subscribe(
         self,
@@ -38,5 +36,7 @@ class EventBus:
         self._handlers[event_type].append(registered_handler)
 
     def publish(self, event: DomainEvent) -> None:
+        # A cópia imutável permite que um handler registre outro listener sem
+        # alterar a coleção que está sendo percorrida nesta publicação.
         for handler in tuple(self._handlers[type(event)]):
             handler(event)
