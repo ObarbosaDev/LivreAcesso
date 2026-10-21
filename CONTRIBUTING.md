@@ -15,7 +15,7 @@ Este guia define o fluxo mínimo para manter o repositório compreensível, segu
 ```powershell
 git clone https://github.com/ObarbosaDev/LivreAcesso.git
 Set-Location LivreAcesso
-py -3.12 -m venv .venv
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
@@ -96,7 +96,7 @@ Evite commits com mensagens vagas como `alterações`, `ajustes` ou `final`.
 
 ## 6. Código Python
 
-- Python 3.12 ou superior;
+- Python 3.11 ou superior;
 - type hints obrigatórios em código de produção;
 - limite de 100 caracteres por linha;
 - nomes internos em inglês e linguagem apresentada ao usuário em português;
