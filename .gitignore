@@ -100,3 +100,6 @@ artifacts/
 # Local tooling
 .cache/
 .agent/
+.supabase/
+supabase/.temp/
+supabase/.branches/
