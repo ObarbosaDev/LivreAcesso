@@ -8,7 +8,8 @@ from backend.app.shared.domain.events import DomainEvent
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class StudentRegistered(DomainEvent):
-    """Emitido depois que um novo aluno é registrado."""
+    """Informa que o cadastro terminou sem carregar dados pessoais no evento."""
 
+    # O identificador técnico permite buscar dados autorizados posteriormente.
+    # Nome, CPF e contato não viajam no evento para reduzir exposição acidental.
     student_id: UUID
-    modality: str

@@ -11,15 +11,10 @@ from backend.app.modules.students.domain.value_objects import CPF, Phone
 from backend.app.shared.domain.events import DomainEvent
 
 
-class Modality(StrEnum):
-    BALLET = "bale"
-    JIU_JITSU = "jiu-jitsu"
-    DRUMS = "bateria"
-
-
 class StudentStatus(StrEnum):
+    """Ciclo cadastral do aluno, independente de suas matrículas."""
+
     ACTIVE = "ativo"
-    WAITING_LIST = "lista-de-espera"
     INACTIVE = "inativo"
 
 
@@ -36,6 +31,8 @@ class Guardian:
         if len(normalized_name) < 3:
             raise InvalidStudentDataError("Informe o nome completo do responsável.")
 
+        # E-mail e telefone são dados pessoais. A entidade apenas os normaliza;
+        # apresentação, logs e auditoria decidem quando devem ser mascarados.
         normalized_email = self.email.strip().lower() if self.email else None
         object.__setattr__(self, "full_name", normalized_name)
         object.__setattr__(self, "email", normalized_email)
@@ -50,7 +47,6 @@ class Student:
     cpf: CPF
     birth_date: date
     guardian: Guardian
-    modality: Modality
     status: StudentStatus = StudentStatus.ACTIVE
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     _events: list[DomainEvent] = field(default_factory=list, init=False, repr=False)
@@ -76,24 +72,23 @@ class Student:
         cpf: CPF,
         birth_date: date,
         guardian: Guardian,
-        modality: Modality,
-        status: StudentStatus = StudentStatus.ACTIVE,
     ) -> "Student":
+        # O status inicial pertence ao ciclo do domínio e não ao payload HTTP.
+        # Dessa forma, nenhum cliente consegue criar um cadastro já inativo.
         student = cls(
             id=uuid4(),
             full_name=full_name,
             cpf=cpf,
             birth_date=birth_date,
             guardian=guardian,
-            modality=modality,
-            status=status,
+            status=StudentStatus.ACTIVE,
         )
-        student._events.append(
-            StudentRegistered(student_id=student.id, modality=student.modality.value)
-        )
+        student._events.append(StudentRegistered(student_id=student.id))
         return student
 
     def age_on(self, reference_date: date | None = None) -> int:
+        """Calcula idade civil na data informada sem armazenar valor derivado."""
+
         reference = reference_date or date.today()
         before_birthday = (reference.month, reference.day) < (
             self.birth_date.month,
@@ -102,6 +97,8 @@ class Student:
         return reference.year - self.birth_date.year - before_birthday
 
     def pull_events(self) -> tuple[DomainEvent, ...]:
+        """Entrega eventos uma única vez para evitar publicação duplicada."""
+
         events = tuple(self._events)
         self._events.clear()
         return events
