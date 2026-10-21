@@ -9,6 +9,10 @@ import uvicorn
 from backend.app.core.config import get_settings
 from backend.app.main import app
 
+# Carregadores ASGI, como o usado pela Vercel, importam ``app`` diretamente.
+# O reexport explícito mantém esse contrato visível sem acoplar a aplicação à plataforma.
+__all__ = ["app", "main"]
+
 
 def main() -> None:
     settings = get_settings()
