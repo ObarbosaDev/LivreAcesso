@@ -5,8 +5,8 @@ from datetime import date
 import pytest
 
 from backend.app.modules.students.application.dtos import GuardianInput, RegisterStudentInput
+from backend.app.modules.students.application.queries import StudentSearchCriteria
 from backend.app.modules.students.application.use_cases import RegisterStudent
-from backend.app.modules.students.domain.entities import Modality
 from backend.app.modules.students.domain.events import StudentRegistered
 from backend.app.modules.students.domain.exceptions import DuplicateCPFError
 from backend.app.modules.students.infrastructure.repositories import InMemoryStudentRepository
@@ -18,7 +18,6 @@ def build_input() -> RegisterStudentInput:
         full_name="Sophia Almeida Ramos",
         cpf="529.982.247-25",
         birth_date=date(2015, 5, 10),
-        modality=Modality.BALLET,
         guardian=GuardianInput(
             full_name="Camila Ramos",
             phone="(61) 99999-1234",
@@ -39,7 +38,7 @@ def test_registers_student_and_publishes_domain_event() -> None:
     assert output.full_name == "Sophia Almeida Ramos"
     assert output.cpf_masked == "***.***.***-25"
     assert output.guardian_phone_masked == "(61) *****-1234"
-    assert len(repository.list_all()) == 1
+    assert repository.search(StudentSearchCriteria()).total == 1
     assert len(recorded_events) == 1
     assert recorded_events[0].student_id == output.id
 
