@@ -33,7 +33,11 @@ class CPF:
 
     @staticmethod
     def _verification_digit(numbers: list[int], weights: range) -> int:
-        remainder = sum(number * weight for number, weight in zip(numbers, weights)) % 11
+        # Os vetores precisam ter o mesmo tamanho; strict impede que uma alteração
+        # futura na fórmula ignore dígitos silenciosamente.
+        remainder = (
+            sum(number * weight for number, weight in zip(numbers, weights, strict=True)) % 11
+        )
         return 0 if remainder < 2 else 11 - remainder
 
     @property
