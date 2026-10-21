@@ -1,5 +1,6 @@
 """Testes unitários do caso de uso de cadastro de aluno."""
 
+import asyncio
 from datetime import date
 
 import pytest
@@ -33,12 +34,13 @@ def test_registers_student_and_publishes_domain_event() -> None:
     event_bus.subscribe(StudentRegistered, recorded_events.append)
     use_case = RegisterStudent(repository, event_bus)
 
-    output = use_case.execute(build_input())
+    output = asyncio.run(use_case.execute(build_input()))
 
     assert output.full_name == "Sophia Almeida Ramos"
     assert output.cpf_masked == "***.***.***-25"
     assert output.guardian_phone_masked == "(61) *****-1234"
-    assert repository.search(StudentSearchCriteria()).total == 1
+    search_result = asyncio.run(repository.search(StudentSearchCriteria()))
+    assert search_result.total == 1
     assert len(recorded_events) == 1
     assert recorded_events[0].student_id == output.id
 
@@ -46,9 +48,9 @@ def test_registers_student_and_publishes_domain_event() -> None:
 def test_rejects_duplicate_cpf_even_with_different_formatting() -> None:
     repository = InMemoryStudentRepository()
     use_case = RegisterStudent(repository, EventBus())
-    use_case.execute(build_input())
+    asyncio.run(use_case.execute(build_input()))
 
     duplicate = build_input().model_copy(update={"cpf": "52998224725"})
 
     with pytest.raises(DuplicateCPFError):
-        use_case.execute(duplicate)
+        asyncio.run(use_case.execute(duplicate))
