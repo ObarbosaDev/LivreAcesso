@@ -5,8 +5,8 @@
 <p><strong>Gestão social com informação organizada, ação antecipada e cuidado com pessoas</strong></p>
 
 [![Status](https://img.shields.io/badge/status-funda%C3%A7%C3%A3o%20em%20desenvolvimento-ff5a3c)](#estado-do-projeto)
-[![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.116.1-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.158.1-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Architecture](https://img.shields.io/badge/arquitetura-mon%C3%B3lito%20modular-1b2138)](docs/architecture.md)
 [![Privacy](https://img.shields.io/badge/privacidade-LGPD%20by%20design-6f42c1)](#segurança-privacidade-e-lgpd)
 
@@ -23,7 +23,7 @@
 O **Livre Acesso** substitui fichas de papel, controles de memória e mensagens dispersas por uma plataforma capaz de organizar alunos, responsáveis, turmas, presença, vagas e comunicação — permitindo que a instituição perceba um problema **antes** de uma criança abandonar uma atividade ou uma vaga permanecer ociosa.
 
 > [!NOTE]
-> Este repositório está na fase de fundação técnica. A API inicial de alunos funciona, mas autenticação, banco permanente, chamada, lista de espera, comunicação e interface React ainda fazem parte do roadmap. Consulte sempre a [matriz de estado](#estado-do-projeto) antes de demonstrar uma funcionalidade.
+> Este repositório está na fase de fundação técnica. A API inicial, a verificação JWT e a primeira migration Supabase já existem, mas integração persistente, chamada, lista de espera, comunicação e interface React ainda fazem parte do roadmap. Consulte sempre a [matriz de estado](#estado-do-projeto) antes de demonstrar uma funcionalidade.
 
 ## Sumário
 
@@ -120,13 +120,16 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | --- | --- | --- |
 | Fundação FastAPI | **Disponível** | Fábrica da aplicação, configuração e endpoint `/health`. |
 | Cadastro de aluno | **Disponível** | `POST /api/v1/students`. |
-| Listagem e filtros | **Disponível** | `GET /api/v1/students` por modalidade/status. |
+| Listagem e filtros | **Disponível** | `GET /api/v1/students` por status cadastral. |
 | CPF e telefone | **Disponível** | Normalização, validação, unicidade e mascaramento. |
 | DTO, mapper e caso de uso | **Disponível** | Camadas separadas no módulo `students`. |
+| Erros e rastreabilidade | **Disponível** | Problem Details, erros por campo e `X-Request-ID`. |
 | Eventos e listener | **Disponível** | `StudentRegistered` e auditoria sem PII. |
-| Testes automatizados | **Disponível** | Unidade e integração incluídas; exigem Python instalado para execução. |
-| Persistência | **Parcial** | Adaptador em memória; PostgreSQL/Supabase ainda não conectado. |
-| Autenticação/autorização | **Planejado** | Obrigatório antes de qualquer dado real. |
+| Testes automatizados | **Disponível** | Unidade, integração e guardas arquiteturais executadas localmente. |
+| Schema Supabase | **Parcial** | Migration validada; ainda não aplicada a um projeto remoto. |
+| Persistência da API | **Parcial** | Adaptador em memória; conexão Supabase ainda não implementada. |
+| Autenticação | **Disponível** | Bearer JWT validado localmente por JWKS do Supabase. |
+| Autorização operacional | **Parcial** | RPCs verificam perfis; validação remota por papel ainda precisa ser executada. |
 | Turmas e matrículas | **Planejado** | Modelo definido arquiteturalmente. |
 | Chamada e alertas | **Planejado** | Regra depende de validação com a instituição. |
 | Lista de espera | **Planejado** | Critérios operacionais e jurídicos pendentes. |
@@ -149,11 +152,11 @@ Set-Location LivreAcesso
 ### 2. Crie e ative um ambiente Python isolado
 
 ```powershell
-py -3.12 -m venv .venv
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Se `py` não existir, instale Python 3.12 ou superior e confirme com `python --version`.
+Se `python` não existir ou apontar para uma versão anterior, instale Python 3.11 ou superior e confirme com `python --version`.
 
 ### 3. Instale a aplicação e as ferramentas de desenvolvimento
 
@@ -202,14 +205,27 @@ A versão atual é uma **API**. O modo mais simples de explorá-la é pelo Swagg
 > [!CAUTION]
 > Use somente dados fictícios. Os exemplos abaixo existem para desenvolvimento e demonstração técnica.
 
+### Preparar a autenticação
+
+As rotas de alunos exigem um JWT de uma conta não anônima do Supabase Auth. Obtenha um token efêmero de uma conta de teste e leia-o sem gravá-lo em arquivo ou no histórico do terminal:
+
+```powershell
+$secureToken = Read-Host "Token de teste" -AsSecureString
+$accessToken = [System.Net.NetworkCredential]::new("", $secureToken).Password
+$headers = @{ Authorization = "Bearer $accessToken" }
+```
+
+Sem `SUPABASE_URL`, as rotas protegidas retornam `503` por segurança. Token ausente ou inválido retorna `401`; `/health` e `/docs` continuam públicos.
+
 ### Cadastrar um aluno
+
+O cadastro cria a pessoa e seu responsável principal. Modalidade e turma não entram neste payload porque pertencem ao futuro fluxo de matrícula.
 
 ```powershell
 $student = @{
     full_name = "Sophia Almeida Ramos"
     cpf = "529.982.247-25"
     birth_date = "2015-05-10"
-    modality = "bale"
     guardian = @{
         full_name = "Camila Ramos"
         phone = "(61) 99999-1234"
@@ -220,6 +236,7 @@ $student = @{
 Invoke-RestMethod `
     -Method Post `
     -Uri "http://127.0.0.1:8000/api/v1/students" `
+    -Headers $headers `
     -ContentType "application/json" `
     -Body $student
 ```
@@ -233,7 +250,6 @@ A resposta não devolve CPF ou telefone completos:
   "cpf_masked": "***.***.***-25",
   "birth_date": "2015-05-10",
   "age": 11,
-  "modality": "bale",
   "status": "ativo",
   "guardian_name": "Camila Ramos",
   "guardian_phone_masked": "(61) *****-1234",
@@ -246,23 +262,19 @@ Os valores de `id`, `age` e `created_at` variam conforme a execução e a data a
 ### Listar todos os alunos
 
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/students"
+Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/students" `
+    -Headers $headers
 ```
 
-### Filtrar por modalidade
+### Filtrar por status cadastral
 
-Valores aceitos: `bale`, `jiu-jitsu` e `bateria`.
-
-```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/students?modality=bale"
-```
-
-### Filtrar por modalidade e status
-
-Status aceitos: `ativo`, `lista-de-espera` e `inativo`.
+Status aceitos: `ativo` e `inativo`. Lista de espera será um estado de matrícula, não do aluno.
 
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/v1/students?modality=bale&status=ativo"
+Invoke-RestMethod `
+    -Uri "http://127.0.0.1:8000/api/v1/students?status=ativo" `
+    -Headers $headers
 ```
 
 ### Conferir a prevenção de CPF duplicado
@@ -271,10 +283,19 @@ Execute o cadastro duas vezes. A segunda tentativa retorna HTTP `409`:
 
 ```json
 {
-  "error": {
-    "code": "duplicate_cpf",
-    "message": "Já existe um aluno cadastrado com este CPF."
-  }
+  "type": "urn:livre-acesso:problem:duplicate-cpf",
+  "title": "CPF já cadastrado",
+  "status": 409,
+  "detail": "Confira o cadastro existente antes de continuar.",
+  "code": "duplicate_cpf",
+  "request_id": "uuid-da-requisicao",
+  "errors": [
+    {
+      "field": "cpf",
+      "code": "duplicate_cpf",
+      "message": "Este CPF já pertence a um cadastro."
+    }
+  ]
 }
 ```
 
@@ -325,14 +346,14 @@ As regras exatas — quantidade de faltas, prazo de inatividade e liberação de
 
 ### Endpoints disponíveis
 
-| Método | Rota | Descrição | Sucesso |
-| --- | --- | --- | --- |
-| `GET` | `/` | Metadados e link da documentação. | `200` |
-| `GET` | `/health` | Disponibilidade do processo. | `200` |
-| `GET` | `/docs` | Interface interativa OpenAPI. | `200` |
-| `GET` | `/openapi.json` | Contrato OpenAPI em JSON. | `200` |
-| `GET` | `/api/v1/students` | Lista com filtros opcionais. | `200` |
-| `POST` | `/api/v1/students` | Cadastra aluno e responsável. | `201` |
+| Método | Rota | Autenticação | Descrição | Sucesso |
+| --- | --- | --- | --- | --- |
+| `GET` | `/` | Pública | Metadados e link da documentação. | `200` |
+| `GET` | `/health` | Pública | Disponibilidade do processo. | `200` |
+| `GET` | `/docs` | Pública | Interface interativa OpenAPI. | `200` |
+| `GET` | `/openapi.json` | Pública | Contrato OpenAPI em JSON. | `200` |
+| `GET` | `/api/v1/students` | Bearer JWT | Pesquisa paginada com filtros. | `200` |
+| `POST` | `/api/v1/students` | Bearer JWT | Cadastra aluno e responsável. | `201` |
 
 ### Convenções
 
@@ -345,18 +366,29 @@ As regras exatas — quantidade de faltas, prazo de inatividade e liberação de
 - entidades do domínio nunca são serializadas diretamente;
 - listagens mascaram dados sensíveis.
 
-### Formato de erro de negócio
+### Formato de erro
+
+Erros de negócio e validação usam `application/problem+json`, um código estável, um `request_id` rastreável e mensagens por campo. Valores recebidos e dados pessoais não são repetidos na resposta.
 
 ```json
 {
-  "error": {
-    "code": "identificador_estavel",
-    "message": "Mensagem segura para o usuário."
-  }
+  "type": "urn:livre-acesso:problem:duplicate-cpf",
+  "title": "CPF já cadastrado",
+  "status": 409,
+  "detail": "Confira o cadastro existente antes de continuar.",
+  "code": "duplicate_cpf",
+  "request_id": "uuid-da-requisicao",
+  "errors": [
+    {
+      "field": "cpf",
+      "code": "duplicate_cpf",
+      "message": "Este CPF já pertence a um cadastro."
+    }
+  ]
 }
 ```
 
-Erros estruturais de payload seguem inicialmente o formato de validação do FastAPI. A padronização completa será feita antes do consumo definitivo pelo front-end.
+O mesmo `request_id` é enviado no cabeçalho `X-Request-ID`, permitindo suporte técnico sem pedir que a pessoa compartilhe CPF, telefone ou corpo da requisição.
 
 ## Arquitetura
 
@@ -404,7 +436,8 @@ LivreAcesso/
 │       ├── core/                       # Configuração e composição de dependências
 │       ├── shared/
 │       │   ├── application/            # Barramento e contratos compartilhados
-│       │   └── domain/                 # Primitivas de domínio
+│       │   ├── domain/                 # Primitivas de domínio
+│       │   └── presentation/           # Problem Details e request ID
 │       └── modules/
 │           └── students/
 │               ├── domain/             # Entidades, VOs, eventos, erros e portas
@@ -413,10 +446,15 @@ LivreAcesso/
 │               └── presentation/       # Endpoints HTTP
 ├── docs/
 │   ├── architecture.md                 # Arquitetura e decisões técnicas
+│   ├── backend-blueprint.md            # Fluxos, segurança e integração Supabase
 │   └── domain-glossary.md              # Linguagem comum do negócio
+├── supabase/
+│   ├── migrations/                     # Schema, RLS, RPCs, auditoria e outbox
+│   └── README.md                       # Operação segura do Supabase
 ├── tests/
-│   ├── unit/                           # Regras isoladas e casos de uso
-│   └── integration/                    # Integração HTTP entre camadas
+│   ├── architecture/                   # Guardas de migration e segurança
+│   ├── integration/                    # Integração HTTP entre camadas
+│   └── unit/                           # Regras isoladas e casos de uso
 ├── .gitignore                          # Segredos, ambientes e artefatos locais
 ├── CONTRIBUTING.md                     # Fluxo de contribuição
 ├── SECURITY.md                         # Política de segurança
@@ -433,7 +471,7 @@ O front-end será criado em `frontend/` somente quando sua implementação come�
 
 | Conceito | Tipo | Responsabilidade |
 | --- | --- | --- |
-| `Student` | Agregado raiz | Protege identidade, situação, modalidade e vínculo com responsável. |
+| `Student` | Agregado raiz | Protege identidade, situação cadastral e vínculo com responsável. |
 | `Guardian` | Entidade interna | Representa responsável ou contato responsável. |
 | `CPF` | Value Object | Normaliza, valida e mascara o documento. |
 | `Phone` | Value Object | Normaliza e mascara o contato. |
@@ -471,6 +509,8 @@ A aplicação lê configuração diretamente das variáveis do processo. **Nenhu
 | `APP_PORT` | `8000` | Porta HTTP. |
 | `APP_DEBUG` | `false` | Logs detalhados e reload local. |
 | `APP_CORS_ORIGINS` | `http://localhost:5173` | Origens do front separadas por vírgula. |
+| `SUPABASE_URL` | sem padrão | URL HTTPS usada para obter as chaves públicas JWKS. |
+| `SUPABASE_PUBLISHABLE_KEY` | sem padrão | Chave pública usada futuramente nas RPCs; nunca substitui o JWT. |
 
 Exemplo somente para a sessão atual do PowerShell:
 
@@ -478,13 +518,14 @@ Exemplo somente para a sessão atual do PowerShell:
 $env:APP_DEBUG = "true"
 $env:APP_PORT = "8080"
 $env:APP_CORS_ORIGINS = "http://localhost:5173,http://localhost:4173"
+$env:SUPABASE_URL = "https://<project-ref>.supabase.co"
 python main.py
 ```
 
 Para remover as variáveis da sessão:
 
 ```powershell
-Remove-Item Env:APP_DEBUG, Env:APP_PORT, Env:APP_CORS_ORIGINS
+Remove-Item Env:APP_DEBUG, Env:APP_PORT, Env:APP_CORS_ORIGINS, Env:SUPABASE_URL
 ```
 
 Em hospedagem, use exclusivamente o painel de variáveis/segredos da plataforma.
@@ -551,16 +592,20 @@ Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra 
 
 - [x] monólito modular e regra de dependência;
 - [x] configuração sem arquivos de ambiente;
-- [x] domínio inicial de alunos;
+- [x] domínio inicial de alunos separado de matrícula;
 - [x] DTO, mapper, repositório, evento e listener;
-- [x] API inicial e testes base;
+- [x] Problem Details, erros por campo e request ID;
+- [x] API inicial e testes automatizados;
+- [x] blueprint e migration inicial do Supabase;
 - [x] documentação técnica e operacional.
 
 ### Fase 1 — Cadastro confiável
 
-- [ ] PostgreSQL/Supabase;
-- [ ] migrations e constraints;
-- [ ] autenticação e perfis;
+- [x] schema inicial, constraints, auditoria e outbox;
+- [x] autenticação Bearer e validação local de JWT por JWKS;
+- [ ] aplicar e validar a migration em um projeto Supabase;
+- [ ] testar perfis, RLS e RPC com cada papel;
+- [ ] implementar o adaptador Supabase na API;
 - [ ] CRUD completo de alunos e responsáveis;
 - [ ] paginação, busca e auditoria persistente.
 
@@ -631,7 +676,7 @@ Nunca faça push direto para `main`. Prefira branches pequenas, commits objetivo
 <details>
 <summary><strong><code>py</code> ou <code>python</code> não foi encontrado</strong></summary>
 
-Instale Python 3.12 ou superior, habilite a opção de adicionar Python ao `PATH` e abra um novo terminal. Confirme com:
+Instale Python 3.11 ou superior, habilite a opção de adicionar Python ao `PATH` e abra um novo terminal. Confirme com:
 
 ```powershell
 python --version
@@ -666,14 +711,14 @@ python main.py
 <details>
 <summary><strong>Os alunos desapareceram depois de reiniciar</strong></summary>
 
-É o comportamento esperado do adaptador em memória. Persistência permanente ainda está no roadmap.
+É o comportamento esperado do adaptador em memória. A migration Supabase já está preparada, mas a API ainda não utiliza o adaptador persistente.
 
 </details>
 
 <details>
 <summary><strong>Recebi <code>422</code> ao cadastrar</strong></summary>
 
-Confira campos obrigatórios, data no formato `YYYY-MM-DD`, CPF válido, telefone com DDD e valores aceitos de modalidade/status. O Swagger em `/docs` mostra o contrato completo.
+Confira campos obrigatórios, data no formato `YYYY-MM-DD`, CPF válido e telefone com DDD. Modalidade e status não pertencem ao cadastro inicial. O Swagger em `/docs` mostra o contrato completo.
 
 </details>
 
@@ -727,7 +772,9 @@ O projeto está alinhado principalmente a:
 | Documento | Conteúdo |
 | --- | --- |
 | [`docs/architecture.md`](docs/architecture.md) | Decisões, módulos, persistência, eventos, segurança e evolução. |
+| [`docs/backend-blueprint.md`](docs/backend-blueprint.md) | Fluxos do backend, Supabase, sensibilidade, eventos e critérios de pronto. |
 | [`docs/domain-glossary.md`](docs/domain-glossary.md) | Linguagem comum, conceitos e regras pendentes do negócio. |
+| [`supabase/README.md`](supabase/README.md) | Migrations, bootstrap, RLS e regras operacionais do Supabase. |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Fluxo Git, padrões de código, testes e revisão. |
 | [`SECURITY.md`](SECURITY.md) | Relato responsável de falhas e práticas obrigatórias. |
 | [`pyproject.toml`](pyproject.toml) | Versões, dependências e configuração das ferramentas. |
