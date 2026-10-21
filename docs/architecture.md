@@ -163,19 +163,23 @@ Quando surgirem integrações externas, eventos confiáveis deverão ser persist
 
 ## 7. Persistência
 
-A recomendação para produção é **PostgreSQL gerenciado pelo Supabase**, pois Supabase utiliza PostgreSQL. Manter simultaneamente uma arquitetura MySQL e outra Supabase não agrega valor.
+A persistência adotada é **PostgreSQL gerenciado pelo Supabase**. A porta `StudentRepository` mantém o domínio independente do fornecedor, enquanto migrations SQL versionam constraints, RPCs e políticas.
 
-A porta `StudentRepository` protege o domínio dessa escolha. Se houver exigência acadêmica por MySQL, apenas o adaptador e as migrations deverão mudar.
+A primeira migration está em `supabase/migrations/20261021000100_initial_identity_and_students.sql` e materializa:
 
-Tabelas iniciais previstas:
+- `profiles`, vinculado a `auth.users` sem armazenar senha;
+- `students`, sem modalidade ou turma embutida;
+- `guardians` e `student_guardians`, permitindo múltiplos vínculos;
+- `private.audit_entries`, sem cópia de valores pessoais;
+- `private.outbox_events`, para efeitos externos duráveis;
+- RPC transacional de cadastro e RPC mascarada de listagem.
 
-- `users`, `roles`, `user_roles`;
-- `students`, `guardians`, `student_guardians`;
+Módulos futuros acrescentarão:
+
 - `modalities`, `classes`, `enrollments`;
 - `attendance_sessions`, `attendance_records`;
 - `waiting_list_entries`, `vacancy_processes`, `vacancy_candidates`;
-- `communications`, `communication_recipients`;
-- `audit_entries`, `outbox_events`.
+- `communications`, `communication_recipients`.
 
 Regras estruturais importantes:
 
@@ -191,7 +195,8 @@ Regras estruturais importantes:
 
 ### Autenticação e autorização
 
-- autenticação por provedor confiável ou Supabase Auth;
+- autenticação, sessão e emissão de JWT pelo Supabase Auth;
+- contas novas começam como `pending` e inativas;
 - papéis iniciais: `COORDINATOR`, `RECEPTIONIST`, `INSTRUCTOR`, `READ_ONLY`;
 - negação por padrão;
 - autorização verificada no back-end, nunca somente escondendo botões;
@@ -257,7 +262,9 @@ Meta inicial de cobertura: 80%, usada como sinal auxiliar. Regras críticas deve
 
 - prefixo estável `/api/v1`;
 - OpenAPI gerado pela aplicação;
-- erros de negócio no formato `{ "error": { "code", "message" } }`;
+- erros de negócio e validação em `application/problem+json`;
+- `request_id` no corpo e em `X-Request-ID`;
+- mensagens por campo sem repetir o valor sensível recebido;
 - paginação obrigatória antes de operar com dados reais;
 - datas civis em ISO 8601 e instantes em UTC;
 - breaking changes exigem nova versão ou período de compatibilidade.
