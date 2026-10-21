@@ -53,6 +53,6 @@ class StudentSearchResult:
 
 
 class StudentQueryService(Protocol):
-    """Porta de leitura otimizada sem exigir a reconstrução de agregados."""
+    """Porta assíncrona de leitura que retorna somente projeções seguras."""
 
-    def search(self, criteria: StudentSearchCriteria) -> StudentSearchResult: ...
+    async def search(self, criteria: StudentSearchCriteria) -> StudentSearchResult: ...

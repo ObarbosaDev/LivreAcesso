@@ -44,7 +44,7 @@ class InMemoryStudentRepository:
         self._student_ids_by_cpf: dict[str, UUID] = {}
         self._lock = RLock()
 
-    def add(self, student: Student) -> None:
+    async def add(self, student: Student) -> None:
         with self._lock:
             # A verificação e a escrita compartilham o mesmo lock. Isso reproduz,
             # em menor escala, a garantia do índice único que existirá no Postgres.
@@ -53,7 +53,7 @@ class InMemoryStudentRepository:
             self._students[student.id] = student
             self._student_ids_by_cpf[student.cpf.value] = student.id
 
-    def search(self, criteria: StudentSearchCriteria) -> StudentSearchResult:
+    async def search(self, criteria: StudentSearchCriteria) -> StudentSearchResult:
         with self._lock:
             query_key = _search_key(criteria.query) if criteria.query else None
             matches = (

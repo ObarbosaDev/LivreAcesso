@@ -42,9 +42,9 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
             },
         },
     )
-    def register_student(payload: RegisterStudentInput) -> StudentOutput:
+    async def register_student(payload: RegisterStudentInput) -> StudentOutput:
         """Valida e cadastra um aluno sem expor seus dados pessoais na resposta."""
-        return container.register_student.execute(payload)
+        return await container.register_student.execute(payload)
 
     @router.get(
         "",
@@ -55,7 +55,7 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
             "no máximo 100 registros por página."
         ),
     )
-    def list_students(
+    async def list_students(
         student_status: Annotated[StudentStatus | None, Query(alias="status")] = None,
         query: Annotated[
             str | None,
@@ -72,7 +72,7 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
         ] = 25,
     ) -> StudentPageOutput:
         """Lista somente os campos seguros necessários para identificação visual."""
-        return container.list_students.execute(
+        return await container.list_students.execute(
             status=student_status,
             query=query,
             page=page,

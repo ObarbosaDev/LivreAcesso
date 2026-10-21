@@ -24,12 +24,12 @@ class RegisterStudent:
     repository: StudentRepository
     event_publisher: EventPublisher
 
-    def execute(self, dto: RegisterStudentInput) -> StudentOutput:
+    async def execute(self, dto: RegisterStudentInput) -> StudentOutput:
         student = StudentMapper.to_domain(dto)
 
         # Uma única operação de persistência reduz tráfego e deixa a constraint
         # única como autoridade contra concorrência, tanto em memória quanto no SQL.
-        self.repository.add(student)
+        await self.repository.add(student)
 
         # Eventos só saem após a persistência principal. Assim, listeners não
         # reagem a um cadastro que falhou antes de ser salvo.
@@ -45,7 +45,7 @@ class ListStudents:
 
     query_service: StudentQueryService
 
-    def execute(
+    async def execute(
         self,
         *,
         status: StudentStatus | None = None,
@@ -59,7 +59,7 @@ class ListStudents:
             offset=(page - 1) * page_size,
             limit=page_size,
         )
-        result = self.query_service.search(criteria)
+        result = await self.query_service.search(criteria)
         total_pages = (result.total + page_size - 1) // page_size if result.total else 0
 
         return StudentPageOutput(

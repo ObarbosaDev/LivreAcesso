@@ -6,6 +6,6 @@ from backend.app.modules.students.domain.entities import Student
 
 
 class StudentRepository(Protocol):
-    """Porta de escrita do agregado; consultas usam projeções próprias."""
+    """Porta assíncrona de escrita do agregado; consultas usam projeções próprias."""
 
-    def add(self, student: Student) -> None: ...
+    async def add(self, student: Student) -> None: ...
