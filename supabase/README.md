@@ -125,3 +125,20 @@ Execução homologada no projeto de São Paulo:
 ```
 
 Após a execução, todas as tabelas operacionais permaneceram vazias e a conta voltou ao papel de coordenação ativa.
+
+## Homologação com JWT real
+
+Depois de instalar o projeto com `python -m pip install -e ".[dev]"`, execute:
+
+```powershell
+livre-acesso-verify-supabase
+```
+
+O comando solicita interativamente:
+
+1. URL do projeto;
+2. chave publicável;
+3. e-mail da conta sintética;
+4. senha da conta sintética em prompt oculto.
+
+Nada é gravado em arquivo e nenhum token é exibido. O verificador autentica no Supabase Auth e percorre JWT/JWKS → FastAPI → RPC de listagem. A operação é somente leitura.
