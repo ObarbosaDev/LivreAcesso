@@ -61,3 +61,24 @@ def test_private_schema_is_revoked_from_client_roles() -> None:
     for migration in MIGRATIONS:
         normalized_sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
         assert expected_revoke in normalized_sql
+
+
+def test_cpf_is_validated_inside_postgresql() -> None:
+    sql = " ".join(
+        " ".join(path.read_text(encoding="utf-8").lower().split()) for path in MIGRATIONS
+    )
+
+    assert "function private.is_valid_cpf" in sql
+    assert "private.is_valid_cpf(cpf)" in sql
+    assert "private.is_valid_cpf(v_cpf)" in sql
+
+
+def test_student_search_preserves_total_for_empty_pages() -> None:
+    sql = " ".join(
+        " ".join(path.read_text(encoding="utf-8").lower().split()) for path in MIGRATIONS
+    )
+
+    assert "function public.list_students" in sql
+    assert "returns jsonb" in sql
+    assert "'items'" in sql
+    assert "'total'" in sql
