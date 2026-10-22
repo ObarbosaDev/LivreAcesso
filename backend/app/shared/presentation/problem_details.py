@@ -24,6 +24,12 @@ from backend.app.modules.students.domain.exceptions import (
     InvalidPhoneError,
     StudentDomainError,
 )
+from backend.app.shared.application.exceptions import (
+    ApplicationError,
+    PermissionDeniedError,
+    PersistenceRejectedError,
+    PersistenceUnavailableError,
+)
 
 logger = logging.getLogger("livre_acesso.api")
 
@@ -180,6 +186,37 @@ def install_problem_handlers(application: FastAPI) -> None:
             detail=str(exception),
             code=exception.code,
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @application.exception_handler(ApplicationError)
+    async def handle_application_error(
+        request: Request,
+        exception: ApplicationError,
+    ) -> JSONResponse:
+        if isinstance(exception, PermissionDeniedError):
+            response_status = status.HTTP_403_FORBIDDEN
+            title = "Operação não permitida"
+            headers = None
+        elif isinstance(exception, PersistenceUnavailableError):
+            response_status = status.HTTP_503_SERVICE_UNAVAILABLE
+            title = "Dados temporariamente indisponíveis"
+            headers = {"Retry-After": "30"}
+        elif isinstance(exception, PersistenceRejectedError):
+            response_status = status.HTTP_422_UNPROCESSABLE_CONTENT
+            title = "Os dados não puderam ser processados"
+            headers = None
+        else:
+            response_status = status.HTTP_400_BAD_REQUEST
+            title = "Não foi possível concluir a operação"
+            headers = None
+
+        return _problem_response(
+            request,
+            response_status=response_status,
+            title=title,
+            detail=str(exception),
+            code=exception.code,
+            headers=headers,
         )
 
     @application.exception_handler(StudentDomainError)
