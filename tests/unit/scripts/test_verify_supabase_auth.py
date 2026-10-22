@@ -5,7 +5,11 @@ import json
 import httpx2
 import pytest
 
-from scripts.verify_supabase_auth import VerificationError, _AuthResponse
+from scripts.verify_supabase_auth import (
+    VerificationError,
+    _AuthResponse,
+    _validate_publishable_key,
+)
 
 
 def test_auth_response_hides_access_token_from_repr() -> None:
@@ -38,3 +42,8 @@ def test_verification_error_never_requires_http_response_body() -> None:
     sanitized = VerificationError("Não foi possível alcançar o Supabase Auth.")
 
     assert str(error) not in str(sanitized)
+
+
+def test_verifier_rejects_non_publishable_key_before_network() -> None:
+    with pytest.raises(VerificationError, match="Publishable key"):
+        _validate_publishable_key("https://example.supabase.co", "wrong-key-type")
