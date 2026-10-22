@@ -233,3 +233,87 @@ def test_unconfigured_authentication_fails_closed() -> None:
     assert response.status_code == 503
     assert response.headers["Retry-After"] == "30"
     assert response.json()["code"] == "authentication_unavailable"
+
+
+def test_manage_student_lifecycle_without_exposing_cpf() -> None:
+    with build_client() as client:
+        created = client.post("/api/v1/students", json=student_payload()).json()
+        student_id = created["id"]
+
+        detail = client.get(f"/api/v1/students/{student_id}")
+        updated = client.put(
+            f"/api/v1/students/{student_id}",
+            json={
+                "expected_updated_at": created["updated_at"],
+                "full_name": "Sophia Almeida Ramos da Silva",
+                "birth_date": "2015-05-10",
+                "guardian": {
+                    "full_name": "Camila Ramos",
+                    "phone": "(61) 98888-1234",
+                    "email": "camila@example.com",
+                },
+            },
+        )
+        inactive = client.post(
+            f"/api/v1/students/{student_id}/deactivate",
+            json={
+                "expected_updated_at": updated.json()["updated_at"],
+                "reason": "Solicitação confirmada pela coordenação responsável",
+            },
+        )
+        active = client.post(
+            f"/api/v1/students/{student_id}/activate",
+            json={
+                "expected_updated_at": inactive.json()["updated_at"],
+                "reason": "Retorno confirmado pela coordenação responsável",
+            },
+        )
+
+    assert detail.status_code == 200
+    assert detail.json()["cpf_masked"] == "***.***.***-25"
+    assert detail.json()["guardian"]["phone"] == "61999991234"
+    assert "52998224725" not in detail.text
+
+    assert updated.status_code == 200
+    assert updated.json()["full_name"] == "Sophia Almeida Ramos da Silva"
+    assert updated.json()["guardian"]["phone"] == "61988881234"
+    assert updated.json()["updated_at"] != created["updated_at"]
+
+    assert inactive.status_code == 200
+    assert inactive.json()["status"] == "inativo"
+    assert active.status_code == 200
+    assert active.json()["status"] == "ativo"
+    assert active.json()["id"] == student_id
+
+
+def test_stale_student_update_returns_conflict() -> None:
+    with build_client() as client:
+        created = client.post("/api/v1/students", json=student_payload()).json()
+        payload = {
+            "expected_updated_at": created["updated_at"],
+            "full_name": "Sophia Almeida Atualizada",
+            "birth_date": "2015-05-10",
+            "guardian": {
+                "full_name": "Camila Ramos",
+                "phone": "61999991234",
+            },
+        }
+        first_update = client.put(f"/api/v1/students/{created['id']}", json=payload)
+        stale_update = client.put(f"/api/v1/students/{created['id']}", json=payload)
+
+    assert first_update.status_code == 200
+    assert stale_update.status_code == 409
+    assert stale_update.json()["code"] == "student_version_conflict"
+
+
+def test_missing_student_and_physical_delete_have_clear_responses() -> None:
+    missing_id = "00000000-0000-4000-8000-000000000099"
+
+    with build_client() as client:
+        missing = client.get(f"/api/v1/students/{missing_id}")
+        physical_delete = client.delete(f"/api/v1/students/{missing_id}")
+
+    assert missing.status_code == 404
+    assert missing.json()["code"] == "student_not_found"
+    assert physical_delete.status_code == 405
+    assert physical_delete.json()["code"] == "http_405"
