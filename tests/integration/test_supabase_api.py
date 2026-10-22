@@ -101,8 +101,16 @@ def test_authenticated_request_crosses_api_and_supabase_adapter() -> None:
                 "payload": payload,
             }
         )
-        if request.url.path.endswith("/register_student_with_guardian"):
-            return httpx2.Response(200, json=payload["p_student_id"])
+        if request.url.path.endswith("/register_student_with_guardian_v2"):
+            persisted_at = datetime(2026, 10, 21, 18, 0, tzinfo=UTC).isoformat()
+            return httpx2.Response(
+                200,
+                json={
+                    "id": payload["p_student_id"],
+                    "created_at": persisted_at,
+                    "updated_at": persisted_at,
+                },
+            )
         return httpx2.Response(
             200,
             json={
