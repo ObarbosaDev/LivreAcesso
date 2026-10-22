@@ -25,6 +25,7 @@ class Guardian:
     full_name: str
     phone: Phone
     email: str | None = None
+    id: UUID = field(default_factory=uuid4)
 
     def __post_init__(self) -> None:
         normalized_name = " ".join(self.full_name.split())

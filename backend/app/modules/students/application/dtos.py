@@ -64,8 +64,8 @@ class StudentOutput(DTO):
     birth_date: date
     age: int
     status: StudentStatus
-    guardian_name: str
-    guardian_phone_masked: str
+    guardian_name: str | None
+    guardian_phone_masked: str | None
     created_at: datetime
 
 
