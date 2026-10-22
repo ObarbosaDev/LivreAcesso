@@ -1,6 +1,7 @@
 """Homologa Supabase Auth, JWT, FastAPI e RPC sem persistir credenciais."""
 
 import getpass
+import logging
 import os
 from dataclasses import dataclass
 from typing import Any
@@ -15,6 +16,33 @@ from backend.app.main import create_app
 
 class VerificationError(Exception):
     """Erro sanitizado que não carrega resposta externa nem credencial."""
+
+
+def _validate_publishable_key(project_url: str, publishable_key: str) -> None:
+    """Confirma a chave do projeto antes de solicitar a senha da conta."""
+
+    if not publishable_key.startswith("sb_publishable_"):
+        raise VerificationError(
+            "Use a Publishable key iniciada por 'sb_publishable_', não Secret/JWT key."
+        )
+
+    try:
+        with httpx2.Client(timeout=10.0, follow_redirects=False) as client:
+            response = client.get(
+                f"{project_url}/auth/v1/settings",
+                headers={"apikey": publishable_key},
+            )
+    except httpx2.HTTPError as error:
+        raise VerificationError("Não foi possível validar a chave publicável.") from error
+
+    if response.status_code in {401, 403}:
+        raise VerificationError(
+            "Chave publicável recusada. Copie novamente em Project Settings → API Keys."
+        )
+    if response.status_code != 200:
+        raise VerificationError(
+            f"Não foi possível validar a chave publicável ({response.status_code})."
+        )
 
 
 class _AuthResponse(BaseModel):
@@ -63,6 +91,8 @@ def _authenticate(
     except httpx2.HTTPError as error:
         raise VerificationError("Não foi possível alcançar o Supabase Auth.") from error
 
+    if response.status_code in {400, 401}:
+        raise VerificationError("E-mail ou senha da conta sintética não conferem.")
     if response.status_code != 200 or len(response.content) > 256 * 1024:
         # O corpo do Auth pode trazer detalhes sobre a conta. Exibimos somente
         # o status para evitar enumeração e vazamento no terminal compartilhado.
@@ -125,6 +155,7 @@ def verify() -> VerificationResult:
         "Chave publicável",
         secret=True,
     )
+    _validate_publishable_key(project_url, publishable_key)
     email = _prompt_value("SUPABASE_TEST_EMAIL", "E-mail da conta sintética")
     # Senha sempre vem do prompt oculto; não aceitamos variável para reduzir a
     # chance de ela permanecer no ambiente de outro processo ou captura de CI.
@@ -143,6 +174,9 @@ def verify() -> VerificationResult:
 
 
 def main() -> int:
+    # O cliente HTTP pode registrar URL/status em INFO. A homologação exibe
+    # apenas seu resumo sanitizado, evitando ruído em terminais compartilhados.
+    logging.getLogger("httpx2").setLevel(logging.WARNING)
     print("Homologando Supabase sem armazenar credenciais...")
     try:
         result = verify()
