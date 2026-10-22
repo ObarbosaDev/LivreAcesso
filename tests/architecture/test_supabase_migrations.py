@@ -147,3 +147,24 @@ def test_privileged_rpcs_have_empty_search_path_and_internal_role_checks() -> No
         assert "security definer" in function_body
         assert "set search_path = ''" in function_body
         assert "private.has_any_role" in function_body
+
+
+SUPABASE_TESTS_DIR = PROJECT_ROOT / "supabase" / "tests"
+SUPABASE_SQL_TESTS = tuple(sorted(SUPABASE_TESTS_DIR.glob("*.sql")))
+
+
+@pytest.mark.parametrize("sql_test", SUPABASE_SQL_TESTS, ids=lambda path: path.name)
+def test_supabase_sql_tests_have_valid_postgresql_syntax(sql_test: Path) -> None:
+    statements = parse_sql(sql_test.read_text(encoding="utf-8"))
+
+    assert statements, f"O teste SQL {sql_test.name} não possui comandos."
+
+
+def test_role_matrix_always_rolls_back() -> None:
+    role_matrix = SUPABASE_TESTS_DIR / "role_matrix.sql"
+    sql = role_matrix.read_text(encoding="utf-8").strip().lower()
+
+    assert "\nbegin;" in sql
+    assert "\nrollback;" in sql
+    assert "\ncommit;" not in sql
+    assert "25/25 permission checks passed" in sql
