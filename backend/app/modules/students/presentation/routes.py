@@ -5,22 +5,19 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from backend.app.core.container import ApplicationContainer
-from backend.app.modules.identity.presentation.dependencies import require_authenticated_user
+from backend.app.modules.identity.presentation.dependencies import require_request_context
 from backend.app.modules.students.application.dtos import (
     RegisterStudentInput,
     StudentOutput,
     StudentPageOutput,
 )
 from backend.app.modules.students.domain.entities import StudentStatus
+from backend.app.shared.application.request_context import RequestContext
 from backend.app.shared.presentation.problem_details import ProblemDetail
 
 
 def build_students_router(container: ApplicationContainer) -> APIRouter:
-    router = APIRouter(
-        prefix="/students",
-        tags=["Alunos"],
-        dependencies=[Depends(require_authenticated_user)],
-    )
+    router = APIRouter(prefix="/students", tags=["Alunos"])
 
     @router.post(
         "",
@@ -42,9 +39,13 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
             },
         },
     )
-    async def register_student(payload: RegisterStudentInput) -> StudentOutput:
+    async def register_student(
+        payload: RegisterStudentInput,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> StudentOutput:
         """Valida e cadastra um aluno sem expor seus dados pessoais na resposta."""
-        return await container.register_student.execute(payload)
+        services = container.students_for(context)
+        return await services.register_student.execute(payload)
 
     @router.get(
         "",
@@ -56,6 +57,7 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
         ),
     )
     async def list_students(
+        context: Annotated[RequestContext, Depends(require_request_context)],
         student_status: Annotated[StudentStatus | None, Query(alias="status")] = None,
         query: Annotated[
             str | None,
@@ -72,7 +74,8 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
         ] = 25,
     ) -> StudentPageOutput:
         """Lista somente os campos seguros necessários para identificação visual."""
-        return await container.list_students.execute(
+        services = container.students_for(context)
+        return await services.list_students.execute(
             status=student_status,
             query=query,
             page=page,

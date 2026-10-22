@@ -1,6 +1,8 @@
 """Fábrica e instância ASGI da API Livre Acesso."""
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI
@@ -29,7 +31,7 @@ def create_app(
     """Compõe adaptadores e políticas sem esconder dependências em módulos globais."""
 
     current_settings = settings or get_settings()
-    current_container = container or build_container()
+    current_container = container or build_container(current_settings)
     current_token_verifier = token_verifier or (
         SupabaseJWTVerifier(current_settings.supabase_url)
         if current_settings.supabase_url
@@ -43,11 +45,19 @@ def create_app(
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
 
+    @asynccontextmanager
+    async def lifespan(_application: FastAPI) -> AsyncIterator[None]:
+        yield
+        # O gateway mantém conexões entre requisições de uma instância quente.
+        # O lifecycle fecha o pool quando ASGI encerra a instância ou um teste.
+        await current_container.close()
+
     application = FastAPI(
         title=current_settings.app_name,
         version=current_settings.version,
         description="API para gestão de alunos, responsáveis, turmas e frequência.",
         debug=current_settings.debug,
+        lifespan=lifespan,
     )
     application.state.container = current_container
     application.state.token_verifier = current_token_verifier
