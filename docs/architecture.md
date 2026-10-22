@@ -183,6 +183,8 @@ Módulos futuros acrescentarão:
 - `waiting_list_entries`, `vacancy_processes`, `vacancy_candidates`;
 - `communications`, `communication_recipients`.
 
+A terceira migration, `supabase/migrations/20261021000300_registration_timestamps.sql`, faz o cadastro devolver os timestamps autoritativos do PostgreSQL. Isso impede conflito falso na primeira edição quando o relógio da API e o relógio do banco diferem.
+
 Regras estruturais importantes:
 
 - CPF normalizado com índice único;
