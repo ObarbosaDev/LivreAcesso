@@ -26,6 +26,9 @@ from backend.app.modules.students.domain.exceptions import (
     StudentNotFoundError,
     StudentVersionConflictError,
 )
+from backend.app.modules.students.domain.repositories import (
+    PersistedStudentVersion,
+)
 from backend.app.modules.students.domain.value_objects import CPF, Phone, StatusChangeReason
 from backend.app.shared.application.exceptions import (
     PermissionDeniedError,
@@ -95,6 +98,14 @@ class _StudentDetailRow(BaseModel):
     updated_at: AwareDatetime
 
 
+class _CreatedResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: UUID
+    created_at: AwareDatetime
+    updated_at: AwareDatetime
+
+
 class _MutationResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -103,6 +114,7 @@ class _MutationResponse(BaseModel):
 
 _STUDENT_SEARCH_RESPONSE = TypeAdapter(_StudentSearchResponse)
 _STUDENT_DETAIL_RESPONSE = TypeAdapter(_StudentDetailRow)
+_CREATED_RESPONSE = TypeAdapter(_CreatedResponse)
 _MUTATION_RESPONSE = TypeAdapter(_MutationResponse)
 
 
@@ -113,7 +125,7 @@ class SupabaseStudentRepository:
         self._gateway = gateway
         self._context = context
 
-    async def add(self, student: Student) -> None:
+    async def add(self, student: Student) -> PersistedStudentVersion:
         payload: dict[str, object] = {
             "p_student_id": str(student.id),
             "p_guardian_id": str(student.guardian.id),
@@ -128,12 +140,21 @@ class SupabaseStudentRepository:
             # legal sem confirmação produziria um dado potencialmente falso.
             "p_relationship": "responsible_contact",
         }
-        result = await self._call("register_student_with_guardian", payload)
+        result = await self._call("register_student_with_guardian_v2", payload)
 
-        # A aplicação gera o UUID antes da transação para que evento, auditoria
-        # e resposta apontem para o mesmo agregado sem mutação após persistência.
-        if result != str(student.id):
+        try:
+            created = _CREATED_RESPONSE.validate_python(result)
+        except ValidationError as error:
+            raise PersistenceUnavailableError from error
+        if created.id != student.id:
             raise PersistenceUnavailableError
+
+        # O PostgreSQL é a autoridade temporal. Esses valores voltam ao caso de
+        # uso para que a primeira edição compare exatamente a versão persistida.
+        return PersistedStudentVersion(
+            created_at=created.created_at,
+            updated_at=created.updated_at,
+        )
 
     async def get_by_id(self, student_id: UUID) -> Student | None:
         try:
