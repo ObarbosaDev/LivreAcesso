@@ -151,6 +151,12 @@ Se qualquer etapa falhar, nada é persistido.
 
 A consulta prévia de CPF melhora a mensagem, mas não evita corrida. A constraint única no PostgreSQL é a garantia definitiva. O adaptador traduz `duplicate_cpf` para conflito HTTP sem expor SQL.
 
+### Concorrência e ciclo cadastral
+
+Edições carregam o `updated_at` visto na consulta. A RPC compara essa versão dentro da transação; se outra pessoa tiver alterado o cadastro, a API devolve conflito e exige recarregar os dados. Isso impede que a última tela a salvar apague silenciosamente o trabalho anterior.
+
+Alunos não são excluídos fisicamente pela API. Desativação e reativação exigem coordenação, versão atual e motivo entre 10 e 500 caracteres. O motivo fica apenas no histórico privado; eventos carregam somente ID e transição.
+
 ### Paginação
 
 Listagens sempre terão limite máximo. O backend nunca carrega todos os registros para filtrar em memória quando estiver conectado ao Supabase.
