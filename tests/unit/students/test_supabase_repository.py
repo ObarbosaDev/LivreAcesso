@@ -59,15 +59,26 @@ def test_add_uses_transactional_rpc_with_generated_ids() -> None:
     current_student = student()
     captured_payload: dict[str, object] = {}
 
+    persisted_at = datetime(2026, 10, 21, 18, 0, tzinfo=UTC)
+
     def respond(request: httpx2.Request) -> httpx2.Response:
         captured_payload.update(json.loads(request.content))
-        return httpx2.Response(200, json=str(current_student.id))
+        return httpx2.Response(
+            200,
+            json={
+                "id": str(current_student.id),
+                "created_at": persisted_at.isoformat(),
+                "updated_at": persisted_at.isoformat(),
+            },
+        )
 
     async def add() -> None:
         async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
             gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
             repository = SupabaseStudentRepository(gateway, context())
-            await repository.add(current_student)
+            version = await repository.add(current_student)
+        assert version.created_at == persisted_at
+        assert version.updated_at == persisted_at
 
     asyncio.run(add())
 
