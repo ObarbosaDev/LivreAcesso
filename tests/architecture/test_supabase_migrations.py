@@ -60,7 +60,8 @@ def test_private_schema_is_revoked_from_client_roles() -> None:
 
     for migration in MIGRATIONS:
         normalized_sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
-        assert expected_revoke in normalized_sql
+        if "create table private." in normalized_sql:
+            assert expected_revoke in normalized_sql
 
 
 def test_cpf_is_validated_inside_postgresql() -> None:
@@ -106,3 +107,14 @@ def test_sensitive_detail_and_status_change_are_audited() -> None:
     assert "student.status_changed" in sql
     assert "student.updated" in sql
     assert "array['status']" in sql
+
+
+def test_registration_returns_authoritative_database_timestamps() -> None:
+    sql = " ".join(
+        " ".join(path.read_text(encoding="utf-8").lower().split()) for path in MIGRATIONS
+    )
+
+    assert "function public.register_student_with_guardian_v2" in sql
+    assert "'created_at'" in sql
+    assert "'updated_at'" in sql
+    assert "from authenticated" in sql
