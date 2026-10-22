@@ -72,3 +72,17 @@ Verificações concluídas:
 - cinco avisos de segurança restantes correspondem somente às RPCs privilegiadas analisadas acima.
 
 A homologação funcional por papel ainda depende de contas sintéticas do Supabase Auth. Nenhum dado real deve entrar antes dessa matriz passar.
+
+## Matriz de autorização remota — 22 de outubro de 2026
+
+O script `supabase/tests/role_matrix.sql` foi executado no projeto de São Paulo e concluiu `25/25 permission checks passed; transaction rolled back`.
+
+Foram exercitadas as cinco RPCs de alunos como coordenação, recepção, consulta, instrutor e perfil pendente/inativo. Após o rollback, a verificação confirmou:
+
+- uma coordenação ativa;
+- nenhum outro estado de perfil;
+- zero alunos, responsáveis e vínculos;
+- zero históricos de status;
+- zero eventos na outbox.
+
+A matriz valida autorização dentro do PostgreSQL com contexto JWT simulado. A etapa restante é autenticar pela API do Supabase e percorrer FastAPI → PostgREST com um JWT real.
