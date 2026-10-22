@@ -535,6 +535,16 @@ Remove-Item Env:APP_DEBUG, Env:APP_PORT, Env:APP_CORS_ORIGINS, Env:SUPABASE_URL
 
 Em hospedagem, use exclusivamente o painel de variáveis/segredos da plataforma.
 
+### Homologação com JWT real
+
+Para testar Supabase Auth, validação JWKS, FastAPI e a RPC remota sem iniciar servidor:
+
+```powershell
+livre-acesso-verify-supabase
+```
+
+O comando pede URL, chave publicável, conta sintética e senha. A chave e a senha ficam ocultas, o JWT permanece somente em memória e a operação consulta apenas a listagem paginada. Nenhuma credencial é gravada ou exibida.
+
 ## Qualidade e testes
 
 ### Comandos
