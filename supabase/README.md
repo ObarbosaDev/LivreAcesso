@@ -105,3 +105,7 @@ Sem `SUPABASE_URL`, o backend usa um verificador que falha fechado com `503`. Is
 ## Terceira migration
 
 `migrations/20261021000300_registration_timestamps.sql` cria a versão atual da RPC de cadastro. Ela devolve `id`, `created_at` e `updated_at` produzidos pelo PostgreSQL, garantindo que a primeira edição compare exatamente a versão persistida. A função anterior perde permissão direta para `authenticated` e permanece apenas como parte interna da transação versionada.
+
+## Quarta migration
+
+`migrations/20261021000400_optimize_profile_policy.sql` mantém a mesma autorização de `profiles`, mas usa initplans para que `auth.uid()` e a verificação de papel não sejam recalculados em cada linha. A decisão sobre RPCs `security definer` está registrada em [`../docs/security-decisions.md`](../docs/security-decisions.md).
