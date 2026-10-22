@@ -174,6 +174,8 @@ A primeira migration está em `supabase/migrations/20261021000100_initial_identi
 - `private.outbox_events`, para efeitos externos duráveis;
 - RPC transacional de cadastro e RPC mascarada de listagem.
 
+A segunda migration, `supabase/migrations/20261021000200_student_management.sql`, adiciona detalhe sensível auditado, atualização com concorrência otimista, histórico de status e ativação/desativação lógica. CPF não é alterado pelo update comum e nenhuma RPC exclui fisicamente o aluno.
+
 Módulos futuros acrescentarão:
 
 - `modalities`, `classes`, `enrollments`;
