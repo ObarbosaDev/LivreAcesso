@@ -130,7 +130,7 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Schema Supabase | **Disponível** | Quatro migrations aplicadas e verificadas no projeto de São Paulo. |
 | Persistência da API | **Disponível** | Gateway HTTP e adaptador de alunos usam RPCs com o JWT da requisição. |
 | Autenticação | **Disponível** | Bearer JWT validado localmente por JWKS do Supabase. |
-| Autorização operacional | **Parcial** | RPCs verificam perfis; validação remota por papel ainda precisa ser executada. |
+| Autorização operacional | **Parcial** | Matriz SQL 25/25 aprovada; fluxo HTTP com JWT real ainda pendente. |
 | Turmas e matrículas | **Planejado** | Modelo definido arquiteturalmente. |
 | Chamada e alertas | **Planejado** | Regra depende de validação com a instituição. |
 | Lista de espera | **Planejado** | Critérios operacionais e jurídicos pendentes. |
@@ -610,7 +610,8 @@ Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra 
 - [x] autenticação Bearer e validação local de JWT por JWKS;
 - [x] implementar o gateway e o adaptador Supabase na API;
 - [x] aplicar e validar as quatro migrations no projeto Supabase de São Paulo;
-- [ ] criar contas sintéticas e testar perfis, RLS e RPC com cada papel;
+- [x] executar matriz SQL de 25 permissões com rollback;
+- [ ] validar FastAPI e PostgREST com JWT real;
 - [x] CRUD seguro de alunos e responsável principal;
 - [x] detalhe sensível auditado e CPF imutável no fluxo comum;
 - [x] atualização com concorrência otimista;
