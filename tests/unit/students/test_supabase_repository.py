@@ -2,7 +2,7 @@
 
 import asyncio
 import json
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
 import httpx2
@@ -10,9 +10,13 @@ import pytest
 
 from backend.app.modules.identity.application.authentication import AccessToken, AuthenticatedUser
 from backend.app.modules.students.application.queries import StudentSearchCriteria
-from backend.app.modules.students.domain.entities import Guardian, Student
+from backend.app.modules.students.domain.entities import Guardian, Student, StudentStatus
 from backend.app.modules.students.domain.exceptions import DuplicateCPFError
-from backend.app.modules.students.domain.value_objects import CPF, Phone
+from backend.app.modules.students.domain.value_objects import (
+    CPF,
+    Phone,
+    StatusChangeReason,
+)
 from backend.app.modules.students.infrastructure.supabase_repository import (
     SupabaseStudentRepository,
 )
@@ -84,6 +88,7 @@ def test_search_maps_only_masked_projection() -> None:
         "guardian_name": "Camila Ramos",
         "guardian_phone_masked": "(61) *****-1234",
         "created_at": datetime(2026, 10, 21, tzinfo=UTC).isoformat(),
+        "updated_at": datetime(2026, 10, 21, tzinfo=UTC).isoformat(),
     }
 
     def respond(_request: httpx2.Request) -> httpx2.Response:
@@ -156,3 +161,99 @@ def test_empty_page_preserves_total_number_of_matches() -> None:
         assert result.total == 37
 
     asyncio.run(search())
+
+
+def detail_row(current_student: Student) -> dict[str, object]:
+    return {
+        "id": str(current_student.id),
+        "full_name": current_student.full_name,
+        "cpf": current_student.cpf.value,
+        "birth_date": current_student.birth_date.isoformat(),
+        "status": "active",
+        "guardian": {
+            "id": str(current_student.guardian.id),
+            "full_name": current_student.guardian.full_name,
+            "phone": current_student.guardian.phone.value,
+            "email": current_student.guardian.email,
+        },
+        "created_at": current_student.created_at.isoformat(),
+        "updated_at": current_student.updated_at.isoformat(),
+    }
+
+
+def test_get_by_id_rehydrates_valid_aggregate() -> None:
+    current_student = student()
+
+    def respond(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json=detail_row(current_student))
+
+    async def get() -> None:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
+            restored = await SupabaseStudentRepository(gateway, context()).get_by_id(
+                current_student.id
+            )
+        assert restored == current_student
+
+    asyncio.run(get())
+
+
+def test_get_by_id_returns_none_for_missing_student() -> None:
+    def respond(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(404, json={"message": "student_not_found"})
+
+    async def get() -> None:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
+            restored = await SupabaseStudentRepository(gateway, context()).get_by_id(student().id)
+        assert restored is None
+
+    asyncio.run(get())
+
+
+def test_update_sends_expected_version_and_returns_database_version() -> None:
+    current_student = student()
+    expected_version = current_student.updated_at
+    database_version = expected_version + timedelta(microseconds=1)
+    captured: dict[str, object] = {}
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        captured.update(json.loads(request.content))
+        return httpx2.Response(200, json={"updated_at": database_version.isoformat()})
+
+    async def update() -> None:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
+            returned_version = await SupabaseStudentRepository(gateway, context()).update(
+                current_student,
+                expected_updated_at=expected_version,
+            )
+        assert returned_version == database_version
+
+    asyncio.run(update())
+    assert captured["p_expected_updated_at"] == expected_version.isoformat()
+    assert captured["p_student_id"] == str(current_student.id)
+    assert "p_cpf" not in captured
+
+
+def test_status_change_sends_reason_only_to_transactional_rpc() -> None:
+    current_student = student()
+    current_student.status = StudentStatus.INACTIVE
+    captured: dict[str, object] = {}
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        captured.update(json.loads(request.content))
+        return httpx2.Response(200, json={"updated_at": current_student.updated_at.isoformat()})
+
+    async def change() -> None:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
+            await SupabaseStudentRepository(gateway, context()).change_status(
+                current_student,
+                reason=StatusChangeReason("Solicitação confirmada pela coordenação"),
+                expected_updated_at=current_student.updated_at,
+            )
+
+    asyncio.run(change())
+    assert captured["p_target_status"] == "inactive"
+    assert captured["p_reason"] == "Solicitação confirmada pela coordenação"
