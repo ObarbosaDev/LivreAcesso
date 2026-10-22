@@ -142,3 +142,12 @@ O comando solicita interativamente:
 4. senha da conta sintética em prompt oculto.
 
 Nada é gravado em arquivo e nenhum token é exibido. O verificador autentica no Supabase Auth e percorre JWT/JWKS → FastAPI → RPC de listagem. A operação é somente leitura.
+
+### Falha de autenticação no verificador
+
+O comando valida primeiro se a chave começa com `sb_publishable_` e se o Supabase Auth a aceita em `/auth/v1/settings`. Só depois solicita e-mail e senha.
+
+- `Chave publicável recusada`: copie **Publishable key** novamente; não use Secret key, JWT secret ou connection string.
+- `E-mail ou senha não conferem`: a chave foi aceita e o problema está nas credenciais da conta em Authentication → Users.
+
+O corpo retornado pelo Supabase não é exibido, pois pode conter detalhes sobre a conta.
