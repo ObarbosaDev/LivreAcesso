@@ -101,3 +101,7 @@ São obrigatórios e validados:
 O papel operacional (`coordinator`, `receptionist`, `instructor`, `read_only`) não é confiado a metadados editáveis do usuário. Cada RPC consulta `profiles` no banco antes de executar a operação.
 
 Sem `SUPABASE_URL`, o backend usa um verificador que falha fechado com `503`. Isso impede que uma implantação incompleta libere rotas protegidas anonimamente.
+
+## Terceira migration
+
+`migrations/20261021000300_registration_timestamps.sql` cria a versão atual da RPC de cadastro. Ela devolve `id`, `created_at` e `updated_at` produzidos pelo PostgreSQL, garantindo que a primeira edição compare exatamente a versão persistida. A função anterior perde permissão direta para `authenticated` e permanece apenas como parte interna da transação versionada.
