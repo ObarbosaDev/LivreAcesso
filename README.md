@@ -120,6 +120,7 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | --- | --- | --- |
 | Fundação FastAPI | **Disponível** | Fábrica da aplicação, configuração e endpoint `/health`. |
 | Cadastro de aluno | **Disponível** | `POST /api/v1/students`. |
+| Gestão cadastral | **Disponível** | Detalhe, edição versionada, ativação e desativação lógica. |
 | Listagem e filtros | **Disponível** | `GET /api/v1/students` por status cadastral. |
 | CPF e telefone | **Disponível** | Normalização, validação, unicidade e mascaramento. |
 | DTO, mapper e caso de uso | **Disponível** | Camadas separadas no módulo `students`. |
@@ -354,6 +355,10 @@ As regras exatas — quantidade de faltas, prazo de inatividade e liberação de
 | `GET` | `/openapi.json` | Pública | Contrato OpenAPI em JSON. | `200` |
 | `GET` | `/api/v1/students` | Bearer JWT | Pesquisa paginada com filtros. | `200` |
 | `POST` | `/api/v1/students` | Bearer JWT | Cadastra aluno e responsável. | `201` |
+| `GET` | `/api/v1/students/{id}` | Bearer JWT | Consulta detalhe sensível e auditado. | `200` |
+| `PUT` | `/api/v1/students/{id}` | Bearer JWT | Atualiza dados usando `updated_at`. | `200` |
+| `POST` | `/api/v1/students/{id}/deactivate` | Bearer JWT | Desativa com motivo, sem excluir histórico. | `200` |
+| `POST` | `/api/v1/students/{id}/activate` | Bearer JWT | Reativa o mesmo cadastro. | `200` |
 
 ### Convenções
 
@@ -606,7 +611,10 @@ Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra 
 - [x] implementar o gateway e o adaptador Supabase na API;
 - [ ] aplicar e validar a migration em um projeto Supabase;
 - [ ] testar perfis, RLS e RPC com cada papel;
-- [ ] CRUD completo de alunos e responsáveis;
+- [x] CRUD seguro de alunos e responsável principal;
+- [x] detalhe sensível auditado e CPF imutável no fluxo comum;
+- [x] atualização com concorrência otimista;
+- [x] ativação/desativação lógica com motivo protegido;
 - [x] paginação, busca e auditoria transacional no schema;
 
 ### Fase 2 — Turmas e operação
