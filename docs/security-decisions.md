@@ -54,3 +54,21 @@ Dados reais continuam proibidos até concluir:
 4. limpeza dos registros sintéticos;
 5. revisão final dos advisors;
 6. definição de backup e restauração.
+
+## Evidência de produção — 22 de outubro de 2026
+
+Projeto homologado estruturalmente: `LivreAcesso`, região `South America (São Paulo)`.
+
+Verificações concluídas:
+
+- quatro migrations locais e remotas sincronizadas;
+- tabelas públicas com RLS ativo;
+- tabelas pessoais sem grants diretos para `anon` ou `authenticated`;
+- RPC de cadastro antiga sem permissão externa;
+- cinco RPCs atuais executáveis somente por `authenticated` e com validação interna;
+- triggers de perfil e timestamps presentes;
+- JWKS público disponível com assinatura `ES256`;
+- advisor de desempenho sem problemas após a quarta migration;
+- cinco avisos de segurança restantes correspondem somente às RPCs privilegiadas analisadas acima.
+
+A homologação funcional por papel ainda depende de contas sintéticas do Supabase Auth. Nenhum dado real deve entrar antes dessa matriz passar.
