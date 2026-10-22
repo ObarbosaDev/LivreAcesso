@@ -17,6 +17,7 @@ from backend.app.modules.students.domain.exceptions import (
     StudentNotFoundError,
     StudentVersionConflictError,
 )
+from backend.app.modules.students.domain.repositories import PersistedStudentVersion
 from backend.app.modules.students.domain.value_objects import StatusChangeReason
 
 
@@ -66,7 +67,7 @@ class InMemoryStudentRepository:
         self._status_reasons: list[tuple[UUID, str]] = []
         self._lock = RLock()
 
-    async def add(self, student: Student) -> None:
+    async def add(self, student: Student) -> PersistedStudentVersion:
         with self._lock:
             # A verificação e a escrita compartilham o mesmo lock. Isso reproduz,
             # em menor escala, a garantia do índice único que existe no Postgres.
@@ -74,6 +75,10 @@ class InMemoryStudentRepository:
                 raise DuplicateCPFError
             self._students[student.id] = _persistent_snapshot(student)
             self._student_ids_by_cpf[student.cpf.value] = student.id
+            return PersistedStudentVersion(
+                created_at=student.created_at,
+                updated_at=student.updated_at,
+            )
 
     async def get_by_id(self, student_id: UUID) -> Student | None:
         with self._lock:
