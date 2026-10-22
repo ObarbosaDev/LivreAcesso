@@ -6,7 +6,14 @@ from backend.app.core.config import Settings, get_settings
 from backend.app.modules.students.application.listeners import (
     StudentRegisteredAuditListener,
 )
-from backend.app.modules.students.application.use_cases import ListStudents, RegisterStudent
+from backend.app.modules.students.application.use_cases import (
+    ChangeStudentStatus,
+    GetStudent,
+    ListStudents,
+    RegisterStudent,
+    UpdateStudent,
+)
+from backend.app.modules.students.domain.entities import StudentStatus
 from backend.app.modules.students.domain.events import StudentRegistered
 from backend.app.modules.students.infrastructure.repositories import InMemoryStudentRepository
 from backend.app.modules.students.infrastructure.supabase_repository import (
@@ -22,6 +29,10 @@ class StudentServices:
     """Casos de uso vinculados ao armazenamento e à identidade da requisição."""
 
     register_student: RegisterStudent
+    get_student: GetStudent
+    update_student: UpdateStudent
+    activate_student: ChangeStudentStatus
+    deactivate_student: ChangeStudentStatus
     list_students: ListStudents
 
 
@@ -38,19 +49,34 @@ class ApplicationContainer:
             # O adaptador é barato e nasce por requisição para manter o JWT
             # efêmero isolado; o gateway HTTP compartilhado preserva conexões.
             store = SupabaseStudentRepository(self.supabase_gateway, context)
-            return StudentServices(
-                register_student=RegisterStudent(store, self.event_bus),
-                list_students=ListStudents(store),
-            )
+            return self._student_services(store)
 
         if self.in_memory_student_store is None:
             raise RuntimeError("O container não possui armazenamento de alunos.")
 
         # O modo em memória serve apenas ao desenvolvimento/testes. Ainda exige
         # autenticação na camada HTTP para não criar dois contratos de segurança.
+        return self._student_services(self.in_memory_student_store)
+
+    def _student_services(
+        self,
+        store: InMemoryStudentRepository | SupabaseStudentRepository,
+    ) -> StudentServices:
         return StudentServices(
-            register_student=RegisterStudent(self.in_memory_student_store, self.event_bus),
-            list_students=ListStudents(self.in_memory_student_store),
+            register_student=RegisterStudent(store, self.event_bus),
+            get_student=GetStudent(store),
+            update_student=UpdateStudent(store, self.event_bus),
+            activate_student=ChangeStudentStatus(
+                store,
+                self.event_bus,
+                StudentStatus.ACTIVE,
+            ),
+            deactivate_student=ChangeStudentStatus(
+                store,
+                self.event_bus,
+                StudentStatus.INACTIVE,
+            ),
+            list_students=ListStudents(store),
         )
 
     async def close(self) -> None:
