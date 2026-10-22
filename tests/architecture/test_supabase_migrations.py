@@ -118,3 +118,32 @@ def test_registration_returns_authoritative_database_timestamps() -> None:
     assert "'created_at'" in sql
     assert "'updated_at'" in sql
     assert "from authenticated" in sql
+
+
+def test_profile_policy_uses_initplans_for_auth_checks() -> None:
+    sql = " ".join(
+        " ".join(path.read_text(encoding="utf-8").lower().split()) for path in MIGRATIONS
+    )
+
+    assert "id = (select auth.uid())" in sql
+    assert "select private.has_any_role" in sql
+
+
+def test_privileged_rpcs_have_empty_search_path_and_internal_role_checks() -> None:
+    sql = " ".join(
+        " ".join(path.read_text(encoding="utf-8").lower().split()) for path in MIGRATIONS
+    )
+    privileged_functions = (
+        "register_student_with_guardian",
+        "list_students",
+        "get_student_detail",
+        "update_student_with_guardian",
+        "change_student_status",
+    )
+
+    for function_name in privileged_functions:
+        function_start = sql.index(f"function public.{function_name}")
+        function_body = sql[function_start : function_start + 12_000]
+        assert "security definer" in function_body
+        assert "set search_path = ''" in function_body
+        assert "private.has_any_role" in function_body
