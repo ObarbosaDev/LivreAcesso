@@ -66,7 +66,9 @@ Essa operação é de bootstrap e não deve virar endpoint público.
 
 ## Limitação atual
 
-A API FastAPI ainda usa o repositório em memória. A próxima etapa implementará o adaptador Supabase e a validação do JWT; até lá, esta migration é a especificação executável do armazenamento, não uma integração concluída.
+A API já possui gateway HTTP, adaptador de alunos e composição por requisição. Em `development` e `test`, a ausência das duas configurações Supabase ativa memória de forma explícita; em `preview`, `staging` e `production`, a aplicação recusa iniciar sem persistência remota.
+
+Ainda é necessário aplicar a migration a um projeto Supabase real e exercitar cada RPC/RLS com contas dos quatro papéis antes de autorizar dados reais.
 
 ## Validação de sessão no FastAPI
 
