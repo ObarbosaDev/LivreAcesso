@@ -23,6 +23,8 @@ livre-acesso-verify-supabase = "scripts.verify_supabase_auth:main"
 
 [project.optional-dependencies]
 dev = [
+    "Markdown==3.11.2",
+    "types-Markdown==3.10.2.20261007",
     "mypy==2.4.0",
     "pglast==8.7",
     "pytest==9.1.1",
