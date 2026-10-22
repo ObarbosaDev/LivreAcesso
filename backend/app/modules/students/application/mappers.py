@@ -1,7 +1,9 @@
 """Conversões explícitas entre DTOs e objetos de domínio."""
 
 from backend.app.modules.students.application.dtos import (
+    GuardianDetailOutput,
     RegisterStudentInput,
+    StudentDetailOutput,
     StudentOutput,
 )
 from backend.app.modules.students.application.queries import StudentListItem
@@ -42,6 +44,28 @@ class StudentMapper:
             guardian_name=student.guardian.full_name,
             guardian_phone_masked=student.guardian.phone.masked,
             created_at=student.created_at,
+            updated_at=student.updated_at,
+        )
+
+    @staticmethod
+    def to_detail_output(student: Student) -> StudentDetailOutput:
+        # Telefone e e-mail integrais aparecem somente neste contrato protegido.
+        # CPF permanece mascarado porque não é necessário para a rotina comum.
+        return StudentDetailOutput(
+            id=student.id,
+            full_name=student.full_name,
+            cpf_masked=student.cpf.masked,
+            birth_date=student.birth_date,
+            age=student.age_on(),
+            status=student.status,
+            guardian=GuardianDetailOutput(
+                id=student.guardian.id,
+                full_name=student.guardian.full_name,
+                phone=student.guardian.phone.value,
+                email=student.guardian.email,
+            ),
+            created_at=student.created_at,
+            updated_at=student.updated_at,
         )
 
     @staticmethod
@@ -58,4 +82,5 @@ class StudentMapper:
             guardian_name=item.guardian_name,
             guardian_phone_masked=item.guardian_phone_masked,
             created_at=item.created_at,
+            updated_at=item.updated_at,
         )

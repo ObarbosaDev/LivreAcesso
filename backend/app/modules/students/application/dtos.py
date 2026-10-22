@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from backend.app.modules.students.domain.entities import StudentStatus
 
@@ -55,8 +55,33 @@ class RegisterStudentInput(DTO):
         return value
 
 
+class UpdateStudentInput(DTO):
+    """Substitui os campos editáveis usando a versão vista pela pessoa usuária."""
+
+    expected_updated_at: AwareDatetime = Field(
+        description="Versão recebida na última consulta; evita sobrescrever outra alteração."
+    )
+    full_name: str = Field(min_length=3, max_length=120)
+    birth_date: date
+    guardian: GuardianInput
+
+    @field_validator("birth_date")
+    @classmethod
+    def birth_date_must_be_in_the_past(cls, value: date) -> date:
+        if value >= date.today():
+            raise ValueError("A data de nascimento deve estar no passado.")
+        return value
+
+
+class ChangeStudentStatusInput(DTO):
+    """Exige versão e justificativa para uma mudança cadastral de alto impacto."""
+
+    expected_updated_at: AwareDatetime
+    reason: str = Field(min_length=10, max_length=500)
+
+
 class StudentOutput(DTO):
-    """Representação segura para listagens e confirmações de cadastro."""
+    """Representação mascarada para listagens e confirmações de cadastro."""
 
     id: UUID
     full_name: str
@@ -67,6 +92,30 @@ class StudentOutput(DTO):
     guardian_name: str | None
     guardian_phone_masked: str | None
     created_at: datetime
+    updated_at: datetime
+
+
+class GuardianDetailOutput(DTO):
+    """Contato sensível liberado apenas pela consulta detalhada auditada."""
+
+    id: UUID
+    full_name: str
+    phone: str
+    email: EmailStr | None
+
+
+class StudentDetailOutput(DTO):
+    """Cadastro completo autorizado; CPF continua mascarado e imutável."""
+
+    id: UUID
+    full_name: str
+    cpf_masked: str
+    birth_date: date
+    age: int
+    status: StudentStatus
+    guardian: GuardianDetailOutput
+    created_at: datetime
+    updated_at: datetime
 
 
 class StudentPageOutput(DTO):
