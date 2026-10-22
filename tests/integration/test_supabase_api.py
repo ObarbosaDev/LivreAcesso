@@ -117,6 +117,7 @@ def test_authenticated_request_crosses_api_and_supabase_adapter() -> None:
                         "guardian_name": "Camila Ramos",
                         "guardian_phone_masked": "(61) *****-1234",
                         "created_at": datetime(2026, 10, 21, tzinfo=UTC).isoformat(),
+                        "updated_at": datetime(2026, 10, 21, tzinfo=UTC).isoformat(),
                     }
                 ],
                 "total": 1,
@@ -162,3 +163,94 @@ def test_database_permission_error_becomes_accessible_problem() -> None:
     assert response.headers["content-type"].startswith("application/problem+json")
     assert response.json()["code"] == "permission_denied"
     assert response.json()["title"] == "Operação não permitida"
+
+
+def test_supabase_management_rpc_flow_preserves_version_and_status() -> None:
+    student_id = "00000000-0000-4000-8000-000000000010"
+    guardian_id = "00000000-0000-4000-8000-000000000011"
+    initial_version = datetime(2026, 10, 21, 18, 0, tzinfo=UTC)
+    updated_version = datetime(2026, 10, 21, 18, 1, tzinfo=UTC)
+    inactive_version = datetime(2026, 10, 21, 18, 2, tzinfo=UTC)
+    rpc_names: list[str] = []
+
+    def detail_payload(*, status: str, updated_at: datetime) -> dict[str, object]:
+        return {
+            "id": student_id,
+            "full_name": "Sophia Almeida Ramos",
+            "cpf": "52998224725",
+            "birth_date": "2015-05-10",
+            "status": status,
+            "guardian": {
+                "id": guardian_id,
+                "full_name": "Camila Ramos",
+                "phone": "61999991234",
+                "email": "camila@example.com",
+            },
+            "created_at": initial_version.isoformat(),
+            "updated_at": updated_at.isoformat(),
+        }
+
+    current_status = "active"
+    current_version = initial_version
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        nonlocal current_status, current_version
+        rpc_name = request.url.path.rsplit("/", maxsplit=1)[-1]
+        rpc_names.append(rpc_name)
+
+        if rpc_name == "get_student_detail":
+            return httpx2.Response(
+                200,
+                json=detail_payload(status=current_status, updated_at=current_version),
+            )
+        if rpc_name == "update_student_with_guardian":
+            current_version = updated_version
+            return httpx2.Response(200, json={"updated_at": current_version.isoformat()})
+        if rpc_name == "change_student_status":
+            payload = json.loads(request.content)
+            current_status = payload["p_target_status"]
+            current_version = inactive_version
+            return httpx2.Response(200, json={"updated_at": current_version.isoformat()})
+        return httpx2.Response(404, json={"message": "function_not_found"})
+
+    application, http_client = build_application(respond)
+    headers = {"Authorization": f"Bearer {_ACCESS_TOKEN}"}
+
+    with TestClient(application, headers=headers) as client:
+        detail = client.get(f"/api/v1/students/{student_id}")
+        updated = client.put(
+            f"/api/v1/students/{student_id}",
+            json={
+                "expected_updated_at": initial_version.isoformat(),
+                "full_name": "Sophia Almeida Ramos da Silva",
+                "birth_date": "2015-05-10",
+                "guardian": {
+                    "full_name": "Camila Ramos",
+                    "phone": "61988881234",
+                    "email": "camila@example.com",
+                },
+            },
+        )
+        inactive = client.post(
+            f"/api/v1/students/{student_id}/deactivate",
+            json={
+                "expected_updated_at": updated_version.isoformat(),
+                "reason": "Solicitação confirmada pela coordenação responsável",
+            },
+        )
+
+    asyncio.run(http_client.aclose())
+
+    assert detail.status_code == 200
+    assert detail.json()["cpf_masked"] == "***.***.***-25"
+    assert updated.status_code == 200
+    assert updated.json()["updated_at"] == updated_version.isoformat().replace("+00:00", "Z")
+    assert inactive.status_code == 200
+    assert inactive.json()["status"] == "inativo"
+    assert rpc_names == [
+        "get_student_detail",
+        "get_student_detail",
+        "update_student_with_guardian",
+        "get_student_detail",
+        "change_student_status",
+    ]
