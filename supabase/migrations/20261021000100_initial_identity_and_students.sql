@@ -15,6 +15,50 @@ create schema if not exists private;
 revoke all on schema private from public, anon, authenticated;
 grant usage on schema private to authenticated;
 
+create or replace function private.is_valid_cpf(p_value text)
+returns boolean
+language plpgsql
+immutable
+strict
+set search_path = ''
+as $$
+declare
+    v_sum integer := 0;
+    v_first_digit integer;
+    v_second_digit integer;
+    v_remainder integer;
+    v_position integer;
+begin
+    if p_value !~ '^[0-9]{11}$'
+       or p_value = repeat(substr(p_value, 1, 1), 11) then
+        return false;
+    end if;
+
+    for v_position in 1..9 loop
+        v_sum := v_sum + substr(p_value, v_position, 1)::integer * (11 - v_position);
+    end loop;
+    v_remainder := v_sum % 11;
+    v_first_digit := case when v_remainder < 2 then 0 else 11 - v_remainder end;
+
+    if v_first_digit <> substr(p_value, 10, 1)::integer then
+        return false;
+    end if;
+
+    v_sum := 0;
+    for v_position in 1..10 loop
+        v_sum := v_sum + substr(p_value, v_position, 1)::integer * (12 - v_position);
+    end loop;
+    v_remainder := v_sum % 11;
+    v_second_digit := case when v_remainder < 2 then 0 else 11 - v_remainder end;
+
+    return v_second_digit = substr(p_value, 11, 1)::integer;
+end;
+$$;
+
+comment on function private.is_valid_cpf(text) is
+    'Valida formato e dígitos verificadores sem registrar ou devolver o CPF.';
+revoke all on function private.is_valid_cpf(text) from public, anon, authenticated;
+
 create type public.user_role as enum (
     'pending',
     'coordinator',
@@ -29,6 +73,7 @@ create type public.student_status as enum (
 );
 
 create type public.guardian_relationship as enum (
+    'responsible_contact',
     'legal_guardian',
     'parent',
     'emergency_contact',
@@ -63,7 +108,9 @@ create table public.students (
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     constraint students_full_name_length check (char_length(btrim(full_name)) between 3 and 120),
-    constraint students_cpf_digits check (cpf ~ '^[0-9]{11}$'),
+    constraint students_cpf_digits check (
+        cpf ~ '^[0-9]{11}$' and private.is_valid_cpf(cpf)
+    ),
     constraint students_cpf_unique unique (cpf),
     constraint students_birth_date_range check (
         birth_date >= date '1900-01-01' and birth_date < current_date
@@ -87,9 +134,17 @@ create table public.guardians (
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     constraint guardians_full_name_length check (char_length(btrim(full_name)) between 3 and 120),
-    constraint guardians_cpf_digits check (cpf is null or cpf ~ '^[0-9]{11}$'),
+    constraint guardians_cpf_digits check (
+        cpf is null or (cpf ~ '^[0-9]{11}$' and private.is_valid_cpf(cpf))
+    ),
     constraint guardians_phone_digits check (phone ~ '^[0-9]{10,11}$'),
-    constraint guardians_email_length check (email is null or char_length(email) <= 254)
+    constraint guardians_email_format check (
+        email is null
+        or (
+            char_length(email) <= 254
+            and email ~* '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'
+        )
+    )
 );
 
 -- CPF de responsável é opcional, mas precisa ser único quando informado.
@@ -270,13 +325,16 @@ revoke all on table public.student_guardians from public, anon, authenticated;
 grant select on table public.profiles to authenticated;
 
 create or replace function public.register_student_with_guardian(
+    p_student_id uuid,
+    p_guardian_id uuid,
+    p_request_id uuid,
     p_full_name text,
     p_cpf text,
     p_birth_date date,
     p_guardian_full_name text,
     p_guardian_phone text,
     p_guardian_email text default null,
-    p_relationship public.guardian_relationship default 'legal_guardian'
+    p_relationship public.guardian_relationship default 'responsible_contact'
 )
 returns uuid
 language plpgsql
@@ -287,12 +345,17 @@ declare
     v_actor_id uuid := auth.uid();
     v_student_id uuid;
     v_guardian_id uuid;
+    v_constraint_name text;
     v_cpf text := regexp_replace(coalesce(p_cpf, ''), '[^0-9]', '', 'g');
     v_phone text := regexp_replace(coalesce(p_guardian_phone, ''), '[^0-9]', '', 'g');
     v_student_name text := btrim(coalesce(p_full_name, ''));
     v_guardian_name text := btrim(coalesce(p_guardian_full_name, ''));
     v_guardian_email text := nullif(lower(btrim(p_guardian_email)), '');
 begin
+    if p_student_id is null or p_guardian_id is null or p_request_id is null then
+        raise exception using errcode = '22023', message = 'missing_operation_identifier';
+    end if;
+
     if not private.has_any_role(
         array['coordinator', 'receptionist']::public.user_role[]
     ) then
@@ -305,8 +368,8 @@ begin
     if char_length(v_guardian_name) not between 3 and 120 then
         raise exception using errcode = '22023', message = 'invalid_guardian_name';
     end if;
-    if v_cpf !~ '^[0-9]{11}$' then
-        raise exception using errcode = '22023', message = 'invalid_cpf_format';
+    if not private.is_valid_cpf(v_cpf) then
+        raise exception using errcode = '22023', message = 'invalid_cpf';
     end if;
     if v_phone !~ '^[0-9]{10,11}$' then
         raise exception using errcode = '22023', message = 'invalid_phone_format';
@@ -316,12 +379,17 @@ begin
        or p_birth_date >= current_date then
         raise exception using errcode = '22023', message = 'invalid_birth_date';
     end if;
-    if v_guardian_email is not null and char_length(v_guardian_email) > 254 then
+    if v_guardian_email is not null
+       and (
+           char_length(v_guardian_email) > 254
+           or v_guardian_email !~* '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'
+       ) then
         raise exception using errcode = '22023', message = 'invalid_email';
     end if;
 
     begin
         insert into public.students (
+            id,
             full_name,
             cpf,
             birth_date,
@@ -329,6 +397,7 @@ begin
             created_by
         )
         values (
+            p_student_id,
             v_student_name,
             v_cpf,
             p_birth_date,
@@ -338,17 +407,24 @@ begin
         returning id into v_student_id;
     exception
         when unique_violation then
-            -- O código estável será traduzido pela API para uma mensagem simples.
-            raise exception using errcode = '23505', message = 'duplicate_cpf';
+            get stacked diagnostics v_constraint_name = constraint_name;
+            if v_constraint_name = 'students_cpf_unique' then
+                -- Somente a constraint de CPF pode virar conflito cadastral.
+                -- Colisão de UUID ou outra integridade continua sendo erro técnico.
+                raise exception using errcode = '23505', message = 'duplicate_cpf';
+            end if;
+            raise;
     end;
 
     insert into public.guardians (
+        id,
         full_name,
         phone,
         email,
         created_by
     )
     values (
+        p_guardian_id,
         v_guardian_name,
         v_phone,
         v_guardian_email,
@@ -380,14 +456,16 @@ begin
         action,
         entity_type,
         entity_id,
-        changed_fields
+        changed_fields,
+        request_id
     )
     values (
         v_actor_id,
         'student.registered',
         'student',
         v_student_id,
-        array['full_name', 'cpf', 'birth_date', 'guardian']
+        array['full_name', 'cpf', 'birth_date', 'guardian'],
+        p_request_id
     );
 
     -- O evento durável carrega apenas o ID. Qualquer listener futuro deverá
@@ -413,6 +491,9 @@ comment on function public.register_student_with_guardian is
     'Cadastra aluno, responsável, vínculo, auditoria e evento na mesma transação.';
 
 revoke all on function public.register_student_with_guardian(
+    uuid,
+    uuid,
+    uuid,
     text,
     text,
     date,
@@ -422,6 +503,9 @@ revoke all on function public.register_student_with_guardian(
     public.guardian_relationship
 ) from public, anon;
 grant execute on function public.register_student_with_guardian(
+    uuid,
+    uuid,
+    uuid,
     text,
     text,
     date,
@@ -437,23 +521,14 @@ create or replace function public.list_students(
     p_limit integer default 25,
     p_offset integer default 0
 )
-returns table (
-    id uuid,
-    full_name text,
-    cpf_masked text,
-    birth_date date,
-    age integer,
-    status public.student_status,
-    guardian_name text,
-    guardian_phone_masked text,
-    created_at timestamptz,
-    total_count bigint
-)
+returns jsonb
 language plpgsql
 stable
 security definer
 set search_path = ''
 as $$
+declare
+    v_result jsonb;
 begin
     if not private.has_any_role(
         array['coordinator', 'receptionist', 'read_only']::public.user_role[]
@@ -461,37 +536,82 @@ begin
         raise exception using errcode = '42501', message = 'forbidden';
     end if;
 
-    return query
-    select
-        student.id,
-        student.full_name,
-        '***.***.***-' || right(student.cpf, 2),
-        student.birth_date,
-        extract(year from age(current_date, student.birth_date))::integer,
-        student.status,
-        guardian.full_name,
-        case
-            when guardian.phone is null then null
-            else '(' || left(guardian.phone, 2) || ') *****-' || right(guardian.phone, 4)
-        end,
-        student.created_at,
-        count(*) over ()
-    from public.students as student
-    left join public.student_guardians as relationship
-        on relationship.student_id = student.id
-       and relationship.is_primary
-    left join public.guardians as guardian
-        on guardian.id = relationship.guardian_id
-    where (p_status is null or student.status = p_status)
-      and (
-          p_query is null
-          or btrim(p_query) = ''
-          or extensions.unaccent(lower(student.full_name))
-             like '%' || extensions.unaccent(lower(btrim(p_query))) || '%'
-      )
-    order by extensions.unaccent(lower(student.full_name)), student.id
-    limit greatest(1, least(coalesce(p_limit, 25), 100))
-    offset greatest(coalesce(p_offset, 0), 0);
+    if p_limit is not null and (p_limit < 1 or p_limit > 100) then
+        raise exception using errcode = '22023', message = 'invalid_page_size';
+    end if;
+    if p_offset is not null and p_offset < 0 then
+        raise exception using errcode = '22023', message = 'invalid_offset';
+    end if;
+    if p_query is not null
+       and btrim(p_query) <> ''
+       and char_length(btrim(p_query)) not between 2 and 120 then
+        raise exception using errcode = '22023', message = 'invalid_query';
+    end if;
+
+    with filtered as materialized (
+        select
+            student.id,
+            student.full_name,
+            '***.***.***-' || right(student.cpf, 2) as cpf_masked,
+            student.birth_date,
+            extract(year from age(current_date, student.birth_date))::integer as age,
+            student.status,
+            guardian.full_name as guardian_name,
+            case
+                when guardian.phone is null then null
+                else '(' || left(guardian.phone, 2) || ') *****-' || right(guardian.phone, 4)
+            end as guardian_phone_masked,
+            student.created_at,
+            extensions.unaccent(lower(student.full_name)) as sort_name
+        from public.students as student
+        left join public.student_guardians as relationship
+            on relationship.student_id = student.id
+           and relationship.is_primary
+        left join public.guardians as guardian
+            on guardian.id = relationship.guardian_id
+        where (p_status is null or student.status = p_status)
+          and (
+              p_query is null
+              or btrim(p_query) = ''
+              or strpos(
+                  extensions.unaccent(lower(student.full_name)),
+                  extensions.unaccent(lower(btrim(p_query)))
+              ) > 0
+          )
+    ),
+    page_items as (
+        select *
+        from filtered
+        order by sort_name, id
+        limit coalesce(p_limit, 25)
+        offset coalesce(p_offset, 0)
+    )
+    select jsonb_build_object(
+        'items', coalesce(
+            (
+                select jsonb_agg(
+                    jsonb_build_object(
+                        'id', item.id,
+                        'full_name', item.full_name,
+                        'cpf_masked', item.cpf_masked,
+                        'birth_date', item.birth_date,
+                        'age', item.age,
+                        'status', item.status,
+                        'guardian_name', item.guardian_name,
+                        'guardian_phone_masked', item.guardian_phone_masked,
+                        'created_at', item.created_at
+                    )
+                    order by item.sort_name, item.id
+                )
+                from page_items as item
+            ),
+            '[]'::jsonb
+        ),
+        'total', (select count(*) from filtered)
+    )
+    into v_result;
+
+    return v_result;
 end;
 $$;
 
