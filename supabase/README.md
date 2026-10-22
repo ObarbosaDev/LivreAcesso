@@ -26,6 +26,19 @@ Este diretório contém somente artefatos versionáveis do banco. Credenciais, t
 - RPC transacional de cadastro;
 - RPC paginada e mascarada de listagem.
 
+## Segunda migration
+
+`migrations/20261021000200_student_management.sql` acrescenta:
+
+- detalhe sensível restrito e auditado;
+- atualização conjunta de aluno e responsável principal;
+- concorrência otimista usando `updated_at`;
+- histórico protegido de ativação e desativação;
+- motivo obrigatório sem cópia para eventos ou logs;
+- eventos duráveis `StudentUpdated` e `StudentStatusChanged`;
+- listagem com versão para edição;
+- ausência intencional de exclusão física.
+
 ## Aplicação da migration
 
 Use a Supabase CLI autenticada de forma interativa ou o fluxo de CI da equipe. Nunca coloque senha ou chave em argumentos que possam ir para histórico compartilhado.
