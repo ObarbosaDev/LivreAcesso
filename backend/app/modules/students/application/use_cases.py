@@ -45,7 +45,11 @@ class RegisterStudent:
 
         # Uma única operação de persistência reduz tráfego e deixa a constraint
         # única como autoridade contra concorrência, tanto em memória quanto no SQL.
-        await self.repository.add(student)
+        persisted_version = await self.repository.add(student)
+        student.mark_created(
+            persisted_version.created_at,
+            persisted_version.updated_at,
+        )
         _publish_pending_events(student, self.event_publisher)
         return StudentMapper.to_output(student)
 

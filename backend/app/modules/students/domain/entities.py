@@ -156,6 +156,14 @@ class Student:
         )
         return True
 
+    def mark_created(self, created_at: datetime, updated_at: datetime) -> None:
+        """Sincroniza os timestamps autoritativos após o primeiro insert."""
+
+        if created_at.tzinfo is None or updated_at.tzinfo is None:
+            raise InvalidStudentDataError("Datas persistidas precisam informar o fuso horário.")
+        self.created_at = created_at
+        self.updated_at = updated_at
+
     def mark_persisted(self, updated_at: datetime) -> None:
         """Sincroniza a versão gerada pelo banco após uma escrita bem-sucedida."""
 
