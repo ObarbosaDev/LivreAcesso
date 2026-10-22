@@ -42,6 +42,7 @@ class StudentListItem:
     guardian_name: str | None
     guardian_phone_masked: str | None
     created_at: datetime
+    updated_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
