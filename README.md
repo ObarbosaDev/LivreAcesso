@@ -127,7 +127,7 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Eventos e listener | **Disponível** | `StudentRegistered` e auditoria sem PII. |
 | Testes automatizados | **Disponível** | Unidade, integração e guardas arquiteturais executadas localmente. |
 | Schema Supabase | **Parcial** | Migration validada; ainda não aplicada a um projeto remoto. |
-| Persistência da API | **Parcial** | Adaptador em memória; conexão Supabase ainda não implementada. |
+| Persistência da API | **Disponível** | Gateway HTTP e adaptador de alunos usam RPCs com o JWT da requisição. |
 | Autenticação | **Disponível** | Bearer JWT validado localmente por JWKS do Supabase. |
 | Autorização operacional | **Parcial** | RPCs verificam perfis; validação remota por papel ainda precisa ser executada. |
 | Turmas e matrículas | **Planejado** | Modelo definido arquiteturalmente. |
@@ -510,7 +510,7 @@ A aplicação lê configuração diretamente das variáveis do processo. **Nenhu
 | `APP_DEBUG` | `false` | Logs detalhados e reload local. |
 | `APP_CORS_ORIGINS` | `http://localhost:5173` | Origens do front separadas por vírgula. |
 | `SUPABASE_URL` | sem padrão | URL HTTPS usada para obter as chaves públicas JWKS. |
-| `SUPABASE_PUBLISHABLE_KEY` | sem padrão | Chave pública usada futuramente nas RPCs; nunca substitui o JWT. |
+| `SUPABASE_PUBLISHABLE_KEY` | sem padrão | Identifica o projeto nas RPCs; a autorização continua dependendo do JWT. |
 
 Exemplo somente para a sessão atual do PowerShell:
 
@@ -582,7 +582,7 @@ O sistema lida com dados de crianças, adolescentes, adultos e responsáveis. Se
 - testar backup e restauração antes do piloto;
 - revisar integrações externas sob finalidade, consentimento e contrato.
 
-Autenticação e autorização ainda não estão implementadas. Portanto, **a API atual não pode receber dados reais nem ficar exposta publicamente**.
+Autenticação e proteção das rotas já estão implementadas, assim como o adaptador Supabase. Entretanto, **a API ainda não pode receber dados reais nem ficar exposta publicamente** até a migration, os papéis, RLS e as RPCs serem exercitados no projeto remoto com cada perfil operacional.
 
 Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra uma issue pública com detalhes exploráveis ou dados pessoais.
 
@@ -603,11 +603,11 @@ Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra 
 
 - [x] schema inicial, constraints, auditoria e outbox;
 - [x] autenticação Bearer e validação local de JWT por JWKS;
+- [x] implementar o gateway e o adaptador Supabase na API;
 - [ ] aplicar e validar a migration em um projeto Supabase;
 - [ ] testar perfis, RLS e RPC com cada papel;
-- [ ] implementar o adaptador Supabase na API;
 - [ ] CRUD completo de alunos e responsáveis;
-- [ ] paginação, busca e auditoria persistente.
+- [x] paginação, busca e auditoria transacional no schema;
 
 ### Fase 2 — Turmas e operação
 
@@ -711,7 +711,7 @@ python main.py
 <details>
 <summary><strong>Os alunos desapareceram depois de reiniciar</strong></summary>
 
-É o comportamento esperado do adaptador em memória. A migration Supabase já está preparada, mas a API ainda não utiliza o adaptador persistente.
+É o comportamento esperado quando `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` não estão configuradas em `development` ou `test`. Fora desses ambientes, a aplicação recusa iniciar sem persistência Supabase para impedir perda silenciosa.
 
 </details>
 
