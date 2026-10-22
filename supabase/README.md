@@ -113,3 +113,15 @@ Sem `SUPABASE_URL`, o backend usa um verificador que falha fechado com `503`. Is
 ### Estado remoto
 
 As quatro migrations foram aplicadas ao projeto `LivreAcesso` em São Paulo. A inspeção confirmou RLS nas tabelas públicas, ausência de grants diretos nas tabelas pessoais, JWKS `ES256` e advisor de desempenho sem problemas. O banco permanece vazio e aguarda contas sintéticas para a matriz funcional por papel.
+
+## Matriz de papéis
+
+`tests/role_matrix.sql` verifica 25 combinações entre cinco papéis e cinco RPCs. O script exige uma única coordenação ativa, altera o perfil somente dentro de uma transação e termina com `ROLLBACK`.
+
+Execução homologada no projeto de São Paulo:
+
+```text
+25/25 permission checks passed; transaction rolled back
+```
+
+Após a execução, todas as tabelas operacionais permaneceram vazias e a conta voltou ao papel de coordenação ativa.
