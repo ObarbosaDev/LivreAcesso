@@ -2,7 +2,11 @@
 
 from dataclasses import dataclass
 
-from backend.app.modules.students.domain.exceptions import InvalidCPFError, InvalidPhoneError
+from backend.app.modules.students.domain.exceptions import (
+    InvalidCPFError,
+    InvalidPhoneError,
+    InvalidStatusReasonError,
+)
 
 
 def _only_digits(value: str) -> str:
@@ -60,3 +64,16 @@ class Phone:
     @property
     def masked(self) -> str:
         return f"({self.value[:2]}) *****-{self.value[-4:]}"
+
+
+@dataclass(frozen=True, slots=True)
+class StatusChangeReason:
+    """Motivo obrigatório preservado na auditoria de mudança cadastral."""
+
+    value: str
+
+    def __post_init__(self) -> None:
+        normalized = " ".join(self.value.split())
+        if not 10 <= len(normalized) <= 500:
+            raise InvalidStatusReasonError
+        object.__setattr__(self, "value", normalized)

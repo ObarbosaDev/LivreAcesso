@@ -25,8 +25,31 @@ class InvalidStudentDataError(StudentDomainError):
     code = "invalid_student_data"
 
 
+class InvalidStatusReasonError(StudentDomainError):
+    code = "invalid_status_reason"
+
+    def __init__(self) -> None:
+        super().__init__("Informe um motivo entre 10 e 500 caracteres.")
+
+
 class DuplicateCPFError(StudentDomainError):
     code = "duplicate_cpf"
 
     def __init__(self) -> None:
         super().__init__("Já existe um aluno cadastrado com este CPF.")
+
+
+class StudentNotFoundError(StudentDomainError):
+    code = "student_not_found"
+
+    def __init__(self) -> None:
+        super().__init__("O cadastro do aluno não foi encontrado.")
+
+
+class StudentVersionConflictError(StudentDomainError):
+    code = "student_version_conflict"
+
+    def __init__(self) -> None:
+        super().__init__(
+            "O cadastro foi alterado por outra pessoa. Atualize os dados e tente novamente."
+        )
