@@ -244,9 +244,9 @@ Funções públicas recebem docstrings com responsabilidade, entrada, saída e e
 2. corrigir os limites entre aluno e matrícula;
 3. criar migration de identidade, alunos e responsáveis;
 4. validar JWT assimétrico por JWKS e proteger rotas;
-5. implementar adaptador Supabase;
+5. implementar e testar o adaptador Supabase;
 6. padronizar respostas de erro e paginação;
-7. testar RPC e RLS por papel;
+7. aplicar a migration e testar RPC/RLS por papel;
 8. criar módulo de turmas;
 9. criar módulo de matrículas;
 10. criar chamada e alertas;
