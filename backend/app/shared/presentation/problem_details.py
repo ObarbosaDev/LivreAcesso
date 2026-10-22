@@ -22,7 +22,10 @@ from backend.app.modules.students.domain.exceptions import (
     DuplicateCPFError,
     InvalidCPFError,
     InvalidPhoneError,
+    InvalidStatusReasonError,
     StudentDomainError,
+    StudentNotFoundError,
+    StudentVersionConflictError,
 )
 from backend.app.shared.application.exceptions import (
     ApplicationError,
@@ -240,10 +243,30 @@ def install_problem_handlers(application: FastAPI) -> None:
                 ],
             )
 
+        if isinstance(exception, StudentNotFoundError):
+            return _problem_response(
+                request,
+                response_status=status.HTTP_404_NOT_FOUND,
+                title="Aluno não encontrado",
+                detail=str(exception),
+                code=exception.code,
+            )
+
+        if isinstance(exception, StudentVersionConflictError):
+            return _problem_response(
+                request,
+                response_status=status.HTTP_409_CONFLICT,
+                title="Cadastro alterado por outra pessoa",
+                detail=str(exception),
+                code=exception.code,
+            )
+
         if isinstance(exception, InvalidCPFError):
             field = "cpf"
         elif isinstance(exception, InvalidPhoneError):
             field = "guardian.phone"
+        elif isinstance(exception, InvalidStatusReasonError):
+            field = "reason"
         else:
             field = "request"
 
