@@ -82,3 +82,27 @@ def test_student_search_preserves_total_for_empty_pages() -> None:
     assert "returns jsonb" in sql
     assert "'items'" in sql
     assert "'total'" in sql
+
+
+def test_student_management_uses_soft_lifecycle_and_optimistic_locking() -> None:
+    sql = " ".join(
+        " ".join(path.read_text(encoding="utf-8").lower().split()) for path in MIGRATIONS
+    )
+
+    assert "function public.get_student_detail" in sql
+    assert "function public.update_student_with_guardian" in sql
+    assert "function public.change_student_status" in sql
+    assert "p_expected_updated_at" in sql
+    assert "private.student_status_history" in sql
+    assert "delete from public.students" not in sql
+
+
+def test_sensitive_detail_and_status_change_are_audited() -> None:
+    sql = " ".join(
+        " ".join(path.read_text(encoding="utf-8").lower().split()) for path in MIGRATIONS
+    )
+
+    assert "student.sensitive_viewed" in sql
+    assert "student.status_changed" in sql
+    assert "student.updated" in sql
+    assert "array['status']" in sql
