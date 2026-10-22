@@ -109,3 +109,7 @@ Sem `SUPABASE_URL`, o backend usa um verificador que falha fechado com `503`. Is
 ## Quarta migration
 
 `migrations/20261021000400_optimize_profile_policy.sql` mantém a mesma autorização de `profiles`, mas usa initplans para que `auth.uid()` e a verificação de papel não sejam recalculados em cada linha. A decisão sobre RPCs `security definer` está registrada em [`../docs/security-decisions.md`](../docs/security-decisions.md).
+
+### Estado remoto
+
+As quatro migrations foram aplicadas ao projeto `LivreAcesso` em São Paulo. A inspeção confirmou RLS nas tabelas públicas, ausência de grants diretos nas tabelas pessoais, JWKS `ES256` e advisor de desempenho sem problemas. O banco permanece vazio e aguarda contas sintéticas para a matriz funcional por papel.
