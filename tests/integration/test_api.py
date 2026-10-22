@@ -49,7 +49,7 @@ def build_application(token_verifier: TokenVerifier | None = None) -> FastAPI:
     )
     return create_app(
         settings=settings,
-        container=build_container(),
+        container=build_container(settings),
         token_verifier=token_verifier or TestTokenVerifier(),
     )
 
