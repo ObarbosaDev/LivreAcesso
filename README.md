@@ -792,6 +792,8 @@ O projeto está alinhado principalmente a:
 | --- | --- |
 | [`docs/architecture.md`](docs/architecture.md) | Decisões, módulos, persistência, eventos, segurança e evolução. |
 | [`docs/backend-blueprint.md`](docs/backend-blueprint.md) | Fluxos do backend, Supabase, sensibilidade, eventos e critérios de pronto. |
+| [`docs/backend-task-plan.md`](docs/backend-task-plan.md) | Fonte atualizável dos 10 blocos de trabalho do backend. |
+| [`docs/LivreAcesso-Plano-Tarefas-Backend.pdf`](docs/LivreAcesso-Plano-Tarefas-Backend.pdf) | PDF de cinco páginas para distribuição à equipe. |
 | [`docs/security-decisions.md`](docs/security-decisions.md) | Decisões, exceções conhecidas e controles compensatórios de segurança. |
 | [`docs/domain-glossary.md`](docs/domain-glossary.md) | Linguagem comum, conceitos e regras pendentes do negócio. |
 | [`supabase/README.md`](supabase/README.md) | Migrations, bootstrap, RLS e regras operacionais do Supabase. |
