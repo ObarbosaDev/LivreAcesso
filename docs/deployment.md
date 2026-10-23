@@ -4,7 +4,7 @@
 
 - projeto Vercel separado: `livre-acesso-api`;
 - repositório: `ObarbosaDev/LivreAcesso`;
-- entrada ASGI: `main.py:app`;
+- entrada ASGI: `main:app`;
 - runtime: Python 3.12;
 - compute: `gru1` — São Paulo;
 - dados/Auth: Supabase São Paulo;
@@ -21,8 +21,9 @@ Content was rephrased for compliance with licensing restrictions.
 ## Configuração versionada
 
 - `.python-version` fixa Python 3.12 no deploy;
-- `pyproject.toml` declara `main.py:app`;
-- `vercel.json` fixa `gru1`, adiciona headers básicos e exclui testes, PDFs, migrations, caches e documentação do bundle;
+- `pyproject.toml` declara `main:app`;
+- `vercel.json` fixa o preset FastAPI e `gru1`, além de adicionar headers básicos;
+- `.vercelignore` remove testes, PDFs, migrations, caches e documentação do upload;
 - nenhum arquivo `.env` é usado ou versionado.
 
 ## Variáveis no painel
@@ -44,14 +45,15 @@ Não cadastrar `service_role`, senha do banco, senha da conta coordenadora ou to
 ## Primeiro deploy
 
 1. autenticar a CLI com `npx vercel@65.2.0 login`;
-2. importar/conectar o repositório como `livre-acesso-api`;
-3. conferir Root Directory na raiz do repositório;
-4. cadastrar variáveis pelo painel;
-5. executar `npx vercel@65.2.0 deploy` para preview;
-6. validar `/health/live` e `/health/ready`;
-7. executar `livre-acesso-verify-supabase` informando a URL preview;
-8. promover com `npx vercel@65.2.0 deploy --prod`;
-9. repetir o smoke test na URL de produção.
+2. criar e vincular localmente o projeto `livre-acesso-api`;
+3. manter a integração Git desconectada enquanto a equipe puder enviar direto à `main`;
+4. conferir Root Directory na raiz do repositório;
+5. cadastrar variáveis pelo painel/CLI sem imprimir valores;
+6. executar `npx vercel@65.2.0 deploy` para preview;
+7. validar `/health/live`, `/health/ready` e 401 sem JWT;
+8. executar `livre-acesso-verify-supabase` informando a URL preview ou produção;
+9. promover manualmente com `npx vercel@65.2.0 deploy --prod`;
+10. repetir o smoke test na URL de produção.
 
 ## Critérios de sucesso
 
@@ -76,4 +78,17 @@ Se o deploy falhar:
 
 ## Quinta migration
 
-`20261021000500_health_check.sql` cria apenas `public.health_check()`. Ela é `security invoker`, retorna um JSON constante, não lê tabelas e pode ser executada por `anon` e `authenticated`. Precisa ser aplicada antes de readiness ficar verde no ambiente remoto.
+`20261021000500_health_check.sql` cria apenas `public.health_check()`. Ela é `security invoker`, retorna um JSON constante, não lê tabelas e pode ser executada por `anon` e `authenticated`. A migration foi aplicada e o Preview confirmou readiness contra o PostgreSQL real.
+
+## Evidência do Preview
+
+- preset remoto: FastAPI;
+- runtime: Python 3.12;
+- função: `fastapi`, 15,03 MB;
+- região: `gru1`;
+- liveness: `200`, estado `alive`;
+- readiness: `200`, persistência `up`;
+- listagem sem JWT: `401`, `authentication_required`;
+- `X-Request-ID` e headers de segurança: presentes;
+- deploy automático do GitHub: desconectado;
+- promoção para produção: pendente de revisão final.
