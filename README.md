@@ -131,7 +131,7 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Persistência da API | **Disponível** | Gateway HTTP e adaptador de alunos usam RPCs com o JWT da requisição. |
 | Autenticação | **Disponível** | Bearer JWT/JWKS homologado com conta real do Supabase Auth. |
 | Deploy do backend | **Disponível** | Produção em `gru1`, readiness e smoke autenticado aprovados. |
-| Autorização operacional | **Parcial** | Matriz SQL 25/25 aprovada; fluxo HTTP com JWT real ainda pendente. |
+| Autorização operacional | **Disponível** | Perfis, capacidades e proteção do último coordenador implementados localmente. |
 | Turmas e matrículas | **Planejado** | Modelo definido arquiteturalmente. |
 | Chamada e alertas | **Planejado** | Regra depende de validação com a instituição. |
 | Lista de espera | **Planejado** | Critérios operacionais e jurídicos pendentes. |
@@ -356,6 +356,12 @@ As regras exatas — quantidade de faltas, prazo de inatividade e liberação de
 | `GET` | `/health/ready` | Pública | Confirma que a persistência está disponível. | `200/503` |
 | `GET` | `/docs` | Pública | Interface interativa OpenAPI. | `200` |
 | `GET` | `/openapi.json` | Pública | Contrato OpenAPI em JSON. | `200` |
+| `GET` | `/api/v1/me` | Bearer JWT | Consulta próprio perfil e capacidades. | `200` |
+| `PUT` | `/api/v1/me` | Bearer JWT | Atualiza o próprio nome com versão. | `200` |
+| `GET` | `/api/v1/profiles` | Coordenação | Pesquisa perfis operacionais. | `200` |
+| `POST` | `/api/v1/profiles/{id}/role` | Coordenação | Atribui papel com motivo. | `200` |
+| `POST` | `/api/v1/profiles/{id}/activate` | Coordenação | Ativa perfil com papel definido. | `200` |
+| `POST` | `/api/v1/profiles/{id}/deactivate` | Coordenação | Bloqueia perfil sem excluir conta. | `200` |
 | `GET` | `/api/v1/students` | Bearer JWT | Pesquisa paginada com filtros. | `200` |
 | `POST` | `/api/v1/students` | Bearer JWT | Cadastra aluno e responsável. | `201` |
 | `GET` | `/api/v1/students/{id}` | Bearer JWT | Consulta detalhe sensível e auditado. | `200` |
@@ -799,6 +805,7 @@ O projeto está alinhado principalmente a:
 | [`docs/backend-blueprint.md`](docs/backend-blueprint.md) | Fluxos do backend, Supabase, sensibilidade, eventos e critérios de pronto. |
 | [`docs/backend-task-plan.md`](docs/backend-task-plan.md) | Fonte atualizável dos 10 blocos de trabalho do backend. |
 | [`docs/deployment.md`](docs/deployment.md) | Deploy do FastAPI na Vercel, variáveis, smoke e rollback. |
+| [`docs/profile-management.md`](docs/profile-management.md) | Ciclo de acesso, papéis, capacidades e proteção administrativa. |
 | [`docs/LivreAcesso-Plano-Tarefas-Backend.pdf`](docs/LivreAcesso-Plano-Tarefas-Backend.pdf) | PDF de cinco páginas para distribuição à equipe. |
 | [`docs/security-decisions.md`](docs/security-decisions.md) | Decisões, exceções conhecidas e controles compensatórios de segurança. |
 | [`docs/domain-glossary.md`](docs/domain-glossary.md) | Linguagem comum, conceitos e regras pendentes do negócio. |
