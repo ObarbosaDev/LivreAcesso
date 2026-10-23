@@ -636,3 +636,126 @@ def test_guardian_management_crosses_fastapi_and_supabase_rpcs() -> None:
         "set_primary_student_guardian",
         "unlink_student_guardian",
     ]
+
+
+def test_class_catalog_crosses_fastapi_profiles_and_supabase_rpcs() -> None:
+    modality_id: str | None = None
+    class_id: str | None = None
+    instructor_id = "00000000-0000-4000-8000-000000000409"
+    version = datetime(2026, 10, 22, 21, 0, tzinfo=UTC)
+    rpc_names: list[str] = []
+
+    def modality_row(identifier: str) -> dict[str, object]:
+        return {
+            "id": identifier,
+            "name": "Capoeira",
+            "description": "Atividade corporal e cultural",
+            "active": True,
+            "created_at": version.isoformat(),
+            "updated_at": version.isoformat(),
+        }
+
+    def class_row(identifier: str) -> dict[str, object]:
+        assert modality_id is not None
+        return {
+            "id": identifier,
+            "modality_id": modality_id,
+            "name": "Turma Infantil A",
+            "capacity": 20,
+            "location": "Sala 1",
+            "minimum_age": 7,
+            "maximum_age": 12,
+            "schedules": [{"weekday": "monday", "starts_at": "14:00", "ends_at": "15:00"}],
+            "instructors": [{"id": instructor_id, "full_name": "Instrutora Ana Silva"}],
+            "active": True,
+            "created_at": version.isoformat(),
+            "updated_at": version.isoformat(),
+        }
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        nonlocal modality_id, class_id
+        rpc_name = request.url.path.rsplit("/", maxsplit=1)[-1]
+        rpc_names.append(rpc_name)
+        payload = json.loads(request.content)
+        assert request.headers["Authorization"] == f"Bearer {_ACCESS_TOKEN}"
+
+        if rpc_name == "get_my_profile":
+            return httpx2.Response(
+                200,
+                json={
+                    "id": str(_USER_ID),
+                    "full_name": "Coordenação Teste",
+                    "role": "coordinator",
+                    "active": True,
+                    "created_at": version.isoformat(),
+                    "updated_at": version.isoformat(),
+                },
+            )
+        if rpc_name == "get_profile_detail":
+            return httpx2.Response(
+                200,
+                json={
+                    "id": instructor_id,
+                    "full_name": "Instrutora Ana Silva",
+                    "role": "instructor",
+                    "active": True,
+                    "created_at": version.isoformat(),
+                    "updated_at": version.isoformat(),
+                },
+            )
+        if rpc_name == "create_modality":
+            modality_id = str(payload["p_modality_id"])
+            return httpx2.Response(200, json=modality_row(modality_id))
+        if rpc_name == "get_modality":
+            assert modality_id is not None
+            return httpx2.Response(200, json=modality_row(modality_id))
+        if rpc_name == "create_class":
+            class_id = str(payload["p_class_id"])
+            assert "p_viewer" not in payload
+            return httpx2.Response(200, json=class_row(class_id))
+        if rpc_name == "list_classes":
+            assert class_id is not None
+            return httpx2.Response(200, json={"items": [class_row(class_id)], "total": 1})
+        return httpx2.Response(404, json={"message": "function_not_found"})
+
+    application, http_client = build_application(respond)
+    with TestClient(
+        application,
+        headers={"Authorization": f"Bearer {_ACCESS_TOKEN}"},
+    ) as client:
+        modality = client.post(
+            "/api/v1/modalities",
+            json={"name": "Capoeira", "description": "Atividade corporal e cultural"},
+        )
+        created_class = client.post(
+            "/api/v1/classes",
+            json={
+                "modality_id": modality.json()["id"],
+                "name": "Turma Infantil A",
+                "capacity": 20,
+                "location": "Sala 1",
+                "minimum_age": 7,
+                "maximum_age": 12,
+                "schedules": [{"weekday": "segunda", "starts_at": "14:00", "ends_at": "15:00"}],
+                "instructor_ids": [instructor_id],
+            },
+        )
+        listed = client.get("/api/v1/classes")
+
+    asyncio.run(http_client.aclose())
+
+    assert modality.status_code == 201
+    assert created_class.status_code == 201
+    assert created_class.json()["instructors"][0]["id"] == instructor_id
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 1
+    assert rpc_names == [
+        "get_my_profile",
+        "create_modality",
+        "get_my_profile",
+        "get_modality",
+        "get_profile_detail",
+        "create_class",
+        "get_my_profile",
+        "list_classes",
+    ]
