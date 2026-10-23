@@ -1,6 +1,7 @@
 """Testes das garantias do verificador interativo de produção."""
 
 import json
+from uuid import uuid4
 
 import httpx2
 import pytest
@@ -9,6 +10,7 @@ from scripts.verify_supabase_auth import (
     VerificationError,
     _AuthResponse,
     _validate_publishable_key,
+    _verify_deployed_path,
 )
 
 
@@ -47,3 +49,46 @@ def test_verification_error_never_requires_http_response_body() -> None:
 def test_verifier_rejects_non_publishable_key_before_network() -> None:
     with pytest.raises(VerificationError, match="Publishable key"):
         _validate_publishable_key("https://example.supabase.co", "wrong-key-type")
+
+
+def test_deployed_smoke_checks_live_ready_and_authenticated_list() -> None:
+    paths: list[str] = []
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        paths.append(request.url.path)
+        headers = {"X-Request-ID": str(uuid4())}
+        if request.url.path == "/health/live":
+            return httpx2.Response(200, headers=headers, json={"status": "alive"})
+        if request.url.path == "/health/ready":
+            return httpx2.Response(200, headers=headers, json={"status": "ready"})
+        assert request.headers["Authorization"] == "Bearer token-sintetico"
+        return httpx2.Response(200, headers=headers, json={"total": 0})
+
+    with httpx2.Client(transport=httpx2.MockTransport(respond)) as client:
+        _verify_deployed_path(
+            "https://api.example.test",
+            "token-sintetico",
+            http_client=client,
+        )
+
+    assert paths == ["/health/live", "/health/ready", "/api/v1/students"]
+
+
+def test_deployed_smoke_requires_https() -> None:
+    with pytest.raises(VerificationError, match="HTTPS"):
+        _verify_deployed_path("http://api.example.test", "token-sintetico")
+
+
+def test_deployed_smoke_rejects_missing_request_id() -> None:
+    def respond(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json={"status": "alive", "total": 0})
+
+    with (
+        httpx2.Client(transport=httpx2.MockTransport(respond)) as client,
+        pytest.raises(VerificationError, match="request ID"),
+    ):
+        _verify_deployed_path(
+            "https://api.example.test",
+            "token-sintetico",
+            http_client=client,
+        )
