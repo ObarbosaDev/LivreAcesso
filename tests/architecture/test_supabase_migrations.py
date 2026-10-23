@@ -174,10 +174,12 @@ def test_permission_matrix_counts_are_explicit() -> None:
     student_matrix = (SUPABASE_TESTS_DIR / "role_matrix.sql").read_text(encoding="utf-8")
     profile_matrix = (SUPABASE_TESTS_DIR / "profile_role_matrix.sql").read_text(encoding="utf-8")
     guardian_matrix = (SUPABASE_TESTS_DIR / "guardian_role_matrix.sql").read_text(encoding="utf-8")
+    class_matrix = (SUPABASE_TESTS_DIR / "class_role_matrix.sql").read_text(encoding="utf-8")
 
     assert "25/25 permission checks passed" in student_matrix
     assert "31/31 profile permission checks passed" in profile_matrix
     assert "35/35 guardian permission checks passed" in guardian_matrix
+    assert "50/50 class permission checks passed" in class_matrix
 
 
 def test_health_check_is_public_constant_and_security_invoker() -> None:
