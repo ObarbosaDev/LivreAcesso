@@ -4,25 +4,46 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from backend.app.modules.students.application.dtos import (
+    AddStudentGuardianInput,
     ChangeStudentStatusInput,
     RegisterStudentInput,
+    SetPrimaryGuardianInput,
     StudentDetailOutput,
+    StudentGuardianDetailOutput,
+    StudentGuardianListOutput,
+    StudentGuardianUnlinkOutput,
     StudentOutput,
     StudentPageOutput,
+    UnlinkStudentGuardianInput,
+    UpdateStudentGuardianInput,
     UpdateStudentInput,
 )
 from backend.app.modules.students.application.mappers import StudentMapper
 from backend.app.modules.students.application.queries import (
+    StudentGuardianQueryService,
     StudentQueryService,
     StudentSearchCriteria,
 )
 from backend.app.modules.students.domain.entities import Guardian, Student, StudentStatus
+from backend.app.modules.students.domain.events import (
+    StudentGuardianLinked,
+    StudentGuardianUnlinked,
+    StudentGuardianUpdated,
+    StudentPrimaryGuardianChanged,
+)
 from backend.app.modules.students.domain.exceptions import (
     StudentNotFoundError,
     StudentVersionConflictError,
 )
-from backend.app.modules.students.domain.repositories import StudentRepository
-from backend.app.modules.students.domain.value_objects import Phone, StatusChangeReason
+from backend.app.modules.students.domain.repositories import (
+    StudentGuardianRepository,
+    StudentRepository,
+)
+from backend.app.modules.students.domain.value_objects import (
+    GuardianUnlinkReason,
+    Phone,
+    StatusChangeReason,
+)
 from backend.app.shared.application.event_bus import EventPublisher
 
 
@@ -69,7 +90,7 @@ class GetStudent:
 
 @dataclass(slots=True)
 class UpdateStudent:
-    """Atualiza dados pessoais sem permitir alteração implícita de CPF ou status."""
+    """Atualiza o aluno sem alterar implicitamente CPF, status ou responsáveis."""
 
     repository: StudentRepository
     event_publisher: EventPublisher
@@ -81,16 +102,9 @@ class UpdateStudent:
         if student.updated_at != dto.expected_updated_at:
             raise StudentVersionConflictError
 
-        guardian = Guardian(
-            id=student.guardian.id,
-            full_name=dto.guardian.full_name,
-            phone=Phone(dto.guardian.phone),
-            email=str(dto.guardian.email) if dto.guardian.email else None,
-        )
         changed_fields = student.update_personal_data(
             full_name=dto.full_name,
             birth_date=dto.birth_date,
-            guardian=guardian,
         )
 
         if changed_fields:
@@ -168,4 +182,154 @@ class ListStudents:
             total_pages=total_pages,
             has_previous=page > 1,
             has_next=page < total_pages,
+        )
+
+
+@dataclass(slots=True)
+class ListStudentGuardians:
+    """Lista contatos ativos com telefone e e-mail mascarados."""
+
+    query_service: StudentGuardianQueryService
+
+    async def execute(self, student_id: UUID) -> StudentGuardianListOutput:
+        result = await self.query_service.list_guardians(student_id)
+        return StudentMapper.guardian_list_to_output(result)
+
+
+@dataclass(slots=True)
+class GetStudentGuardian:
+    """Obtém contato integral; a implementação Supabase audita esta leitura."""
+
+    repository: StudentGuardianRepository
+
+    async def execute(self, student_id: UUID, guardian_id: UUID) -> StudentGuardianDetailOutput:
+        snapshot = await self.repository.get_guardian(student_id, guardian_id)
+        return StudentMapper.guardian_snapshot_to_output(snapshot)
+
+
+@dataclass(slots=True)
+class AddStudentGuardian:
+    """Inclui contato novo ou revincula um responsável compartilhado."""
+
+    repository: StudentGuardianRepository
+    event_publisher: EventPublisher
+
+    async def execute(
+        self,
+        student_id: UUID,
+        dto: AddStudentGuardianInput,
+    ) -> StudentGuardianDetailOutput:
+        guardian = None
+        if dto.guardian is not None:
+            guardian = Guardian(
+                full_name=dto.guardian.full_name,
+                phone=Phone(dto.guardian.phone),
+                email=str(dto.guardian.email) if dto.guardian.email else None,
+            )
+
+        result = await self.repository.add_guardian(
+            student_id,
+            guardian=guardian,
+            existing_guardian_id=dto.existing_guardian_id,
+            relationship=dto.relationship,
+            make_primary=dto.make_primary,
+            receives_communications=dto.receives_communications,
+            expected_student_updated_at=dto.expected_student_updated_at,
+        )
+        if result.changed:
+            self.event_publisher.publish(
+                StudentGuardianLinked(
+                    student_id=student_id,
+                    guardian_id=result.snapshot.link.guardian.id,
+                )
+            )
+        return StudentMapper.guardian_snapshot_to_output(result.snapshot)
+
+
+@dataclass(slots=True)
+class UpdateStudentGuardian:
+    """Atualiza contato e vínculo sem aceitar versões obsoletas."""
+
+    repository: StudentGuardianRepository
+    event_publisher: EventPublisher
+
+    async def execute(
+        self,
+        student_id: UUID,
+        guardian_id: UUID,
+        dto: UpdateStudentGuardianInput,
+    ) -> StudentGuardianDetailOutput:
+        guardian = Guardian(
+            id=guardian_id,
+            full_name=dto.full_name,
+            phone=Phone(dto.phone),
+            email=str(dto.email) if dto.email else None,
+        )
+        result = await self.repository.update_guardian(
+            student_id,
+            guardian,
+            relationship=dto.relationship,
+            receives_communications=dto.receives_communications,
+            expected_student_updated_at=dto.expected_student_updated_at,
+            expected_guardian_updated_at=dto.expected_guardian_updated_at,
+        )
+        if result.changed:
+            self.event_publisher.publish(
+                StudentGuardianUpdated(student_id=student_id, guardian_id=guardian_id)
+            )
+        return StudentMapper.guardian_snapshot_to_output(result.snapshot)
+
+
+@dataclass(slots=True)
+class SetPrimaryGuardian:
+    """Promove um vínculo ativo e rebaixa o principal anterior atomicamente."""
+
+    repository: StudentGuardianRepository
+    event_publisher: EventPublisher
+
+    async def execute(
+        self,
+        student_id: UUID,
+        guardian_id: UUID,
+        dto: SetPrimaryGuardianInput,
+    ) -> StudentGuardianDetailOutput:
+        result = await self.repository.set_primary_guardian(
+            student_id,
+            guardian_id,
+            expected_student_updated_at=dto.expected_student_updated_at,
+        )
+        if result.changed:
+            self.event_publisher.publish(
+                StudentPrimaryGuardianChanged(student_id=student_id, guardian_id=guardian_id)
+            )
+        return StudentMapper.guardian_snapshot_to_output(result.snapshot)
+
+
+@dataclass(slots=True)
+class UnlinkStudentGuardian:
+    """Desativa apenas vínculo não principal e preserva a justificativa privada."""
+
+    repository: StudentGuardianRepository
+    event_publisher: EventPublisher
+
+    async def execute(
+        self,
+        student_id: UUID,
+        guardian_id: UUID,
+        dto: UnlinkStudentGuardianInput,
+    ) -> StudentGuardianUnlinkOutput:
+        result = await self.repository.unlink_guardian(
+            student_id,
+            guardian_id,
+            reason=GuardianUnlinkReason(dto.reason),
+            expected_student_updated_at=dto.expected_student_updated_at,
+        )
+        if result.changed:
+            self.event_publisher.publish(
+                StudentGuardianUnlinked(student_id=student_id, guardian_id=guardian_id)
+            )
+        return StudentGuardianUnlinkOutput(
+            student_id=result.student_id,
+            guardian_id=result.guardian_id,
+            student_updated_at=result.student_updated_at,
         )

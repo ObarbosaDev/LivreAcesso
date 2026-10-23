@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from backend.app.modules.students.domain.exceptions import (
     InvalidCPFError,
+    InvalidGuardianUnlinkReasonError,
     InvalidPhoneError,
     InvalidStatusReasonError,
 )
@@ -76,4 +77,17 @@ class StatusChangeReason:
         normalized = " ".join(self.value.split())
         if not 10 <= len(normalized) <= 500:
             raise InvalidStatusReasonError
+        object.__setattr__(self, "value", normalized)
+
+
+@dataclass(frozen=True, slots=True)
+class GuardianUnlinkReason:
+    """Justificativa privada para retirar um vínculo sem apagar seu histórico."""
+
+    value: str
+
+    def __post_init__(self) -> None:
+        normalized = " ".join(self.value.split())
+        if not 10 <= len(normalized) <= 500:
+            raise InvalidGuardianUnlinkReasonError
         object.__setattr__(self, "value", normalized)

@@ -4,10 +4,18 @@ from backend.app.modules.students.application.dtos import (
     GuardianDetailOutput,
     RegisterStudentInput,
     StudentDetailOutput,
+    StudentGuardianDetailOutput,
+    StudentGuardianListItemOutput,
+    StudentGuardianListOutput,
     StudentOutput,
 )
-from backend.app.modules.students.application.queries import StudentListItem
+from backend.app.modules.students.application.queries import (
+    StudentGuardianListItem,
+    StudentGuardianListResult,
+    StudentListItem,
+)
 from backend.app.modules.students.domain.entities import Guardian, Student
+from backend.app.modules.students.domain.repositories import StudentGuardianSnapshot
 from backend.app.modules.students.domain.value_objects import CPF, Phone
 
 
@@ -83,4 +91,47 @@ class StudentMapper:
             guardian_phone_masked=item.guardian_phone_masked,
             created_at=item.created_at,
             updated_at=item.updated_at,
+        )
+
+    @staticmethod
+    def guardian_list_to_output(result: StudentGuardianListResult) -> StudentGuardianListOutput:
+        return StudentGuardianListOutput(
+            student_id=result.student_id,
+            student_updated_at=result.student_updated_at,
+            items=[StudentMapper.guardian_list_item_to_output(item) for item in result.items],
+        )
+
+    @staticmethod
+    def guardian_list_item_to_output(
+        item: StudentGuardianListItem,
+    ) -> StudentGuardianListItemOutput:
+        return StudentGuardianListItemOutput(
+            id=item.id,
+            full_name=item.full_name,
+            phone_masked=item.phone_masked,
+            email_masked=item.email_masked,
+            relationship=item.relationship,
+            is_primary=item.is_primary,
+            receives_communications=item.receives_communications,
+            linked_at=item.linked_at,
+            guardian_updated_at=item.guardian_updated_at,
+        )
+
+    @staticmethod
+    def guardian_snapshot_to_output(
+        snapshot: StudentGuardianSnapshot,
+    ) -> StudentGuardianDetailOutput:
+        link = snapshot.link
+        return StudentGuardianDetailOutput(
+            student_id=link.student_id,
+            student_updated_at=snapshot.student_updated_at,
+            id=link.guardian.id,
+            full_name=link.guardian.full_name,
+            phone=link.guardian.phone.value,
+            email=link.guardian.email,
+            relationship=link.relationship,
+            is_primary=link.is_primary,
+            receives_communications=link.receives_communications,
+            linked_at=link.linked_at,
+            guardian_updated_at=link.guardian_updated_at,
         )

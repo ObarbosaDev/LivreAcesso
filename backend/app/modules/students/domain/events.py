@@ -30,3 +30,35 @@ class StudentStatusChanged(DomainEvent):
     student_id: UUID
     previous_status: str
     current_status: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StudentGuardianLinked(DomainEvent):
+    """Informa um novo vínculo usando apenas identificadores técnicos."""
+
+    student_id: UUID
+    guardian_id: UUID
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StudentGuardianUpdated(DomainEvent):
+    """Informa uma edição sem copiar telefone, e-mail, nome ou parentesco."""
+
+    student_id: UUID
+    guardian_id: UUID
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StudentPrimaryGuardianChanged(DomainEvent):
+    """Informa a troca do contato principal sem transportar dados pessoais."""
+
+    student_id: UUID
+    guardian_id: UUID
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StudentGuardianUnlinked(DomainEvent):
+    """Informa uma desvinculação lógica; o motivo permanece no histórico privado."""
+
+    student_id: UUID
+    guardian_id: UUID

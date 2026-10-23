@@ -1,11 +1,20 @@
 """DTOs de entrada e saída do módulo de alunos."""
 
 from datetime import date, datetime
+from typing import Self
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
-from backend.app.modules.students.domain.entities import StudentStatus
+from backend.app.modules.students.domain.entities import GuardianRelationship, StudentStatus
 
 
 class DTO(BaseModel):
@@ -56,14 +65,13 @@ class RegisterStudentInput(DTO):
 
 
 class UpdateStudentInput(DTO):
-    """Substitui os campos editáveis usando a versão vista pela pessoa usuária."""
+    """Substitui somente dados do aluno; responsáveis têm endpoints versionados."""
 
     expected_updated_at: AwareDatetime = Field(
         description="Versão recebida na última consulta; evita sobrescrever outra alteração."
     )
     full_name: str = Field(min_length=3, max_length=120)
     birth_date: date
-    guardian: GuardianInput
 
     @field_validator("birth_date")
     @classmethod
@@ -77,6 +85,50 @@ class ChangeStudentStatusInput(DTO):
     """Exige versão e justificativa para uma mudança cadastral de alto impacto."""
 
     expected_updated_at: AwareDatetime
+    reason: str = Field(min_length=10, max_length=500)
+
+
+class AddStudentGuardianInput(DTO):
+    """Cria um contato ou reutiliza, por UUID, um responsável de outro aluno."""
+
+    expected_student_updated_at: AwareDatetime
+    relationship: GuardianRelationship
+    receives_communications: bool = True
+    make_primary: bool = False
+    guardian: GuardianInput | None = None
+    existing_guardian_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def exactly_one_guardian_source(self) -> Self:
+        # Separar criação de reutilização evita atualizar silenciosamente um
+        # contato compartilhado quando o objetivo era apenas vinculá-lo a um irmão.
+        if (self.guardian is None) == (self.existing_guardian_id is None):
+            raise ValueError("Informe um novo responsável ou um UUID existente, mas não ambos.")
+        return self
+
+
+class UpdateStudentGuardianInput(DTO):
+    """Atualiza contato compartilhado e propriedades deste vínculo com duas versões."""
+
+    expected_student_updated_at: AwareDatetime
+    expected_guardian_updated_at: AwareDatetime
+    full_name: str = Field(min_length=3, max_length=120)
+    phone: str = Field(min_length=10, max_length=20)
+    email: EmailStr | None = None
+    relationship: GuardianRelationship
+    receives_communications: bool = True
+
+
+class SetPrimaryGuardianInput(DTO):
+    """Troca o principal usando a versão atual do agregado de aluno."""
+
+    expected_student_updated_at: AwareDatetime
+
+
+class UnlinkStudentGuardianInput(DTO):
+    """Desativa o vínculo sem apagar responsável ou histórico."""
+
+    expected_student_updated_at: AwareDatetime
     reason: str = Field(min_length=10, max_length=500)
 
 
@@ -96,7 +148,7 @@ class StudentOutput(DTO):
 
 
 class GuardianDetailOutput(DTO):
-    """Contato sensível liberado apenas pela consulta detalhada auditada."""
+    """Contato principal mantido no detalhe legado do aluno."""
 
     id: UUID
     full_name: str
@@ -128,3 +180,49 @@ class StudentPageOutput(DTO):
     total_pages: int = Field(ge=0)
     has_previous: bool
     has_next: bool
+
+
+class StudentGuardianListItemOutput(DTO):
+    """Contato mascarado para escolha segura na interface."""
+
+    id: UUID
+    full_name: str
+    phone_masked: str
+    email_masked: str | None
+    relationship: GuardianRelationship
+    is_primary: bool
+    receives_communications: bool
+    linked_at: datetime
+    guardian_updated_at: datetime
+
+
+class StudentGuardianListOutput(DTO):
+    """Coleção ativa e versão atual do aluno."""
+
+    student_id: UUID
+    student_updated_at: datetime
+    items: list[StudentGuardianListItemOutput]
+
+
+class StudentGuardianDetailOutput(DTO):
+    """Contato integral cuja consulta é auditada no armazenamento remoto."""
+
+    student_id: UUID
+    student_updated_at: datetime
+    id: UUID
+    full_name: str
+    phone: str
+    email: EmailStr | None
+    relationship: GuardianRelationship
+    is_primary: bool
+    receives_communications: bool
+    linked_at: datetime
+    guardian_updated_at: datetime
+
+
+class StudentGuardianUnlinkOutput(DTO):
+    """Confirma a desvinculação e devolve a nova versão do aluno."""
+
+    student_id: UUID
+    guardian_id: UUID
+    student_updated_at: datetime

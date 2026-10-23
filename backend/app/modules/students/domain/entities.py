@@ -22,6 +22,17 @@ class StudentStatus(StrEnum):
     INACTIVE = "inativo"
 
 
+class GuardianRelationship(StrEnum):
+    """Finalidade explícita do vínculo entre aluno e responsável."""
+
+    RESPONSIBLE_CONTACT = "contato_responsavel"
+    LEGAL_GUARDIAN = "responsavel_legal"
+    PARENT = "pai_ou_mae"
+    EMERGENCY_CONTACT = "contato_emergencia"
+    SELF = "proprio"
+    OTHER = "outro"
+
+
 def _normalize_student_data(full_name: str, birth_date: date) -> str:
     normalized_name = " ".join(full_name.split())
     today = date.today()
@@ -54,6 +65,30 @@ class Guardian:
         normalized_email = self.email.strip().lower() if self.email else None
         object.__setattr__(self, "full_name", normalized_name)
         object.__setattr__(self, "email", normalized_email)
+
+
+@dataclass(frozen=True, slots=True)
+class StudentGuardian:
+    """Vínculo versionado entre um aluno e um contato potencialmente compartilhado."""
+
+    student_id: UUID
+    guardian: Guardian
+    relationship: GuardianRelationship
+    is_primary: bool
+    receives_communications: bool
+    active: bool
+    linked_at: datetime
+    guardian_updated_at: datetime
+
+    def __post_init__(self) -> None:
+        # Um vínculo principal inativo deixaria a interface apontando para um
+        # contato que não pode mais ser usado; a mesma regra existe no Postgres.
+        if self.is_primary and not self.active:
+            raise InvalidStudentDataError("O responsável principal precisa estar ativo.")
+        if self.linked_at.tzinfo is None or self.guardian_updated_at.tzinfo is None:
+            raise InvalidStudentDataError(
+                "Versões do responsável precisam informar o fuso horário."
+            )
 
 
 @dataclass(slots=True)
@@ -110,9 +145,8 @@ class Student:
         *,
         full_name: str,
         birth_date: date,
-        guardian: Guardian,
     ) -> tuple[str, ...]:
-        """Altera dados editáveis e informa campos, nunca valores, no evento."""
+        """Altera somente o aluno; contatos possuem versão e endpoints próprios."""
 
         normalized_name = _normalize_student_data(full_name, birth_date)
         changed_fields: list[str] = []
@@ -123,9 +157,6 @@ class Student:
         if self.birth_date != birth_date:
             self.birth_date = birth_date
             changed_fields.append("birth_date")
-        if self.guardian != guardian:
-            self.guardian = guardian
-            changed_fields.append("guardian")
 
         result = tuple(changed_fields)
         if result:

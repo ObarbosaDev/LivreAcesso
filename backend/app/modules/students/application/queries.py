@@ -5,7 +5,7 @@ from datetime import date, datetime
 from typing import Protocol
 from uuid import UUID
 
-from backend.app.modules.students.domain.entities import StudentStatus
+from backend.app.modules.students.domain.entities import GuardianRelationship, StudentStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,7 +53,37 @@ class StudentSearchResult:
     total: int
 
 
+@dataclass(frozen=True, slots=True)
+class StudentGuardianListItem:
+    """Projeção mascarada de um vínculo ativo com responsável."""
+
+    id: UUID
+    full_name: str
+    phone_masked: str
+    email_masked: str | None
+    relationship: GuardianRelationship
+    is_primary: bool
+    receives_communications: bool
+    linked_at: datetime
+    guardian_updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class StudentGuardianListResult:
+    """Lista segura acompanhada da versão usada nas próximas alterações."""
+
+    student_id: UUID
+    student_updated_at: datetime
+    items: tuple[StudentGuardianListItem, ...]
+
+
 class StudentQueryService(Protocol):
     """Porta assíncrona de leitura que retorna somente projeções seguras."""
 
     async def search(self, criteria: StudentSearchCriteria) -> StudentSearchResult: ...
+
+
+class StudentGuardianQueryService(Protocol):
+    """Porta de listagem que nunca carrega telefone ou e-mail integrais."""
+
+    async def list_guardians(self, student_id: UUID) -> StudentGuardianListResult: ...
