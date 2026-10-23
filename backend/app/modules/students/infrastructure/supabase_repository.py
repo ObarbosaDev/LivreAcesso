@@ -1,4 +1,4 @@
-"""Persistência de alunos por funções RPC protegidas do Supabase."""
+"""Persistência de alunos e responsáveis por funções RPC protegidas do Supabase."""
 
 from datetime import date, datetime
 from enum import StrEnum
@@ -16,20 +16,41 @@ from pydantic import (
 
 from backend.app.modules.identity.application.authentication import InvalidAccessTokenError
 from backend.app.modules.students.application.queries import (
+    StudentGuardianListItem,
+    StudentGuardianListResult,
     StudentListItem,
     StudentSearchCriteria,
     StudentSearchResult,
 )
-from backend.app.modules.students.domain.entities import Guardian, Student, StudentStatus
+from backend.app.modules.students.domain.entities import (
+    Guardian,
+    GuardianRelationship,
+    Student,
+    StudentGuardian,
+    StudentStatus,
+)
 from backend.app.modules.students.domain.exceptions import (
     DuplicateCPFError,
+    GuardianAlreadyLinkedError,
+    GuardianNotFoundError,
+    GuardianVersionConflictError,
+    InvalidGuardianUnlinkReasonError,
+    PrimaryGuardianRequiredError,
     StudentNotFoundError,
     StudentVersionConflictError,
 )
 from backend.app.modules.students.domain.repositories import (
     PersistedStudentVersion,
+    StudentGuardianMutation,
+    StudentGuardianSnapshot,
+    StudentGuardianUnlinkResult,
 )
-from backend.app.modules.students.domain.value_objects import CPF, Phone, StatusChangeReason
+from backend.app.modules.students.domain.value_objects import (
+    CPF,
+    GuardianUnlinkReason,
+    Phone,
+    StatusChangeReason,
+)
 from backend.app.shared.application.exceptions import (
     PermissionDeniedError,
     PersistenceRejectedError,
@@ -46,6 +67,26 @@ from backend.app.shared.infrastructure.supabase_rpc import (
 class _DatabaseStudentStatus(StrEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+
+
+class _DatabaseGuardianRelationship(StrEnum):
+    RESPONSIBLE_CONTACT = "responsible_contact"
+    LEGAL_GUARDIAN = "legal_guardian"
+    PARENT = "parent"
+    EMERGENCY_CONTACT = "emergency_contact"
+    SELF = "self"
+    OTHER = "other"
+
+
+_RELATIONSHIP_TO_DATABASE = {
+    GuardianRelationship.RESPONSIBLE_CONTACT: _DatabaseGuardianRelationship.RESPONSIBLE_CONTACT,
+    GuardianRelationship.LEGAL_GUARDIAN: _DatabaseGuardianRelationship.LEGAL_GUARDIAN,
+    GuardianRelationship.PARENT: _DatabaseGuardianRelationship.PARENT,
+    GuardianRelationship.EMERGENCY_CONTACT: _DatabaseGuardianRelationship.EMERGENCY_CONTACT,
+    GuardianRelationship.SELF: _DatabaseGuardianRelationship.SELF,
+    GuardianRelationship.OTHER: _DatabaseGuardianRelationship.OTHER,
+}
+_RELATIONSHIP_FROM_DATABASE = {value: key for key, value in _RELATIONSHIP_TO_DATABASE.items()}
 
 
 class _StudentListRow(BaseModel):
@@ -112,10 +153,70 @@ class _MutationResponse(BaseModel):
     updated_at: AwareDatetime
 
 
+class _StudentGuardianListRow(BaseModel):
+    """Contrato mascarado da listagem de responsáveis."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: UUID
+    full_name: str
+    phone_masked: str = Field(pattern=r"^\(\d{2}\) \*{5}-\d{4}$")
+    email_masked: str | None
+    relationship: _DatabaseGuardianRelationship
+    is_primary: bool
+    receives_communications: bool
+    linked_at: AwareDatetime
+    guardian_updated_at: AwareDatetime
+
+
+class _StudentGuardianListResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    student_id: UUID
+    student_updated_at: AwareDatetime
+    items: list[_StudentGuardianListRow]
+
+
+class _StudentGuardianDetailRow(BaseModel):
+    """Contrato integral liberado somente por leitura ou escrita auditada."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    student_id: UUID
+    student_updated_at: AwareDatetime
+    id: UUID
+    full_name: str
+    phone: str
+    email: EmailStr | None
+    relationship: _DatabaseGuardianRelationship
+    is_primary: bool
+    receives_communications: bool
+    active: bool
+    linked_at: AwareDatetime
+    guardian_updated_at: AwareDatetime
+
+
+class _StudentGuardianMutationRow(_StudentGuardianDetailRow):
+    changed: bool
+
+
+class _StudentGuardianUnlinkResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    student_id: UUID
+    guardian_id: UUID
+    student_updated_at: AwareDatetime
+    changed: bool
+
+
 _STUDENT_SEARCH_RESPONSE = TypeAdapter(_StudentSearchResponse)
 _STUDENT_DETAIL_RESPONSE = TypeAdapter(_StudentDetailRow)
 _CREATED_RESPONSE = TypeAdapter(_CreatedResponse)
 _MUTATION_RESPONSE = TypeAdapter(_MutationResponse)
+_GUARDIAN_LIST_RESPONSE = TypeAdapter(_StudentGuardianListResponse)
+_GUARDIAN_DETAIL_RESPONSE = TypeAdapter(_StudentGuardianDetailRow)
+_GUARDIAN_MUTATION_RESPONSE = TypeAdapter(_StudentGuardianMutationRow)
+_GUARDIAN_UNLINK_RESPONSE = TypeAdapter(_StudentGuardianUnlinkResponse)
 
 
 class SupabaseStudentRepository:
@@ -183,16 +284,13 @@ class SupabaseStudentRepository:
         expected_updated_at: datetime,
     ) -> datetime:
         result = await self._call(
-            "update_student_with_guardian",
+            "update_student",
             {
                 "p_student_id": str(student.id),
                 "p_request_id": str(self._context.request_id),
                 "p_expected_updated_at": expected_updated_at.isoformat(),
                 "p_full_name": student.full_name,
                 "p_birth_date": student.birth_date.isoformat(),
-                "p_guardian_full_name": student.guardian.full_name,
-                "p_guardian_phone": student.guardian.phone.value,
-                "p_guardian_email": student.guardian.email,
             },
         )
         return self._mutation_timestamp(result)
@@ -251,6 +349,148 @@ class SupabaseStudentRepository:
             total=response.total,
         )
 
+    async def list_guardians(self, student_id: UUID) -> StudentGuardianListResult:
+        result = await self._call(
+            "list_student_guardians",
+            {"p_student_id": str(student_id)},
+        )
+        try:
+            response = _GUARDIAN_LIST_RESPONSE.validate_python(result)
+        except ValidationError as error:
+            raise PersistenceUnavailableError from error
+        return StudentGuardianListResult(
+            student_id=response.student_id,
+            student_updated_at=response.student_updated_at,
+            items=tuple(self._to_guardian_list_item(item) for item in response.items),
+        )
+
+    async def get_guardian(
+        self,
+        student_id: UUID,
+        guardian_id: UUID,
+    ) -> StudentGuardianSnapshot:
+        result = await self._call(
+            "get_student_guardian_detail",
+            {
+                "p_student_id": str(student_id),
+                "p_guardian_id": str(guardian_id),
+                "p_request_id": str(self._context.request_id),
+            },
+        )
+        try:
+            row = _GUARDIAN_DETAIL_RESPONSE.validate_python(result)
+            return self._to_guardian_snapshot(row)
+        except (ValidationError, ValueError) as error:
+            raise PersistenceUnavailableError from error
+
+    async def add_guardian(
+        self,
+        student_id: UUID,
+        *,
+        guardian: Guardian | None,
+        existing_guardian_id: UUID | None,
+        relationship: GuardianRelationship,
+        make_primary: bool,
+        receives_communications: bool,
+        expected_student_updated_at: datetime,
+    ) -> StudentGuardianMutation:
+        if (guardian is None) == (existing_guardian_id is None):
+            raise ValueError("A origem do responsável é ambígua.")
+        guardian_id = guardian.id if guardian is not None else existing_guardian_id
+        assert guardian_id is not None
+        result = await self._call(
+            "add_student_guardian",
+            {
+                "p_student_id": str(student_id),
+                "p_guardian_id": str(guardian_id),
+                "p_request_id": str(self._context.request_id),
+                "p_expected_student_updated_at": expected_student_updated_at.isoformat(),
+                "p_create_guardian": guardian is not None,
+                "p_guardian_full_name": guardian.full_name if guardian is not None else None,
+                "p_guardian_phone": guardian.phone.value if guardian is not None else None,
+                "p_guardian_email": guardian.email if guardian is not None else None,
+                "p_relationship": _RELATIONSHIP_TO_DATABASE[relationship].value,
+                "p_make_primary": make_primary,
+                "p_receives_communications": receives_communications,
+            },
+        )
+        return self._guardian_mutation(result)
+
+    async def update_guardian(
+        self,
+        student_id: UUID,
+        guardian: Guardian,
+        *,
+        relationship: GuardianRelationship,
+        receives_communications: bool,
+        expected_student_updated_at: datetime,
+        expected_guardian_updated_at: datetime,
+    ) -> StudentGuardianMutation:
+        result = await self._call(
+            "update_student_guardian",
+            {
+                "p_student_id": str(student_id),
+                "p_guardian_id": str(guardian.id),
+                "p_request_id": str(self._context.request_id),
+                "p_expected_student_updated_at": expected_student_updated_at.isoformat(),
+                "p_expected_guardian_updated_at": expected_guardian_updated_at.isoformat(),
+                "p_guardian_full_name": guardian.full_name,
+                "p_guardian_phone": guardian.phone.value,
+                "p_guardian_email": guardian.email,
+                "p_relationship": _RELATIONSHIP_TO_DATABASE[relationship].value,
+                "p_receives_communications": receives_communications,
+            },
+        )
+        return self._guardian_mutation(result)
+
+    async def set_primary_guardian(
+        self,
+        student_id: UUID,
+        guardian_id: UUID,
+        *,
+        expected_student_updated_at: datetime,
+    ) -> StudentGuardianMutation:
+        result = await self._call(
+            "set_primary_student_guardian",
+            {
+                "p_student_id": str(student_id),
+                "p_guardian_id": str(guardian_id),
+                "p_request_id": str(self._context.request_id),
+                "p_expected_student_updated_at": expected_student_updated_at.isoformat(),
+            },
+        )
+        return self._guardian_mutation(result)
+
+    async def unlink_guardian(
+        self,
+        student_id: UUID,
+        guardian_id: UUID,
+        *,
+        reason: GuardianUnlinkReason,
+        expected_student_updated_at: datetime,
+    ) -> StudentGuardianUnlinkResult:
+        result = await self._call(
+            "unlink_student_guardian",
+            {
+                "p_student_id": str(student_id),
+                "p_guardian_id": str(guardian_id),
+                "p_request_id": str(self._context.request_id),
+                "p_expected_student_updated_at": expected_student_updated_at.isoformat(),
+                # A justificativa segue apenas no corpo HTTPS até a tabela privada.
+                "p_reason": reason.value,
+            },
+        )
+        try:
+            response = _GUARDIAN_UNLINK_RESPONSE.validate_python(result)
+        except ValidationError as error:
+            raise PersistenceUnavailableError from error
+        return StudentGuardianUnlinkResult(
+            student_id=response.student_id,
+            guardian_id=response.guardian_id,
+            student_updated_at=response.student_updated_at,
+            changed=response.changed,
+        )
+
     async def _call(self, function_name: str, payload: dict[str, object]) -> object:
         try:
             return await self._gateway.call(function_name, payload, self._context)
@@ -265,11 +505,17 @@ class SupabaseStudentRepository:
                 or error.message_code == "forbidden"
             ):
                 raise PermissionDeniedError from error
-            if (
-                error.status_code == 409
-                or error.database_code == "23505"
-                or error.message_code == "duplicate_cpf"
-            ):
+            if error.message_code == "guardian_already_linked":
+                raise GuardianAlreadyLinkedError from error
+            if error.message_code in {"guardian_not_found", "guardian_link_not_found"}:
+                raise GuardianNotFoundError from error
+            if error.message_code == "primary_guardian_required":
+                raise PrimaryGuardianRequiredError from error
+            if error.message_code == "guardian_version_conflict":
+                raise GuardianVersionConflictError from error
+            if error.message_code == "invalid_guardian_unlink_reason":
+                raise InvalidGuardianUnlinkReasonError from error
+            if error.database_code == "23505" or error.message_code == "duplicate_cpf":
                 raise DuplicateCPFError from error
             if error.message_code == "student_not_found":
                 raise StudentNotFoundError from error
@@ -286,6 +532,15 @@ class SupabaseStudentRepository:
         except ValidationError as error:
             raise PersistenceUnavailableError from error
         return response.updated_at
+
+    @staticmethod
+    def _guardian_mutation(result: object) -> StudentGuardianMutation:
+        try:
+            response = _GUARDIAN_MUTATION_RESPONSE.validate_python(result)
+            snapshot = SupabaseStudentRepository._to_guardian_snapshot(response)
+        except (ValidationError, ValueError) as error:
+            raise PersistenceUnavailableError from error
+        return StudentGuardianMutation(snapshot=snapshot, changed=response.changed)
 
     @staticmethod
     def _to_domain(row: _StudentDetailRow) -> Student:
@@ -328,4 +583,39 @@ class SupabaseStudentRepository:
             guardian_phone_masked=row.guardian_phone_masked,
             created_at=row.created_at,
             updated_at=row.updated_at,
+        )
+
+    @staticmethod
+    def _to_guardian_list_item(row: _StudentGuardianListRow) -> StudentGuardianListItem:
+        return StudentGuardianListItem(
+            id=row.id,
+            full_name=row.full_name,
+            phone_masked=row.phone_masked,
+            email_masked=row.email_masked,
+            relationship=_RELATIONSHIP_FROM_DATABASE[row.relationship],
+            is_primary=row.is_primary,
+            receives_communications=row.receives_communications,
+            linked_at=row.linked_at,
+            guardian_updated_at=row.guardian_updated_at,
+        )
+
+    @staticmethod
+    def _to_guardian_snapshot(row: _StudentGuardianDetailRow) -> StudentGuardianSnapshot:
+        return StudentGuardianSnapshot(
+            student_updated_at=row.student_updated_at,
+            link=StudentGuardian(
+                student_id=row.student_id,
+                guardian=Guardian(
+                    id=row.id,
+                    full_name=row.full_name,
+                    phone=Phone(row.phone),
+                    email=str(row.email) if row.email else None,
+                ),
+                relationship=_RELATIONSHIP_FROM_DATABASE[row.relationship],
+                is_primary=row.is_primary,
+                receives_communications=row.receives_communications,
+                active=row.active,
+                linked_at=row.linked_at,
+                guardian_updated_at=row.guardian_updated_at,
+            ),
         )
