@@ -173,9 +173,11 @@ def test_permission_matrices_always_roll_back(sql_test: Path) -> None:
 def test_permission_matrix_counts_are_explicit() -> None:
     student_matrix = (SUPABASE_TESTS_DIR / "role_matrix.sql").read_text(encoding="utf-8")
     profile_matrix = (SUPABASE_TESTS_DIR / "profile_role_matrix.sql").read_text(encoding="utf-8")
+    guardian_matrix = (SUPABASE_TESTS_DIR / "guardian_role_matrix.sql").read_text(encoding="utf-8")
 
     assert "25/25 permission checks passed" in student_matrix
     assert "31/31 profile permission checks passed" in profile_matrix
+    assert "35/35 guardian permission checks passed" in guardian_matrix
 
 
 def test_health_check_is_public_constant_and_security_invoker() -> None:
@@ -237,3 +239,53 @@ def test_pending_profile_cannot_be_active_in_database() -> None:
 
     assert "constraint profiles_pending_inactive" in sql
     assert "role <> 'pending' or not active" in sql
+
+
+def test_guardian_management_preserves_primary_and_history() -> None:
+    migration = MIGRATIONS_DIR / "20261022000700_guardian_management.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "private.guardian_change_history" in sql
+    assert "student_guardians_one_active_primary" in sql
+    assert "student_guardians_require_primary" in sql
+    assert "deferrable initially deferred" in sql
+    assert "p_expected_student_updated_at" in sql
+    assert "p_expected_guardian_updated_at" in sql
+    assert "delete from public.guardians" not in sql
+    assert "delete from public.student_guardians" not in sql
+    assert "revoke all on function public.update_student_with_guardian" in sql
+
+
+def test_guardian_rpcs_are_authorized_and_do_not_expose_tables() -> None:
+    migration = MIGRATIONS_DIR / "20261022000700_guardian_management.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    for function_name in (
+        "update_student",
+        "list_student_guardians",
+        "get_student_guardian_detail",
+        "add_student_guardian",
+        "update_student_guardian",
+        "set_primary_student_guardian",
+        "unlink_student_guardian",
+    ):
+        function_start = sql.index(f"function public.{function_name}(")
+        function_body = sql[function_start : function_start + 16_000]
+        assert "security definer" in function_body
+        assert "set search_path = ''" in function_body
+        assert "private.has_any_role" in function_body
+
+    assert "grant execute on function public.list_student_guardians" in sql
+    assert "grant execute on function public.unlink_student_guardian" in sql
+    assert "grant select on table public.guardians" not in sql
+
+
+def test_guardian_list_is_masked_and_sensitive_detail_is_audited() -> None:
+    migration = MIGRATIONS_DIR / "20261022000700_guardian_management.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "'phone_masked'" in sql
+    assert "'email_masked'" in sql
+    assert "guardian.sensitive_viewed" in sql
+    assert "'student_guardian.' || p_action" in sql
+    assert "jsonb_build_object( 'student_id', p_student_id, 'guardian_id', p_guardian_id" in sql
