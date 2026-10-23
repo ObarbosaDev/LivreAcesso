@@ -61,17 +61,17 @@ Projeto homologado estruturalmente: `LivreAcesso`, região `South America (São 
 
 Verificações concluídas:
 
-- cinco migrations locais e remotas sincronizadas;
+- seis migrations locais e remotas sincronizadas;
 - tabelas públicas com RLS ativo;
 - tabelas pessoais sem grants diretos para `anon` ou `authenticated`;
 - RPC de cadastro antiga sem permissão externa;
-- cinco RPCs atuais executáveis somente por `authenticated` e com validação interna;
+- RPCs operacionais executáveis somente por `authenticated` e com validação interna;
 - triggers de perfil e timestamps presentes;
 - JWKS público disponível com assinatura `ES256`;
-- advisor de desempenho sem problemas após a quarta migration;
-- cinco avisos de segurança restantes correspondem somente às RPCs privilegiadas analisadas acima.
+- advisor de desempenho sem problemas;
+- advisor de segurança sem erros críticos; avisos genéricos das RPCs privilegiadas permanecem cobertos pelos controles documentados acima.
 
-A homologação funcional por papel ainda depende de contas sintéticas do Supabase Auth. Nenhum dado real deve entrar antes dessa matriz passar.
+As matrizes transacionais validaram os papéis com contexto JWT simulado. O smoke final usou o JWT real da única conta sintética de coordenação; nenhum dado real foi utilizado.
 
 ## Matriz de autorização remota — 22 de outubro de 2026
 
@@ -85,16 +85,18 @@ Foram exercitadas as cinco RPCs de alunos como coordenação, recepção, consul
 - zero históricos de status;
 - zero eventos na outbox.
 
-A matriz valida autorização dentro do PostgreSQL com contexto JWT simulado. A etapa restante é autenticar pela API do Supabase e percorrer FastAPI → PostgREST com um JWT real.
+A matriz validou a autorização dentro do PostgreSQL sem persistir os estados sintéticos. O caminho Auth → JWT ES256 → FastAPI → PostgREST foi validado separadamente com a conta sintética real.
 
 ## Smoke autenticado de produção — 22 de outubro de 2026
 
 O fluxo completo Supabase Auth → JWT ES256 → FastAPI na Vercel → validação JWKS → RPC PostgREST foi homologado em `https://livre-acesso-api.vercel.app` com a única conta sintética de coordenação.
 
-O resultado confirmou autenticação, autorização, persistência disponível e zero alunos. Chave, senha e token permaneceram somente em memória e não foram exibidos ou gravados.
+O resultado confirmou autenticação, autorização, persistência disponível, `/me` como `coordenador` ativo e zero alunos. Chave, senha e token permaneceram somente em memória e não foram exibidos ou gravados.
 
 ## Matriz de perfis — 22 de outubro de 2026
 
 A sexta migration foi aplicada e a matriz transacional de perfis concluiu 31/31 verificações. Foram testados perfil próprio, renomeação e quatro ações administrativas sob coordenação, recepção, consulta, instrutor e conta pendente/inativa.
 
 O rollback foi confirmado: uma coordenação ativa, nenhum outro estado, histórico de acesso vazio e zero alunos. Os advisors permaneceram sem problemas de desempenho e sem erros críticos de segurança.
+
+O build aprovado foi promovido como `dpl_ENayE7orgDcD4c63coUcYDqZjcQH` em `gru1`. A produção respondeu live e ready, bloqueou `/me` sem JWT e retornou o perfil correto no smoke autenticado.

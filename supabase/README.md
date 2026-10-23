@@ -112,7 +112,7 @@ Sem `SUPABASE_URL`, o backend usa um verificador que falha fechado com `503`. Is
 
 ### Estado remoto
 
-As cinco migrations foram aplicadas ao projeto `LivreAcesso` em São Paulo. A inspeção confirmou RLS nas tabelas públicas, ausência de grants diretos nas tabelas pessoais, JWKS `ES256` e advisor de desempenho sem problemas. O banco permanece vazio e aguarda contas sintéticas para a matriz funcional por papel.
+As seis migrations foram aplicadas ao projeto `LivreAcesso` em São Paulo. A inspeção confirmou RLS nas tabelas públicas, ausência de grants diretos nas tabelas pessoais, JWKS `ES256`, advisor de desempenho sem problemas e advisor de segurança sem erros críticos. Permanecem somente uma conta sintética de coordenação ativa, zero alunos e nenhum histórico criado pelos testes.
 
 ## Matriz de papéis
 
@@ -141,7 +141,7 @@ O comando solicita interativamente:
 3. e-mail da conta sintética;
 4. senha da conta sintética em prompt oculto.
 
-Nada é gravado em arquivo e nenhum token é exibido. O verificador autentica no Supabase Auth e percorre JWT/JWKS → FastAPI → RPC de listagem. A operação é somente leitura.
+Nada é gravado em arquivo e nenhum token é exibido. O verificador autentica no Supabase Auth e percorre JWT/JWKS → FastAPI → `/me` e RPC de listagem. Quando `BACKEND_BASE_URL` é informado, o mesmo token valida também o deployment publicado. A operação é somente leitura.
 
 ### Falha de autenticação no verificador
 
@@ -169,3 +169,5 @@ A criação de contas permanece no Supabase Auth. O backend administra somente p
 ### Matriz de perfis
 
 `tests/profile_role_matrix.sql` foi executado em produção e aprovou 31/31 combinações. A transação foi revertida; a conta permaneceu coordenadora ativa e `profile_access_history` continuou vazio.
+
+O smoke final no deployment `dpl_ENayE7orgDcD4c63coUcYDqZjcQH` confirmou Auth, JWT/JWKS, FastAPI → RPC, `/me` como coordenação ativa, persistência disponível e zero alunos. Nenhuma credencial foi gravada ou exibida.

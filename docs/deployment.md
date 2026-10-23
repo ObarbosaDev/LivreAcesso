@@ -80,22 +80,25 @@ Se o deploy falhar:
 
 `20261021000500_health_check.sql` cria apenas `public.health_check()`. Ela é `security invoker`, retorna um JSON constante, não lê tabelas e pode ser executada por `anon` e `authenticated`. A migration foi aplicada e o Preview confirmou readiness contra o PostgreSQL real.
 
-## Evidência do Preview
+## Evidência do Preview do BL-02
 
+- deployment: `dpl_5UmeG8zD924SrSg8U2VXV4rKWNkQ`;
 - preset remoto: FastAPI;
 - runtime: Python 3.12;
-- função: `fastapi`, 15,03 MB;
+- função: `fastapi`, 15,18 MB;
 - região: `gru1`;
 - liveness: `200`, estado `alive`;
 - readiness: `200`, persistência `up`;
-- listagem sem JWT: `401`, `authentication_required`;
+- `/api/v1/me` sem JWT: `401`, `authentication_required`;
 - `X-Request-ID` e headers de segurança: presentes;
 - deploy automático do GitHub: desconectado;
-- promoção para produção: pendente de revisão final.
+- promoção: autorizada após revisão e concluída com sucesso.
 
 ## Evidência de produção
 
 Produção: <https://livre-acesso-api.vercel.app>
+
+Deployment ativo: `dpl_ENayE7orgDcD4c63coUcYDqZjcQH`.
 
 Validação final concluída:
 
@@ -103,9 +106,10 @@ Validação final concluída:
 Auth: OK
 JWT/JWKS: OK
 FastAPI → RPC: OK
+Perfil: coordenador ativo
 Deploy: OK
 Alunos encontrados: 0
 Nenhuma credencial foi gravada ou exibida.
 ```
 
-Também foram confirmados liveness, readiness, bloqueio 401 sem JWT, request ID, headers de segurança, Python 3.12, função FastAPI de 15,03 MB e execução em `gru1`.
+Também foram confirmados liveness, readiness, bloqueio 401 sem JWT, request ID, headers de segurança, Python 3.12, função FastAPI de 15,18 MB e execução em `gru1`.
