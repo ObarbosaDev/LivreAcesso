@@ -14,6 +14,22 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
+from backend.app.modules.classes.domain.exceptions import (
+    ActiveClassesExistError,
+    ClassDomainError,
+    ClassNotFoundError,
+    ClassVersionConflictError,
+    DuplicateClassError,
+    DuplicateModalityError,
+    InvalidCapacityError,
+    InvalidClassChangeReasonError,
+    InvalidClassDataError,
+    InvalidInstructorAssignmentError,
+    InvalidModalityDataError,
+    InvalidScheduleError,
+    ModalityNotFoundError,
+    ModalityVersionConflictError,
+)
 from backend.app.modules.identity.application.authentication import (
     AuthenticationError,
     AuthenticationUnavailableError,
@@ -281,6 +297,65 @@ def install_problem_handlers(application: FastAPI) -> None:
             request,
             response_status=status.HTTP_422_UNPROCESSABLE_CONTENT,
             title="Dados do perfil inválidos",
+            detail=str(exception),
+            code=exception.code,
+            errors=[FieldProblem(field=field, code=exception.code, message=str(exception))],
+        )
+
+    @application.exception_handler(ClassDomainError)
+    async def handle_class_domain_error(
+        request: Request,
+        exception: ClassDomainError,
+    ) -> JSONResponse:
+        if isinstance(exception, (ModalityNotFoundError, ClassNotFoundError)):
+            title = (
+                "Modalidade não encontrada"
+                if isinstance(exception, ModalityNotFoundError)
+                else "Turma não encontrada"
+            )
+            return _problem_response(
+                request,
+                response_status=status.HTTP_404_NOT_FOUND,
+                title=title,
+                detail=str(exception),
+                code=exception.code,
+            )
+        if isinstance(
+            exception,
+            (
+                DuplicateModalityError,
+                DuplicateClassError,
+                ModalityVersionConflictError,
+                ClassVersionConflictError,
+                ActiveClassesExistError,
+            ),
+        ):
+            return _problem_response(
+                request,
+                response_status=status.HTTP_409_CONFLICT,
+                title="Conflito no catálogo de turmas",
+                detail=str(exception),
+                code=exception.code,
+            )
+
+        if isinstance(exception, InvalidCapacityError):
+            field = "capacity"
+        elif isinstance(exception, InvalidScheduleError):
+            field = "schedules"
+        elif isinstance(exception, InvalidInstructorAssignmentError):
+            field = "instructor_ids"
+        elif isinstance(exception, InvalidClassChangeReasonError):
+            field = "reason"
+        elif isinstance(exception, InvalidModalityDataError):
+            field = "name"
+        elif isinstance(exception, InvalidClassDataError):
+            field = "request"
+        else:
+            field = "request"
+        return _problem_response(
+            request,
+            response_status=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            title="Dados da turma inválidos",
             detail=str(exception),
             code=exception.code,
             errors=[FieldProblem(field=field, code=exception.code, message=str(exception))],
