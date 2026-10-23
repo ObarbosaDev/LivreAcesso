@@ -32,6 +32,7 @@ from backend.app.shared.application.exceptions import (
     PermissionDeniedError,
     PersistenceRejectedError,
     PersistenceUnavailableError,
+    ServiceNotReadyError,
 )
 
 logger = logging.getLogger("livre_acesso.api")
@@ -200,6 +201,10 @@ def install_problem_handlers(application: FastAPI) -> None:
             response_status = status.HTTP_403_FORBIDDEN
             title = "Operação não permitida"
             headers = None
+        elif isinstance(exception, ServiceNotReadyError):
+            response_status = status.HTTP_503_SERVICE_UNAVAILABLE
+            title = "Serviço ainda não está pronto"
+            headers = {"Retry-After": "30"}
         elif isinstance(exception, PersistenceUnavailableError):
             response_status = status.HTTP_503_SERVICE_UNAVAILABLE
             title = "Dados temporariamente indisponíveis"

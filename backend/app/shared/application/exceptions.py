@@ -21,6 +21,13 @@ class PersistenceUnavailableError(ApplicationError):
         super().__init__("Os dados estão temporariamente indisponíveis.")
 
 
+class ServiceNotReadyError(ApplicationError):
+    code = "service_not_ready"
+
+    def __init__(self) -> None:
+        super().__init__("Uma dependência necessária está temporariamente indisponível.")
+
+
 class PersistenceRejectedError(ApplicationError):
     code = "persistence_rejected"
 

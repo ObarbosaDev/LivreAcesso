@@ -3,7 +3,6 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +14,7 @@ from backend.app.modules.identity.application.authentication import (
     UnavailableTokenVerifier,
 )
 from backend.app.modules.identity.infrastructure.supabase_jwt import SupabaseJWTVerifier
+from backend.app.modules.operations.presentation.routes import build_operations_router
 from backend.app.modules.students.presentation.routes import build_students_router
 from backend.app.shared.presentation.problem_details import (
     RequestIdMiddleware,
@@ -85,17 +85,9 @@ def create_app(
             "documentation": "/docs",
         }
 
-    @application.get("/health", tags=["Operacional"], summary="Verificar disponibilidade")
-    def health() -> dict[str, Any]:
-        """Confirma que o processo responde; dependências terão probes separados."""
-
-        return {
-            "status": "ok",
-            "service": current_settings.app_name,
-            "version": current_settings.version,
-            "environment": current_settings.environment,
-        }
-
+    application.include_router(
+        build_operations_router(current_settings, current_container.readiness_probe)
+    )
     application.include_router(
         build_students_router(current_container),
         prefix=current_settings.api_prefix,

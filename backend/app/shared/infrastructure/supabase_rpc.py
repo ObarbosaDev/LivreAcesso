@@ -35,7 +35,7 @@ class SupabaseTransportError(Exception):
 
 
 class SupabaseRPCGateway:
-    """Executa somente RPCs explícitas usando o JWT da pessoa autenticada."""
+    """Executa somente RPCs explícitas, autenticadas ou públicas e sem logs de payload."""
 
     def __init__(
         self,
@@ -68,21 +68,42 @@ class SupabaseRPCGateway:
         payload: dict[str, Any],
         context: RequestContext,
     ) -> Any:
-        """Chama uma função permitida e devolve somente JSON com tamanho limitado."""
-
-        if _FUNCTION_NAME.fullmatch(function_name) is None:
-            raise ValueError("Nome de função Supabase inválido.")
+        """Chama uma RPC protegida usando o JWT efêmero da requisição."""
 
         access_token: AccessToken = context.user.access_token
-        headers = {
+        headers = self._base_headers()
+        headers.update(
+            {
+                "Authorization": f"Bearer {access_token.reveal_for_authorization()}",
+                "X-Request-ID": str(context.request_id),
+            }
+        )
+        return await self._post(function_name, payload, headers)
+
+    async def call_public(self, function_name: str, payload: dict[str, Any]) -> Any:
+        """Chama RPC explicitamente pública sem inventar identidade de usuário."""
+
+        # Atualmente este caminho existe somente para health_check. Funções de
+        # negócio continuam exigindo RequestContext e falham pela permissão SQL.
+        return await self._post(function_name, payload, self._base_headers())
+
+    def _base_headers(self) -> dict[str, str]:
+        return {
             "apikey": self._publishable_key,
-            "Authorization": f"Bearer {access_token.reveal_for_authorization()}",
             "Accept": "application/json",
             "Content-Type": "application/json",
             "Accept-Profile": "public",
             "Content-Profile": "public",
-            "X-Request-ID": str(context.request_id),
         }
+
+    async def _post(
+        self,
+        function_name: str,
+        payload: dict[str, Any],
+        headers: dict[str, str],
+    ) -> Any:
+        if _FUNCTION_NAME.fullmatch(function_name) is None:
+            raise ValueError("Nome de função Supabase inválido.")
 
         try:
             response = await self._http_client.post(

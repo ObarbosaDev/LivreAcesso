@@ -3,6 +3,13 @@
 from dataclasses import dataclass
 
 from backend.app.core.config import Settings, get_settings
+from backend.app.modules.operations.application.health import (
+    LocalReadinessProbe,
+    ReadinessProbe,
+)
+from backend.app.modules.operations.infrastructure.supabase_health import (
+    SupabaseReadinessProbe,
+)
 from backend.app.modules.students.application.listeners import (
     StudentRegisteredAuditListener,
 )
@@ -41,6 +48,7 @@ class ApplicationContainer:
     """Mantém recursos globais e cria serviços seguros por requisição."""
 
     event_bus: EventBus
+    readiness_probe: ReadinessProbe
     in_memory_student_store: InMemoryStudentRepository | None
     supabase_gateway: SupabaseRPCGateway | None
 
@@ -99,13 +107,15 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         raise ValueError("Configure SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY em conjunto.")
 
     if current_settings.supabase_url and current_settings.supabase_publishable_key:
+        gateway = SupabaseRPCGateway(
+            current_settings.supabase_url,
+            current_settings.supabase_publishable_key,
+        )
         return ApplicationContainer(
             event_bus=event_bus,
+            readiness_probe=SupabaseReadinessProbe(gateway),
             in_memory_student_store=None,
-            supabase_gateway=SupabaseRPCGateway(
-                current_settings.supabase_url,
-                current_settings.supabase_publishable_key,
-            ),
+            supabase_gateway=gateway,
         )
 
     if current_settings.environment not in {"development", "test"}:
@@ -115,6 +125,7 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
 
     return ApplicationContainer(
         event_bus=event_bus,
+        readiness_probe=LocalReadinessProbe(),
         in_memory_student_store=InMemoryStudentRepository(),
         supabase_gateway=None,
     )
