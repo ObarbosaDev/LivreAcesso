@@ -186,4 +186,4 @@ As RPCs permitem lista mascarada, detalhe auditado, criação ou reutilização 
 35/35 guardian permission checks passed; lifecycle assertions passed; transaction rolled back
 ```
 
-Após o rollback, permaneceram uma coordenação ativa, zero alunos, zero responsáveis, zero vínculos, zero históricos e zero eventos. O deployment `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu` está Ready em `gru1`; o smoke JWT somente leitura é a última evidência pendente.
+Após o rollback, permaneceram uma coordenação ativa, zero alunos, zero responsáveis, zero vínculos, zero históricos e zero eventos. O deployment `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu` está Ready em `gru1`; o smoke JWT somente leitura confirmou Auth, JWKS, perfil ativo, nova RPC protegida e zero alunos sem persistir credenciais.

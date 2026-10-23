@@ -126,6 +126,17 @@ Também foram confirmados liveness, readiness, bloqueio 401 sem JWT, request ID,
 - readiness: `200`, persistência `up`;
 - rota de responsáveis sem JWT: `401`, `authentication_required`;
 - `X-Request-ID` e headers de segurança: presentes;
-- smoke somente leitura com JWT real: pendente.
+- smoke somente leitura com JWT real: aprovado.
+
+```text
+Auth: OK
+JWT/JWKS: OK
+FastAPI → RPC: OK
+Perfil: coordenador ativo
+Responsáveis: rota protegida OK
+Deploy: OK
+Alunos encontrados: 0
+Nenhuma credencial foi gravada ou exibida.
+```
 
 O GitHub continua desconectado da Vercel; o push não cria ou promove deployments automaticamente.

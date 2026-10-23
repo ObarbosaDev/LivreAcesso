@@ -68,4 +68,4 @@ A migration `20261022000700_guardian_management.sql` foi aplicada ao projeto de 
 
 A matriz `guardian_role_matrix.sql` aprovou 35/35 combinações e o ciclo completo de inclusão, edição, troca de principal, mascaramento e desvinculação. O rollback foi confirmado: zero alunos, zero responsáveis, zero vínculos, zero históricos e uma coordenação ativa.
 
-O deployment de produção `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu` está Ready em `gru1`; live, ready e bloqueio 401 da nova rota foram aprovados. O smoke final com JWT real permanece pendente antes de encerrar o bloco.
+O deployment de produção `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu` está Ready em `gru1`; live, ready e bloqueio 401 da nova rota foram aprovados. O smoke final com JWT real confirmou o perfil de coordenação ativo e a rota de responsáveis até o PostgREST, retornando `student_not_found` para o UUID sintético sem persistir dados ou credenciais.

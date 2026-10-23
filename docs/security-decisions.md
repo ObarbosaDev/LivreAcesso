@@ -109,4 +109,4 @@ A lista retorna telefone e e-mail mascarados. Detalhes integrais exigem coordena
 
 A RPC antiga que atualizava aluno e responsável com uma única versão perdeu acesso de `authenticated`. Nome e nascimento do aluno usam `expected_student_updated_at`; contato compartilhado usa também `expected_guardian_updated_at`, evitando que a edição feita para um irmão sobrescreva silenciosamente outra atualização.
 
-A matriz remota aprovou 35/35 permissões e o ciclo de principal único, mascaramento, histórico e desvinculação. O rollback deixou zero alunos, responsáveis, vínculos, históricos e eventos. A produção `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu` passou live, ready e bloqueio 401; resta somente o smoke com JWT real.
+A matriz remota aprovou 35/35 permissões e o ciclo de principal único, mascaramento, histórico e desvinculação. O rollback deixou zero alunos, responsáveis, vínculos, históricos e eventos. A produção `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu` passou live, ready e bloqueio 401. O smoke com JWT real confirmou Auth, JWKS, perfil de coordenação ativo, nova RPC protegida e zero alunos sem gravar credenciais.
