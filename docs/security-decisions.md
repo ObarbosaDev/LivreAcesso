@@ -55,7 +55,7 @@ Dados reais continuam proibidos até concluir:
 5. revisão final dos advisors;
 6. definição de backup e restauração.
 
-## Evidência de produção — 21 de outubro de 2026
+## Evidência de produção — 22 de outubro de 2026
 
 Projeto homologado estruturalmente: `LivreAcesso`, região `South America (São Paulo)`.
 
@@ -73,7 +73,7 @@ Verificações concluídas:
 
 A homologação funcional por papel ainda depende de contas sintéticas do Supabase Auth. Nenhum dado real deve entrar antes dessa matriz passar.
 
-## Matriz de autorização remota — 21 de outubro de 2026
+## Matriz de autorização remota — 22 de outubro de 2026
 
 O script `supabase/tests/role_matrix.sql` foi executado no projeto de São Paulo e concluiu `25/25 permission checks passed; transaction rolled back`.
 
@@ -87,13 +87,13 @@ Foram exercitadas as cinco RPCs de alunos como coordenação, recepção, consul
 
 A matriz valida autorização dentro do PostgreSQL com contexto JWT simulado. A etapa restante é autenticar pela API do Supabase e percorrer FastAPI → PostgREST com um JWT real.
 
-## Smoke autenticado de produção — 21 de outubro de 2026
+## Smoke autenticado de produção — 22 de outubro de 2026
 
 O fluxo completo Supabase Auth → JWT ES256 → FastAPI na Vercel → validação JWKS → RPC PostgREST foi homologado em `https://livre-acesso-api.vercel.app` com a única conta sintética de coordenação.
 
 O resultado confirmou autenticação, autorização, persistência disponível e zero alunos. Chave, senha e token permaneceram somente em memória e não foram exibidos ou gravados.
 
-## Matriz de perfis — 21 de outubro de 2026
+## Matriz de perfis — 22 de outubro de 2026
 
 A sexta migration foi aplicada e a matriz transacional de perfis concluiu 31/31 verificações. Foram testados perfil próprio, renomeação e quatro ações administrativas sob coordenação, recepção, consulta, instrutor e conta pendente/inativa.
 
