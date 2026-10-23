@@ -160,14 +160,22 @@ def test_supabase_sql_tests_have_valid_postgresql_syntax(sql_test: Path) -> None
     assert statements, f"O teste SQL {sql_test.name} não possui comandos."
 
 
-def test_role_matrix_always_rolls_back() -> None:
-    role_matrix = SUPABASE_TESTS_DIR / "role_matrix.sql"
-    sql = role_matrix.read_text(encoding="utf-8").strip().lower()
+@pytest.mark.parametrize("sql_test", SUPABASE_SQL_TESTS, ids=lambda path: path.name)
+def test_permission_matrices_always_roll_back(sql_test: Path) -> None:
+    sql = sql_test.read_text(encoding="utf-8").strip().lower()
 
     assert "\nbegin;" in sql
     assert "\nrollback;" in sql
     assert "\ncommit;" not in sql
-    assert "25/25 permission checks passed" in sql
+    assert "permission checks passed" in sql
+
+
+def test_permission_matrix_counts_are_explicit() -> None:
+    student_matrix = (SUPABASE_TESTS_DIR / "role_matrix.sql").read_text(encoding="utf-8")
+    profile_matrix = (SUPABASE_TESTS_DIR / "profile_role_matrix.sql").read_text(encoding="utf-8")
+
+    assert "25/25 permission checks passed" in student_matrix
+    assert "31/31 profile permission checks passed" in profile_matrix
 
 
 def test_health_check_is_public_constant_and_security_invoker() -> None:
@@ -179,3 +187,53 @@ def test_health_check_is_public_constant_and_security_invoker() -> None:
     assert "grant execute on function public.health_check() to anon, authenticated" in sql
     assert "from public.students" not in sql
     assert "from public.profiles" not in sql
+
+
+def test_profile_management_protects_last_active_coordinator() -> None:
+    migration = MIGRATIONS_DIR / "20261021000600_profile_management.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "private.profile_access_history" in sql
+    assert "last_active_coordinator" in sql
+    assert "where role = 'coordinator' and active order by id for update" in sql
+    assert "p_expected_updated_at" in sql
+
+
+def test_my_profile_uses_invoker_and_excludes_auth_secrets() -> None:
+    migration = MIGRATIONS_DIR / "20261021000600_profile_management.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+    function_start = sql.index("function public.get_my_profile")
+    function_body = sql[function_start : function_start + 2_000]
+
+    assert "security invoker" in function_body
+    assert "auth.uid()" in function_body
+    assert "encrypted_password" not in sql
+    assert "raw_user_meta_data" not in sql
+    assert "service_role" not in sql
+
+
+def test_profile_admin_rpcs_have_role_checks_and_no_anon_grants() -> None:
+    migration = MIGRATIONS_DIR / "20261021000600_profile_management.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    for function_name in (
+        "get_profile_detail",
+        "list_profiles",
+        "change_profile_role",
+        "change_profile_activation",
+    ):
+        function_start = sql.index(f"function public.{function_name}")
+        function_body = sql[function_start : function_start + 13_000]
+        assert "security definer" in function_body
+        assert "private.has_any_role" in function_body
+
+    assert "from public, anon" in sql
+    assert "grant execute on function public.list_profiles" in sql
+
+
+def test_pending_profile_cannot_be_active_in_database() -> None:
+    migration = MIGRATIONS_DIR / "20261021000600_profile_management.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "constraint profiles_pending_inactive" in sql
+    assert "role <> 'pending' or not active" in sql
