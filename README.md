@@ -131,7 +131,7 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Persistência da API | **Disponível** | Gateway HTTP e adaptador de alunos usam RPCs com o JWT da requisição. |
 | Autenticação | **Disponível** | Bearer JWT/JWKS homologado com conta real do Supabase Auth. |
 | Deploy do backend | **Disponível** | Produção em `gru1`, readiness e smoke autenticado aprovados. |
-| Autorização operacional | **Disponível** | Perfis, capacidades e proteção do último coordenador implementados localmente. |
+| Autorização operacional | **Disponível** | Matriz remota de perfis 31/31 aprovada; smoke HTTP final pendente. |
 | Turmas e matrículas | **Planejado** | Modelo definido arquiteturalmente. |
 | Chamada e alertas | **Planejado** | Regra depende de validação com a instituição. |
 | Lista de espera | **Planejado** | Critérios operacionais e jurídicos pendentes. |
@@ -628,7 +628,7 @@ Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra 
 - [x] schema inicial, constraints, auditoria e outbox;
 - [x] autenticação Bearer e validação local de JWT por JWKS;
 - [x] implementar o gateway e o adaptador Supabase na API;
-- [x] aplicar e validar as cinco migrations no projeto Supabase de São Paulo;
+- [x] aplicar e validar as seis migrations no projeto Supabase de São Paulo;
 - [x] executar matriz SQL de 25 permissões com rollback;
 - [x] validar FastAPI e PostgREST com JWT real;
 - [x] publicar e validar Preview do FastAPI em `gru1`;
