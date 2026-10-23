@@ -18,6 +18,16 @@ from backend.app.modules.identity.application.authentication import (
     AuthenticationError,
     AuthenticationUnavailableError,
 )
+from backend.app.modules.identity.domain.exceptions import (
+    InvalidAccessChangeReasonError,
+    InvalidProfileDataError,
+    InvalidProfileRoleError,
+    LastActiveCoordinatorError,
+    ProfileDomainError,
+    ProfileNotFoundError,
+    ProfileRoleRequiredError,
+    ProfileVersionConflictError,
+)
 from backend.app.modules.students.domain.exceptions import (
     DuplicateCPFError,
     InvalidCPFError,
@@ -225,6 +235,50 @@ def install_problem_handlers(application: FastAPI) -> None:
             detail=str(exception),
             code=exception.code,
             headers=headers,
+        )
+
+    @application.exception_handler(ProfileDomainError)
+    async def handle_profile_domain_error(
+        request: Request,
+        exception: ProfileDomainError,
+    ) -> JSONResponse:
+        if isinstance(exception, ProfileNotFoundError):
+            return _problem_response(
+                request,
+                response_status=status.HTTP_404_NOT_FOUND,
+                title="Perfil não encontrado",
+                detail=str(exception),
+                code=exception.code,
+            )
+        if isinstance(exception, (ProfileVersionConflictError, LastActiveCoordinatorError)):
+            title = (
+                "Perfil alterado por outra pessoa"
+                if isinstance(exception, ProfileVersionConflictError)
+                else "Último coordenador ativo"
+            )
+            return _problem_response(
+                request,
+                response_status=status.HTTP_409_CONFLICT,
+                title=title,
+                detail=str(exception),
+                code=exception.code,
+            )
+
+        if isinstance(exception, InvalidAccessChangeReasonError):
+            field = "reason"
+        elif isinstance(exception, (InvalidProfileRoleError, ProfileRoleRequiredError)):
+            field = "role"
+        elif isinstance(exception, InvalidProfileDataError):
+            field = "full_name"
+        else:
+            field = "request"
+        return _problem_response(
+            request,
+            response_status=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            title="Dados do perfil inválidos",
+            detail=str(exception),
+            code=exception.code,
+            errors=[FieldProblem(field=field, code=exception.code, message=str(exception))],
         )
 
     @application.exception_handler(StudentDomainError)
