@@ -31,27 +31,21 @@ def student() -> Student:
 def test_update_reports_fields_without_personal_values() -> None:
     current = student()
     original_cpf = current.cpf
-    updated_guardian = Guardian(
-        id=current.guardian.id,
-        full_name="Camila Ramos da Silva",
-        phone=Phone("61988881234"),
-        email="nova@example.com",
-    )
+    original_guardian = current.guardian
 
     changed_fields = current.update_personal_data(
         full_name="Sophia Almeida Ramos da Silva",
         birth_date=date(2015, 5, 10),
-        guardian=updated_guardian,
     )
     events = current.pull_events()
 
-    assert changed_fields == ("full_name", "guardian")
+    assert changed_fields == ("full_name",)
     assert current.cpf == original_cpf
+    assert current.guardian == original_guardian
     assert len(events) == 1
     assert isinstance(events[0], StudentUpdated)
     assert events[0].changed_fields == changed_fields
     assert "Sophia" not in repr(events[0])
-    assert "61988881234" not in repr(events[0])
 
 
 def test_unchanged_profile_emits_no_event() -> None:
@@ -60,7 +54,6 @@ def test_unchanged_profile_emits_no_event() -> None:
     changed_fields = current.update_personal_data(
         full_name=current.full_name,
         birth_date=current.birth_date,
-        guardian=current.guardian,
     )
 
     assert changed_fields == ()

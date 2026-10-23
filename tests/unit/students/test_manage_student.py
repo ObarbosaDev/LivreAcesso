@@ -75,17 +75,13 @@ def test_update_changes_version_and_publishes_safe_event() -> None:
                 expected_updated_at=created.updated_at,
                 full_name="Sophia Almeida Ramos da Silva",
                 birth_date=date(2015, 5, 10),
-                guardian=GuardianInput(
-                    full_name="Camila Ramos",
-                    phone="61988881234",
-                    email="camila@example.com",
-                ),
             ),
         )
 
         assert detail.full_name == "Sophia Almeida Ramos da Silva"
+        assert detail.guardian.phone == "61999991234"
         assert detail.updated_at > created.updated_at
-        assert recorded[0].changed_fields == ("full_name", "guardian")
+        assert recorded[0].changed_fields == ("full_name",)
 
     asyncio.run(scenario())
 
@@ -103,10 +99,6 @@ def test_stale_update_is_rejected() -> None:
                     expected_updated_at=stale_version,
                     full_name="Outro Nome",
                     birth_date=date(2015, 5, 10),
-                    guardian=GuardianInput(
-                        full_name="Camila Ramos",
-                        phone="61999991234",
-                    ),
                 ),
             )
 
