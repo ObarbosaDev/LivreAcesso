@@ -61,7 +61,7 @@ Projeto homologado estruturalmente: `LivreAcesso`, região `South America (São 
 
 Verificações concluídas:
 
-- seis migrations locais e remotas sincronizadas;
+- sete migrations locais e remotas sincronizadas;
 - tabelas públicas com RLS ativo;
 - tabelas pessoais sem grants diretos para `anon` ou `authenticated`;
 - RPC de cadastro antiga sem permissão externa;
@@ -100,3 +100,13 @@ A sexta migration foi aplicada e a matriz transacional de perfis concluiu 31/31 
 O rollback foi confirmado: uma coordenação ativa, nenhum outro estado, histórico de acesso vazio e zero alunos. Os advisors permaneceram sem problemas de desempenho e sem erros críticos de segurança.
 
 O build aprovado foi promovido como `dpl_ENayE7orgDcD4c63coUcYDqZjcQH` em `gru1`. A produção respondeu live e ready, bloqueou `/me` sem JWT e retornou o perfil correto no smoke autenticado.
+
+## Responsáveis múltiplos — 22 de outubro de 2026
+
+A sétima migration mantém `students`, `guardians` e `student_guardians` sem grants diretos para papéis clientes. As novas RPCs usam `security definer`, `search_path = ''` e verificação interna de coordenação, recepção ou consulta conforme a finalidade.
+
+A lista retorna telefone e e-mail mascarados. Detalhes integrais exigem coordenação ou recepção e geram `guardian.sensitive_viewed`. Alterações gravam somente IDs, ação e nomes de campos na auditoria/outbox; a justificativa de desvinculação permanece exclusivamente em `private.guardian_change_history`.
+
+A RPC antiga que atualizava aluno e responsável com uma única versão perdeu acesso de `authenticated`. Nome e nascimento do aluno usam `expected_student_updated_at`; contato compartilhado usa também `expected_guardian_updated_at`, evitando que a edição feita para um irmão sobrescreva silenciosamente outra atualização.
+
+A matriz remota aprovou 35/35 permissões e o ciclo de principal único, mascaramento, histórico e desvinculação. O rollback deixou zero alunos, responsáveis, vínculos, históricos e eventos. A produção `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu` passou live, ready e bloqueio 401; resta somente o smoke com JWT real.

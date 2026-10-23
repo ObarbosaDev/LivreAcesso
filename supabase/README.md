@@ -31,7 +31,7 @@ Este diretório contém somente artefatos versionáveis do banco. Credenciais, t
 `migrations/20261021000200_student_management.sql` acrescenta:
 
 - detalhe sensível restrito e auditado;
-- atualização conjunta de aluno e responsável principal;
+- atualização transacional inicial de aluno e responsável principal, substituída no BL-03 por versões independentes;
 - concorrência otimista usando `updated_at`;
 - histórico protegido de ativação e desativação;
 - motivo obrigatório sem cópia para eventos ou logs;
@@ -112,7 +112,7 @@ Sem `SUPABASE_URL`, o backend usa um verificador que falha fechado com `503`. Is
 
 ### Estado remoto
 
-As seis migrations foram aplicadas ao projeto `LivreAcesso` em São Paulo. A inspeção confirmou RLS nas tabelas públicas, ausência de grants diretos nas tabelas pessoais, JWKS `ES256`, advisor de desempenho sem problemas e advisor de segurança sem erros críticos. Permanecem somente uma conta sintética de coordenação ativa, zero alunos e nenhum histórico criado pelos testes.
+As sete migrations foram aplicadas ao projeto `LivreAcesso` em São Paulo. A inspeção confirmou RLS nas tabelas públicas, ausência de grants diretos nas tabelas pessoais, JWKS `ES256` e sete RPCs do BL-03 restritas a `authenticated`. Permanecem somente uma conta sintética de coordenação ativa, zero alunos e nenhum histórico criado pelos testes.
 
 ## Matriz de papéis
 
@@ -141,7 +141,7 @@ O comando solicita interativamente:
 3. e-mail da conta sintética;
 4. senha da conta sintética em prompt oculto.
 
-Nada é gravado em arquivo e nenhum token é exibido. O verificador autentica no Supabase Auth e percorre JWT/JWKS → FastAPI → `/me` e RPC de listagem. Quando `BACKEND_BASE_URL` é informado, o mesmo token valida também o deployment publicado. A operação é somente leitura.
+Nada é gravado em arquivo e nenhum token é exibido. O verificador autentica no Supabase Auth e percorre JWT/JWKS → FastAPI → `/me`, listagem e rota de responsáveis. Esta última usa um UUID inexistente e exige `404 student_not_found`, provando a nova RPC sem persistir dados. Quando `BACKEND_BASE_URL` é informado, o mesmo token valida também o deployment publicado. A operação é somente leitura.
 
 ### Falha de autenticação no verificador
 
@@ -171,3 +171,19 @@ A criação de contas permanece no Supabase Auth. O backend administra somente p
 `tests/profile_role_matrix.sql` foi executado em produção e aprovou 31/31 combinações. A transação foi revertida; a conta permaneceu coordenadora ativa e `profile_access_history` continuou vazio.
 
 O smoke final no deployment `dpl_ENayE7orgDcD4c63coUcYDqZjcQH` confirmou Auth, JWT/JWKS, FastAPI → RPC, `/me` como coordenação ativa, persistência disponível e zero alunos. Nenhuma credencial foi gravada ou exibida.
+
+## Sétima migration
+
+`migrations/20261022000700_guardian_management.sql` separa a edição do aluno da edição do contato e completa a relação muitos-para-muitos. Ela adiciona vínculo ativo/inativo, principal único por constraint diferida, histórico privado e versões independentes do aluno e do responsável.
+
+As RPCs permitem lista mascarada, detalhe auditado, criação ou reutilização de contato, edição, troca de principal e desvinculação lógica. A antiga `update_student_with_guardian` perdeu permissão externa para impedir sobrescrita de um contato compartilhado usando somente a versão de um aluno.
+
+### Matriz de responsáveis
+
+`tests/guardian_role_matrix.sql` aprovou 35/35 combinações de coordenação, recepção, consulta, instrutor e perfil pendente/inativo. O ciclo adicional validou inclusão, edição, troca de principal, mascaramento, histórico e desvinculação.
+
+```text
+35/35 guardian permission checks passed; lifecycle assertions passed; transaction rolled back
+```
+
+Após o rollback, permaneceram uma coordenação ativa, zero alunos, zero responsáveis, zero vínculos, zero históricos e zero eventos. O deployment `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu` está Ready em `gru1`; o smoke JWT somente leitura é a última evidência pendente.

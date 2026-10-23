@@ -98,9 +98,9 @@ Se o deploy falhar:
 
 Produção: <https://livre-acesso-api.vercel.app>
 
-Deployment ativo: `dpl_ENayE7orgDcD4c63coUcYDqZjcQH`.
+Deployment ativo: `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu`.
 
-Validação final concluída:
+Validação autenticada do BL-02 concluída:
 
 ```text
 Auth: OK
@@ -113,3 +113,19 @@ Nenhuma credencial foi gravada ou exibida.
 ```
 
 Também foram confirmados liveness, readiness, bloqueio 401 sem JWT, request ID, headers de segurança, Python 3.12, função FastAPI de 15,18 MB e execução em `gru1`.
+
+## Evidência de produção do BL-03
+
+- migration: `20261022000700_guardian_management.sql` aplicada;
+- matriz remota: 35/35 permissões e ciclo completo, com rollback;
+- Preview: `dpl_87K9vsQWhHkmW8LAZuaBrrBG1M8i`;
+- produção: `dpl_8Lgdnu3EGQFwCV74FePscWCCtGiu`;
+- função: `fastapi`, 15,26 MB;
+- região: `gru1`;
+- liveness: `200`, estado `alive`;
+- readiness: `200`, persistência `up`;
+- rota de responsáveis sem JWT: `401`, `authentication_required`;
+- `X-Request-ID` e headers de segurança: presentes;
+- smoke somente leitura com JWT real: pendente.
+
+O GitHub continua desconectado da Vercel; o push não cria ou promove deployments automaticamente.
