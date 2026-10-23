@@ -63,7 +63,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 
 ### BL-02 — Usuários, papéis e bloqueios
 
-> **EM ANDAMENTO** · Prioridade **P1** · Matheus · Implementação local concluída
+> **EM ANDAMENTO** · Prioridade **P1** · Matheus · Matriz 31/31 e Preview aprovados
 
 - **Fazer:** `/me`, listagem de perfis, ativação/desativação e troca de papel.
 - **Como:** RPCs auditadas, paginação, motivo obrigatório e proteção do último coordenador ativo.
