@@ -121,13 +121,14 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Fundação FastAPI | **Disponível** | Fábrica da aplicação, configuração e endpoint `/health`. |
 | Cadastro de aluno | **Disponível** | `POST /api/v1/students`. |
 | Gestão cadastral | **Disponível** | Detalhe, edição versionada, ativação e desativação lógica. |
+| Responsáveis múltiplos | **Disponível** | Seis rotas, principal único, matriz 35/35 e produção; smoke JWT final pendente. |
 | Listagem e filtros | **Disponível** | `GET /api/v1/students` por status cadastral. |
 | CPF e telefone | **Disponível** | Normalização, validação, unicidade e mascaramento. |
 | DTO, mapper e caso de uso | **Disponível** | Camadas separadas no módulo `students`. |
 | Erros e rastreabilidade | **Disponível** | Problem Details, erros por campo e `X-Request-ID`. |
 | Eventos e listener | **Disponível** | `StudentRegistered` e auditoria sem PII. |
 | Testes automatizados | **Disponível** | Unidade, integração e guardas arquiteturais executadas localmente. |
-| Schema Supabase | **Disponível** | Seis migrations aplicadas e verificadas no projeto de São Paulo. |
+| Schema Supabase | **Disponível** | Sete migrations aplicadas e verificadas no projeto de São Paulo. |
 | Persistência da API | **Disponível** | Gateway HTTP e adaptador de alunos usam RPCs com o JWT da requisição. |
 | Autenticação | **Disponível** | Bearer JWT/JWKS homologado com conta real do Supabase Auth. |
 | Deploy do backend | **Disponível** | Produção em `gru1`, readiness e smoke autenticado aprovados. |
@@ -303,7 +304,7 @@ Execute o cadastro duas vezes. A segunda tentativa retorna HTTP `409`:
 
 ### Encerrar a API
 
-No terminal em que a aplicação está rodando, pressione `Ctrl+C`. Como a persistência atual é em memória, os registros dessa execução serão descartados.
+No terminal em que a aplicação está rodando, pressione `Ctrl+C`. Somente o modo local sem Supabase usa persistência em memória e descarta os registros dessa execução.
 
 ## Como será o uso pela instituição
 
@@ -628,12 +629,15 @@ Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra 
 - [x] schema inicial, constraints, auditoria e outbox;
 - [x] autenticação Bearer e validação local de JWT por JWKS;
 - [x] implementar o gateway e o adaptador Supabase na API;
-- [x] aplicar e validar as seis migrations no projeto Supabase de São Paulo;
+- [x] aplicar e validar as sete migrations no projeto Supabase de São Paulo;
 - [x] executar matriz SQL de 25 permissões com rollback;
 - [x] validar FastAPI e PostgREST com JWT real;
 - [x] publicar e validar Preview do FastAPI em `gru1`;
 - [x] promover o backend para produção e repetir o smoke test;
 - [x] CRUD seguro de alunos e responsável principal;
+- [x] múltiplos responsáveis, parentesco e contato compartilhado entre irmãos;
+- [x] principal único, desvinculação lógica e histórico privado;
+- [x] matriz SQL de responsáveis 35/35 com rollback;
 - [x] detalhe sensível auditado e CPF imutável no fluxo comum;
 - [x] atualização com concorrência otimista;
 - [x] ativação/desativação lógica com motivo protegido;
@@ -806,6 +810,7 @@ O projeto está alinhado principalmente a:
 | [`docs/backend-task-plan.md`](docs/backend-task-plan.md) | Fonte atualizável dos 10 blocos de trabalho do backend. |
 | [`docs/deployment.md`](docs/deployment.md) | Deploy do FastAPI na Vercel, variáveis, smoke e rollback. |
 | [`docs/profile-management.md`](docs/profile-management.md) | Ciclo de acesso, papéis, capacidades e proteção administrativa. |
+| [`docs/guardian-management.md`](docs/guardian-management.md) | Responsáveis múltiplos, parentesco, privacidade, versões e endpoints. |
 | [`docs/LivreAcesso-Plano-Tarefas-Backend.pdf`](docs/LivreAcesso-Plano-Tarefas-Backend.pdf) | PDF de cinco páginas para distribuição à equipe. |
 | [`docs/security-decisions.md`](docs/security-decisions.md) | Decisões, exceções conhecidas e controles compensatórios de segurança. |
 | [`docs/domain-glossary.md`](docs/domain-glossary.md) | Linguagem comum, conceitos e regras pendentes do negócio. |
