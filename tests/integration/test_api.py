@@ -194,7 +194,7 @@ def test_invalid_cpf_points_to_the_field_without_echoing_value() -> None:
     assert response.status_code == 422
     assert response.json()["code"] == "invalid_cpf"
     assert response.json()["errors"][0]["field"] == "cpf"
-    assert payload["cpf"] not in serialized_response
+    assert str(payload["cpf"]) not in serialized_response
 
 
 def test_unexpected_error_hides_exception_content(
@@ -562,3 +562,128 @@ def test_primary_guardian_and_ambiguous_source_return_accessible_errors() -> Non
     assert primary_unlink.json()["code"] == "primary_guardian_required"
     assert ambiguous.status_code == 422
     assert ambiguous.json()["code"] == "validation_error"
+
+
+def class_payload(modality_id: str, instructor_id: str) -> dict[str, object]:
+    return {
+        "modality_id": modality_id,
+        "name": "Turma Infantil A",
+        "capacity": 20,
+        "location": "Sala 1",
+        "minimum_age": 7,
+        "maximum_age": 12,
+        "schedules": [
+            {"weekday": "segunda", "starts_at": "14:00", "ends_at": "15:00"},
+            {"weekday": "quarta", "starts_at": "14:00", "ends_at": "15:00"},
+        ],
+        "instructor_ids": [instructor_id],
+    }
+
+
+def test_coordinator_manages_versioned_modalities_and_classes() -> None:
+    application = build_application()
+    instructor = seed_profile(
+        application,
+        full_name="Instrutora Ana Silva",
+        role=UserRole.INSTRUCTOR,
+        active=True,
+    )
+
+    with TestClient(
+        application,
+        headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+    ) as client:
+        modality = client.post(
+            "/api/v1/modalities",
+            json={"name": "Capoeira", "description": "Atividade corporal e cultural"},
+        )
+        created_class = client.post(
+            "/api/v1/classes",
+            json=class_payload(modality.json()["id"], str(instructor.id)),
+        )
+        listed = client.get("/api/v1/classes?query=infantil&active=true")
+        updated_payload = class_payload(modality.json()["id"], str(instructor.id))
+        updated_payload.update(
+            {
+                "expected_updated_at": created_class.json()["updated_at"],
+                "capacity": 24,
+                "location": "Quadra coberta",
+            }
+        )
+        updated = client.put(
+            f"/api/v1/classes/{created_class.json()['id']}",
+            json=updated_payload,
+        )
+        blocked_modality = client.post(
+            f"/api/v1/modalities/{modality.json()['id']}/deactivate",
+            json={
+                "expected_updated_at": modality.json()["updated_at"],
+                "reason": "Reorganização confirmada pela coordenação",
+            },
+        )
+        inactive_class = client.post(
+            f"/api/v1/classes/{created_class.json()['id']}/deactivate",
+            json={
+                "expected_updated_at": updated.json()["updated_at"],
+                "reason": "Pausa confirmada pela coordenação responsável",
+            },
+        )
+        inactive_modality = client.post(
+            f"/api/v1/modalities/{modality.json()['id']}/deactivate",
+            json={
+                "expected_updated_at": modality.json()["updated_at"],
+                "reason": "Reorganização confirmada pela coordenação",
+            },
+        )
+
+    assert modality.status_code == 201
+    assert created_class.status_code == 201
+    assert created_class.json()["schedules"][0]["weekday"] == "segunda"
+    assert created_class.json()["instructors"][0]["id"] == str(instructor.id)
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 1
+    assert updated.status_code == 200
+    assert updated.json()["capacity"] == 24
+    assert blocked_modality.status_code == 409
+    assert blocked_modality.json()["code"] == "active_classes_exist"
+    assert inactive_class.status_code == 200
+    assert inactive_class.json()["active"] is False
+    assert inactive_modality.status_code == 200
+    assert inactive_modality.json()["active"] is False
+
+
+def test_class_validation_and_permissions_return_accessible_problems() -> None:
+    coordinator_app = build_application()
+    instructor = seed_profile(
+        coordinator_app,
+        full_name="Instrutora Ana Silva",
+        role=UserRole.INSTRUCTOR,
+        active=True,
+    )
+
+    with TestClient(
+        coordinator_app,
+        headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+    ) as client:
+        modality = client.post("/api/v1/modalities", json={"name": "Capoeira"}).json()
+        invalid_payload = class_payload(modality["id"], str(instructor.id))
+        invalid_payload["schedules"] = [
+            {"weekday": "segunda", "starts_at": "14:00", "ends_at": "15:30"},
+            {"weekday": "segunda", "starts_at": "15:00", "ends_at": "16:00"},
+        ]
+        invalid = client.post("/api/v1/classes", json=invalid_payload)
+
+    receptionist_app = build_application(role=UserRole.RECEPTIONIST)
+    with TestClient(
+        receptionist_app,
+        headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+    ) as client:
+        denied = client.post("/api/v1/modalities", json={"name": "Capoeira"})
+        allowed_list = client.get("/api/v1/classes")
+
+    assert invalid.status_code == 422
+    assert invalid.json()["code"] == "invalid_class_schedule"
+    assert invalid.json()["errors"][0]["field"] == "schedules"
+    assert denied.status_code == 403
+    assert denied.json()["code"] == "permission_denied"
+    assert allowed_list.status_code == 200
