@@ -86,3 +86,9 @@ Foram exercitadas as cinco RPCs de alunos como coordenação, recepção, consul
 - zero eventos na outbox.
 
 A matriz valida autorização dentro do PostgreSQL com contexto JWT simulado. A etapa restante é autenticar pela API do Supabase e percorrer FastAPI → PostgREST com um JWT real.
+
+## Smoke autenticado de produção — 22 de outubro de 2026
+
+O fluxo completo Supabase Auth → JWT ES256 → FastAPI na Vercel → validação JWKS → RPC PostgREST foi homologado em `https://livre-acesso-api.vercel.app` com a única conta sintética de coordenação.
+
+O resultado confirmou autenticação, autorização, persistência disponível e zero alunos. Chave, senha e token permaneceram somente em memória e não foram exibidos ou gravados.

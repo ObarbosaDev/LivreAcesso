@@ -92,3 +92,20 @@ Se o deploy falhar:
 - `X-Request-ID` e headers de segurança: presentes;
 - deploy automático do GitHub: desconectado;
 - promoção para produção: pendente de revisão final.
+
+## Evidência de produção
+
+Produção: <https://livre-acesso-api.vercel.app>
+
+Validação final concluída:
+
+```text
+Auth: OK
+JWT/JWKS: OK
+FastAPI → RPC: OK
+Deploy: OK
+Alunos encontrados: 0
+Nenhuma credencial foi gravada ou exibida.
+```
+
+Também foram confirmados liveness, readiness, bloqueio 401 sem JWT, request ID, headers de segurança, Python 3.12, função FastAPI de 15,03 MB e execução em `gru1`.
