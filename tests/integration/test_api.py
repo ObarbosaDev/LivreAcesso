@@ -268,11 +268,6 @@ def test_manage_student_lifecycle_without_exposing_cpf() -> None:
                 "expected_updated_at": created["updated_at"],
                 "full_name": "Sophia Almeida Ramos da Silva",
                 "birth_date": "2015-05-10",
-                "guardian": {
-                    "full_name": "Camila Ramos",
-                    "phone": "(61) 98888-1234",
-                    "email": "camila@example.com",
-                },
             },
         )
         inactive = client.post(
@@ -297,7 +292,7 @@ def test_manage_student_lifecycle_without_exposing_cpf() -> None:
 
     assert updated.status_code == 200
     assert updated.json()["full_name"] == "Sophia Almeida Ramos da Silva"
-    assert updated.json()["guardian"]["phone"] == "61988881234"
+    assert updated.json()["guardian"]["phone"] == "61999991234"
     assert updated.json()["updated_at"] != created["updated_at"]
 
     assert inactive.status_code == 200
@@ -314,10 +309,6 @@ def test_stale_student_update_returns_conflict() -> None:
             "expected_updated_at": created["updated_at"],
             "full_name": "Sophia Almeida Atualizada",
             "birth_date": "2015-05-10",
-            "guardian": {
-                "full_name": "Camila Ramos",
-                "phone": "61999991234",
-            },
         }
         first_update = client.put(f"/api/v1/students/{created['id']}", json=payload)
         stale_update = client.put(f"/api/v1/students/{created['id']}", json=payload)
@@ -481,3 +472,93 @@ def test_last_active_coordinator_cannot_be_deactivated() -> None:
 
     assert response.status_code == 409
     assert response.json()["code"] == "last_active_coordinator"
+
+
+def test_manage_multiple_guardians_with_masking_and_versions() -> None:
+    with build_client() as client:
+        created = client.post("/api/v1/students", json=student_payload()).json()
+        student_id = created["id"]
+        initial_list = client.get(f"/api/v1/students/{student_id}/guardians")
+        initial_guardian_id = initial_list.json()["items"][0]["id"]
+
+        added = client.post(
+            f"/api/v1/students/{student_id}/guardians",
+            json={
+                "expected_student_updated_at": initial_list.json()["student_updated_at"],
+                "relationship": "responsavel_legal",
+                "receives_communications": True,
+                "guardian": {
+                    "full_name": "Roberto Almeida",
+                    "phone": "(61) 98888-1234",
+                    "email": "roberto@example.com",
+                },
+            },
+        )
+        guardian_id = added.json()["id"]
+        updated = client.put(
+            f"/api/v1/students/{student_id}/guardians/{guardian_id}",
+            json={
+                "expected_student_updated_at": added.json()["student_updated_at"],
+                "expected_guardian_updated_at": added.json()["guardian_updated_at"],
+                "full_name": "Roberto Almeida Silva",
+                "phone": "(61) 97777-4321",
+                "email": "roberto.silva@example.com",
+                "relationship": "pai_ou_mae",
+                "receives_communications": True,
+            },
+        )
+        promoted = client.post(
+            f"/api/v1/students/{student_id}/guardians/{guardian_id}/primary",
+            json={"expected_student_updated_at": updated.json()["student_updated_at"]},
+        )
+        unlinked = client.post(
+            f"/api/v1/students/{student_id}/guardians/{initial_guardian_id}/unlink",
+            json={
+                "expected_student_updated_at": promoted.json()["student_updated_at"],
+                "reason": "Vínculo anterior confirmado como incorreto",
+            },
+        )
+        final_list = client.get(f"/api/v1/students/{student_id}/guardians")
+        detail = client.get(f"/api/v1/students/{student_id}/guardians/{guardian_id}")
+
+    assert initial_list.status_code == 200
+    assert initial_list.json()["items"][0]["phone_masked"] == "(61) *****-1234"
+    assert "61999991234" not in initial_list.text
+    assert added.status_code == 201
+    assert updated.status_code == 200
+    assert updated.json()["relationship"] == "pai_ou_mae"
+    assert promoted.status_code == 200
+    assert promoted.json()["is_primary"] is True
+    assert unlinked.status_code == 200
+    assert final_list.json()["student_updated_at"] == unlinked.json()["student_updated_at"]
+    assert [item["id"] for item in final_list.json()["items"]] == [guardian_id]
+    assert detail.status_code == 200
+    assert detail.json()["phone"] == "61977774321"
+
+
+def test_primary_guardian_and_ambiguous_source_return_accessible_errors() -> None:
+    with build_client() as client:
+        created = client.post("/api/v1/students", json=student_payload()).json()
+        student_id = created["id"]
+        listed = client.get(f"/api/v1/students/{student_id}/guardians").json()
+        primary_id = listed["items"][0]["id"]
+
+        primary_unlink = client.post(
+            f"/api/v1/students/{student_id}/guardians/{primary_id}/unlink",
+            json={
+                "expected_student_updated_at": listed["student_updated_at"],
+                "reason": "Contato não deve mais permanecer vinculado",
+            },
+        )
+        ambiguous = client.post(
+            f"/api/v1/students/{student_id}/guardians",
+            json={
+                "expected_student_updated_at": listed["student_updated_at"],
+                "relationship": "outro",
+            },
+        )
+
+    assert primary_unlink.status_code == 409
+    assert primary_unlink.json()["code"] == "primary_guardian_required"
+    assert ambiguous.status_code == 422
+    assert ambiguous.json()["code"] == "validation_error"
