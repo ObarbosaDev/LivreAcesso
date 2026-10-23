@@ -159,3 +159,9 @@ O corpo retornado pelo Supabase não é exibido, pois pode conter detalhes sobre
 ### Homologação concluída
 
 O caminho Auth → JWT/JWKS → FastAPI em produção → RPC foi aprovado com a conta sintética de coordenação. O banco continuou com zero alunos, e nenhuma credencial foi gravada ou exibida.
+
+## Sexta migration
+
+`migrations/20261021000600_profile_management.sql` cria gestão operacional de perfis: `/me`, nome próprio, listagem paginada, atribuição de papel e ativação/desativação. Ela adiciona histórico privado, concorrência por `updated_at`, constraint `pending ⇒ inativo` e proteção serializada do último coordenador ativo.
+
+A criação de contas permanece no Supabase Auth. O backend administra somente perfis já criados e não armazena senhas ou `service_role`.
