@@ -3,6 +3,15 @@
 from dataclasses import dataclass
 
 from backend.app.core.config import Settings, get_settings
+from backend.app.modules.identity.application.use_cases import (
+    ChangeProfileActivation,
+    ChangeProfileRole,
+    GetMyProfile,
+    ListProfiles,
+    UpdateMyProfile,
+)
+from backend.app.modules.identity.infrastructure.repositories import InMemoryProfileRepository
+from backend.app.modules.identity.infrastructure.supabase_profiles import SupabaseProfileRepository
 from backend.app.modules.operations.application.health import (
     LocalReadinessProbe,
     ReadinessProbe,
@@ -32,6 +41,18 @@ from backend.app.shared.infrastructure.supabase_rpc import SupabaseRPCGateway
 
 
 @dataclass(frozen=True, slots=True)
+class IdentityServices:
+    """Casos de uso de perfil vinculados à identidade atual."""
+
+    get_my_profile: GetMyProfile
+    update_my_profile: UpdateMyProfile
+    list_profiles: ListProfiles
+    change_profile_role: ChangeProfileRole
+    activate_profile: ChangeProfileActivation
+    deactivate_profile: ChangeProfileActivation
+
+
+@dataclass(frozen=True, slots=True)
 class StudentServices:
     """Casos de uso vinculados ao armazenamento e à identidade da requisição."""
 
@@ -49,8 +70,32 @@ class ApplicationContainer:
 
     event_bus: EventBus
     readiness_probe: ReadinessProbe
+    in_memory_profile_store: InMemoryProfileRepository | None
     in_memory_student_store: InMemoryStudentRepository | None
     supabase_gateway: SupabaseRPCGateway | None
+
+    def identity_for(self, context: RequestContext) -> IdentityServices:
+        if self.supabase_gateway is not None:
+            store = SupabaseProfileRepository(self.supabase_gateway, context)
+            return self._identity_services(store, context)
+        if self.in_memory_profile_store is None:
+            raise RuntimeError("O container não possui armazenamento de perfis.")
+        return self._identity_services(self.in_memory_profile_store, context)
+
+    def _identity_services(
+        self,
+        store: InMemoryProfileRepository | SupabaseProfileRepository,
+        context: RequestContext,
+    ) -> IdentityServices:
+        actor_id = context.user.user_id
+        return IdentityServices(
+            get_my_profile=GetMyProfile(store, actor_id),
+            update_my_profile=UpdateMyProfile(store, self.event_bus, actor_id),
+            list_profiles=ListProfiles(store, store, actor_id),
+            change_profile_role=ChangeProfileRole(store, self.event_bus, actor_id),
+            activate_profile=ChangeProfileActivation(store, self.event_bus, actor_id, True),
+            deactivate_profile=ChangeProfileActivation(store, self.event_bus, actor_id, False),
+        )
 
     def students_for(self, context: RequestContext) -> StudentServices:
         if self.supabase_gateway is not None:
@@ -114,6 +159,7 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         return ApplicationContainer(
             event_bus=event_bus,
             readiness_probe=SupabaseReadinessProbe(gateway),
+            in_memory_profile_store=None,
             in_memory_student_store=None,
             supabase_gateway=gateway,
         )
@@ -126,6 +172,7 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
     return ApplicationContainer(
         event_bus=event_bus,
         readiness_probe=LocalReadinessProbe(),
+        in_memory_profile_store=InMemoryProfileRepository(),
         in_memory_student_store=InMemoryStudentRepository(),
         supabase_gateway=None,
     )
