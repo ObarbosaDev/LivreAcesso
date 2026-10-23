@@ -168,3 +168,14 @@ def test_role_matrix_always_rolls_back() -> None:
     assert "\nrollback;" in sql
     assert "\ncommit;" not in sql
     assert "25/25 permission checks passed" in sql
+
+
+def test_health_check_is_public_constant_and_security_invoker() -> None:
+    migration = MIGRATIONS_DIR / "20261021000500_health_check.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "function public.health_check()" in sql
+    assert "security invoker" in sql
+    assert "grant execute on function public.health_check() to anon, authenticated" in sql
+    assert "from public.students" not in sql
+    assert "from public.profiles" not in sql
