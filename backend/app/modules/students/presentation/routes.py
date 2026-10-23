@@ -8,11 +8,18 @@ from fastapi import APIRouter, Depends, Query, status
 from backend.app.core.container import ApplicationContainer
 from backend.app.modules.identity.presentation.dependencies import require_request_context
 from backend.app.modules.students.application.dtos import (
+    AddStudentGuardianInput,
     ChangeStudentStatusInput,
     RegisterStudentInput,
+    SetPrimaryGuardianInput,
     StudentDetailOutput,
+    StudentGuardianDetailOutput,
+    StudentGuardianListOutput,
+    StudentGuardianUnlinkOutput,
     StudentOutput,
     StudentPageOutput,
+    UnlinkStudentGuardianInput,
+    UpdateStudentGuardianInput,
     UpdateStudentInput,
 )
 from backend.app.modules.students.domain.entities import StudentStatus
@@ -83,12 +90,150 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
         )
 
     @router.get(
+        "/{student_id}/guardians",
+        response_model=StudentGuardianListOutput,
+        summary="Listar responsáveis do aluno",
+        description=(
+            "Retorna somente contatos ativos com telefone e e-mail mascarados, "
+            "ordenando o responsável principal primeiro."
+        ),
+        responses={status.HTTP_404_NOT_FOUND: _PROBLEM_RESPONSE},
+    )
+    async def list_student_guardians(
+        student_id: UUID,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> StudentGuardianListOutput:
+        """Lista vínculos sem liberar contato integral ou histórico privado."""
+        return await container.students_for(context).list_guardians.execute(student_id)
+
+    @router.post(
+        "/{student_id}/guardians",
+        response_model=StudentGuardianDetailOutput,
+        status_code=status.HTTP_201_CREATED,
+        summary="Adicionar responsável ao aluno",
+        description=(
+            "Cria um contato ou reutiliza por UUID um responsável já cadastrado, "
+            "permitindo que irmãos compartilhem a mesma pessoa sem duplicação."
+        ),
+        responses={
+            status.HTTP_404_NOT_FOUND: _PROBLEM_RESPONSE,
+            status.HTTP_409_CONFLICT: _PROBLEM_RESPONSE,
+            status.HTTP_422_UNPROCESSABLE_CONTENT: _PROBLEM_RESPONSE,
+        },
+    )
+    async def add_student_guardian(
+        student_id: UUID,
+        payload: AddStudentGuardianInput,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> StudentGuardianDetailOutput:
+        """Inclui ou revincula um contato com concorrência otimista."""
+        return await container.students_for(context).add_guardian.execute(student_id, payload)
+
+    @router.get(
+        "/{student_id}/guardians/{guardian_id}",
+        response_model=StudentGuardianDetailOutput,
+        summary="Consultar responsável do aluno",
+        description=(
+            "Libera telefone e e-mail integrais para a rotina autorizada; "
+            "a leitura é registrada na auditoria do Supabase."
+        ),
+        responses={status.HTTP_404_NOT_FOUND: _PROBLEM_RESPONSE},
+    )
+    async def get_student_guardian(
+        student_id: UUID,
+        guardian_id: UUID,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> StudentGuardianDetailOutput:
+        """Obtém um contato integral sem expor CPF ou dados de outros vínculos."""
+        return await container.students_for(context).get_guardian.execute(
+            student_id,
+            guardian_id,
+        )
+
+    @router.put(
+        "/{student_id}/guardians/{guardian_id}",
+        response_model=StudentGuardianDetailOutput,
+        summary="Atualizar responsável do aluno",
+        description=(
+            "Atualiza o contato compartilhado e este vínculo somente quando as "
+            "versões do aluno e do responsável ainda são atuais."
+        ),
+        responses={
+            status.HTTP_404_NOT_FOUND: _PROBLEM_RESPONSE,
+            status.HTTP_409_CONFLICT: _PROBLEM_RESPONSE,
+            status.HTTP_422_UNPROCESSABLE_CONTENT: _PROBLEM_RESPONSE,
+        },
+    )
+    async def update_student_guardian(
+        student_id: UUID,
+        guardian_id: UUID,
+        payload: UpdateStudentGuardianInput,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> StudentGuardianDetailOutput:
+        """Evita perda de edição tanto no agregado quanto no contato compartilhado."""
+        return await container.students_for(context).update_guardian.execute(
+            student_id,
+            guardian_id,
+            payload,
+        )
+
+    @router.post(
+        "/{student_id}/guardians/{guardian_id}/primary",
+        response_model=StudentGuardianDetailOutput,
+        summary="Definir responsável principal",
+        description="Promove um vínculo ativo e rebaixa o principal anterior na mesma transação.",
+        responses={
+            status.HTTP_404_NOT_FOUND: _PROBLEM_RESPONSE,
+            status.HTTP_409_CONFLICT: _PROBLEM_RESPONSE,
+        },
+    )
+    async def set_primary_student_guardian(
+        student_id: UUID,
+        guardian_id: UUID,
+        payload: SetPrimaryGuardianInput,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> StudentGuardianDetailOutput:
+        """Mantém exatamente um contato principal para identificação rápida."""
+        return await container.students_for(context).set_primary_guardian.execute(
+            student_id,
+            guardian_id,
+            payload,
+        )
+
+    @router.post(
+        "/{student_id}/guardians/{guardian_id}/unlink",
+        response_model=StudentGuardianUnlinkOutput,
+        summary="Desvincular responsável do aluno",
+        description=(
+            "Desativa um vínculo não principal com motivo obrigatório. "
+            "Responsável e histórico não são excluídos fisicamente."
+        ),
+        responses={
+            status.HTTP_404_NOT_FOUND: _PROBLEM_RESPONSE,
+            status.HTTP_409_CONFLICT: _PROBLEM_RESPONSE,
+            status.HTTP_422_UNPROCESSABLE_CONTENT: _PROBLEM_RESPONSE,
+        },
+    )
+    async def unlink_student_guardian(
+        student_id: UUID,
+        guardian_id: UUID,
+        payload: UnlinkStudentGuardianInput,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> StudentGuardianUnlinkOutput:
+        """Preserva rastreabilidade e impede remover o único principal."""
+        return await container.students_for(context).unlink_guardian.execute(
+            student_id,
+            guardian_id,
+            payload,
+        )
+
+    @router.get(
         "/{student_id}",
         response_model=StudentDetailOutput,
         summary="Consultar os dados de um aluno",
         description=(
-            "Retorna contato integral do responsável. No Supabase, esta leitura "
-            "é autorizada e registrada na auditoria."
+            "Retorna contato integral do responsável principal. No Supabase, "
+            "esta leitura é autorizada e registrada na auditoria."
         ),
         responses={status.HTTP_404_NOT_FOUND: _PROBLEM_RESPONSE},
     )
@@ -104,8 +249,8 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
         response_model=StudentDetailOutput,
         summary="Atualizar os dados de um aluno",
         description=(
-            "Substitui os dados editáveis com concorrência otimista. CPF e status "
-            "não podem ser alterados por esta operação."
+            "Substitui nome e nascimento com concorrência otimista. CPF, status "
+            "e responsáveis possuem operações próprias e não são alterados aqui."
         ),
         responses={
             status.HTTP_404_NOT_FOUND: _PROBLEM_RESPONSE,
@@ -118,7 +263,7 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
         payload: UpdateStudentInput,
         context: Annotated[RequestContext, Depends(require_request_context)],
     ) -> StudentDetailOutput:
-        """Atualiza aluno e responsável sem sobrescrever uma edição concorrente."""
+        """Atualiza somente o aluno sem sobrescrever contato compartilhado."""
         return await container.students_for(context).update_student.execute(student_id, payload)
 
     @router.post(

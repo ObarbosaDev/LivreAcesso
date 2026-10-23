@@ -23,11 +23,17 @@ from backend.app.modules.students.application.listeners import (
     StudentRegisteredAuditListener,
 )
 from backend.app.modules.students.application.use_cases import (
+    AddStudentGuardian,
     ChangeStudentStatus,
     GetStudent,
+    GetStudentGuardian,
+    ListStudentGuardians,
     ListStudents,
     RegisterStudent,
+    SetPrimaryGuardian,
+    UnlinkStudentGuardian,
     UpdateStudent,
+    UpdateStudentGuardian,
 )
 from backend.app.modules.students.domain.entities import StudentStatus
 from backend.app.modules.students.domain.events import StudentRegistered
@@ -62,6 +68,12 @@ class StudentServices:
     activate_student: ChangeStudentStatus
     deactivate_student: ChangeStudentStatus
     list_students: ListStudents
+    list_guardians: ListStudentGuardians
+    get_guardian: GetStudentGuardian
+    add_guardian: AddStudentGuardian
+    update_guardian: UpdateStudentGuardian
+    set_primary_guardian: SetPrimaryGuardian
+    unlink_guardian: UnlinkStudentGuardian
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,6 +142,12 @@ class ApplicationContainer:
                 StudentStatus.INACTIVE,
             ),
             list_students=ListStudents(store),
+            list_guardians=ListStudentGuardians(store),
+            get_guardian=GetStudentGuardian(store),
+            add_guardian=AddStudentGuardian(store, self.event_bus),
+            update_guardian=UpdateStudentGuardian(store, self.event_bus),
+            set_primary_guardian=SetPrimaryGuardian(store, self.event_bus),
+            unlink_guardian=UnlinkStudentGuardian(store, self.event_bus),
         )
 
     async def close(self) -> None:
