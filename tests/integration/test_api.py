@@ -83,7 +83,7 @@ def test_health_endpoint_has_traceable_request_id() -> None:
         response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    assert response.json()["status"] == "alive"
     assert UUID(response.headers["X-Request-ID"])
 
 
@@ -317,3 +317,16 @@ def test_missing_student_and_physical_delete_have_clear_responses() -> None:
     assert missing.json()["code"] == "student_not_found"
     assert physical_delete.status_code == 405
     assert physical_delete.json()["code"] == "http_405"
+
+
+def test_local_liveness_and_readiness_have_distinct_contracts() -> None:
+    with build_client() as client:
+        live = client.get("/health/live")
+        ready = client.get("/health/ready")
+
+    assert live.status_code == 200
+    assert live.json()["status"] == "alive"
+    assert "persistence" not in live.json()
+    assert ready.status_code == 200
+    assert ready.json()["status"] == "ready"
+    assert ready.json()["persistence"] == "up"

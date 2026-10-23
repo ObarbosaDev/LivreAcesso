@@ -162,3 +162,25 @@ def test_response_size_is_limited() -> None:
                 await gateway.call("safe_function", {}, request_context())
 
     asyncio.run(call())
+
+
+def test_public_call_uses_publishable_key_without_authorization() -> None:
+    captured_headers: dict[str, str] = {}
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        captured_headers.update(dict(request.headers))
+        return httpx2.Response(200, json={"status": "ok"})
+
+    async def call() -> object:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            gateway = SupabaseRPCGateway(
+                _PROJECT_URL,
+                _PUBLISHABLE_KEY,
+                http_client=client,
+            )
+            return await gateway.call_public("health_check", {})
+
+    assert asyncio.run(call()) == {"status": "ok"}
+    assert captured_headers["apikey"] == _PUBLISHABLE_KEY
+    assert "authorization" not in captured_headers
+    assert "x-request-id" not in captured_headers

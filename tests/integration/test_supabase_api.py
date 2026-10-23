@@ -17,6 +17,9 @@ from backend.app.modules.identity.application.authentication import (
     AccessToken,
     AuthenticatedUser,
 )
+from backend.app.modules.operations.infrastructure.supabase_health import (
+    SupabaseReadinessProbe,
+)
 from backend.app.shared.application.event_bus import EventBus
 from backend.app.shared.infrastructure.supabase_rpc import SupabaseRPCGateway
 
@@ -64,6 +67,7 @@ def build_application(
     )
     container = ApplicationContainer(
         event_bus=EventBus(),
+        readiness_probe=SupabaseReadinessProbe(gateway),
         in_memory_student_store=None,
         supabase_gateway=gateway,
     )
@@ -262,3 +266,41 @@ def test_supabase_management_rpc_flow_preserves_version_and_status() -> None:
         "get_student_detail",
         "change_student_status",
     ]
+
+
+def test_readiness_uses_public_health_rpc_without_user_token() -> None:
+    captured_headers: dict[str, str] = {}
+
+    def healthy(request: httpx2.Request) -> httpx2.Response:
+        captured_headers.update(dict(request.headers))
+        assert request.url.path.endswith("/health_check")
+        return httpx2.Response(200, json={"status": "ok"})
+
+    application, http_client = build_application(healthy)
+
+    with TestClient(application) as client:
+        response = client.get("/health/ready")
+
+    asyncio.run(http_client.aclose())
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ready"
+    assert "authorization" not in captured_headers
+    assert captured_headers["apikey"] == "publishable-test"
+
+
+def test_readiness_failure_returns_sanitized_503() -> None:
+    def unavailable(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(503, json={"message": "internal_database_detail"})
+
+    application, http_client = build_application(unavailable)
+
+    with TestClient(application) as client:
+        response = client.get("/health/ready")
+
+    asyncio.run(http_client.aclose())
+
+    assert response.status_code == 503
+    assert response.json()["code"] == "service_not_ready"
+    assert response.headers["Retry-After"] == "30"
+    assert "internal_database_detail" not in response.text
