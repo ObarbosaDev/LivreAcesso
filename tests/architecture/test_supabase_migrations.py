@@ -289,3 +289,66 @@ def test_guardian_list_is_masked_and_sensitive_detail_is_audited() -> None:
     assert "guardian.sensitive_viewed" in sql
     assert "'student_guardian.' || p_action" in sql
     assert "jsonb_build_object( 'student_id', p_student_id, 'guardian_id', p_guardian_id" in sql
+
+
+def test_class_catalog_has_rls_and_no_direct_client_grants() -> None:
+    migration = MIGRATIONS_DIR / "20261022000800_classes_and_modalities.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    for table_name in ("modalities", "classes", "class_schedules", "class_instructors"):
+        assert f"alter table public.{table_name} enable row level security" in sql
+        assert f"revoke all on table public.{table_name} from public, anon, authenticated" in sql
+        assert f"grant select on table public.{table_name}" not in sql
+
+
+def test_class_catalog_enforces_capacity_names_and_schedule_overlap() -> None:
+    migration = MIGRATIONS_DIR / "20261022000800_classes_and_modalities.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "classes_capacity_range check (capacity between 1 and 500)" in sql
+    assert "private.normalized_catalog_text" in sql
+    assert "modalities_name_normalized_unique" in sql
+    assert "classes_modality_name_normalized_unique" in sql
+    assert "class_schedules_prevent_overlap" in sql
+    assert "message = 'schedule_overlap'" in sql
+    assert "role = 'instructor' and active" in sql
+
+
+def test_class_rpcs_authorize_roles_and_derive_instructor_from_auth_uid() -> None:
+    migration = MIGRATIONS_DIR / "20261022000800_classes_and_modalities.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    for function_name in (
+        "list_modalities",
+        "get_modality",
+        "create_modality",
+        "update_modality",
+        "change_modality_activation",
+        "list_classes",
+        "get_class",
+        "create_class",
+        "update_class",
+        "change_class_activation",
+    ):
+        start = sql.index(f"function public.{function_name}(")
+        body = sql[start : start + 24_000]
+        assert "security definer" in body
+        assert "set search_path = ''" in body
+        assert "private.has_any_role" in body or "auth.uid()" in body
+
+    assert "assignment.instructor_id = auth.uid()" in sql
+    assert "p_viewer" not in sql
+    assert "p_actor" not in sql
+
+
+def test_class_changes_are_versioned_audited_and_never_delete_catalog_records() -> None:
+    migration = MIGRATIONS_DIR / "20261022000800_classes_and_modalities.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "private.catalog_change_history" in sql
+    assert "p_expected_updated_at" in sql
+    assert "active_classes_exist" in sql
+    assert "invalid_instructor_assignment" in sql
+    assert "delete from public.modalities" not in sql
+    assert "delete from public.classes" not in sql
+    assert "jsonb_build_object(p_entity_type || '_id', p_entity_id)" in sql
