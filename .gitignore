@@ -16,7 +16,6 @@ __pycache__/
 venv/
 env/
 ENV/
-.python-version
 .pytest_cache/
 .coverage
 .coverage.*
@@ -100,6 +99,7 @@ artifacts/
 # Local tooling
 .cache/
 .agent/
+.vercel/
 .supabase/
 supabase/.temp/
 supabase/.branches/

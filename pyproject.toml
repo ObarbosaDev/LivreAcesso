@@ -32,6 +32,9 @@ dev = [
     "ruff==0.17.1",
 ]
 
+[tool.vercel]
+entrypoint = "main.py:app"
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["backend*", "scripts*"]
