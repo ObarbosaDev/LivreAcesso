@@ -73,7 +73,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 
 ### BL-03 — Responsáveis e histórico do aluno
 
-> **EM ANDAMENTO** · Prioridade **P1** · Matheus · Matriz 35/35 e produção aprovadas; smoke JWT pendente
+> **CONCLUÍDO** · Prioridade **P1** · Matheus · Produção e smoke autenticado aprovados
 
 - **Fazer:** múltiplos responsáveis, contato principal, parentesco e histórico cadastral seguro.
 - **Como:** relação muitos-para-muitos, endpoints em `/students/{id}/guardians` e concorrência por versão.
@@ -175,7 +175,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 - Giovana Oliveira de Queiroz — `BL-__`
 - Sara Adriele de Lima Andrade — `BL-__`
 - Júlio César Soares Cavalcante — `BL-__`
-- Matheus Pinheiro Barbosa — `BL-01 concluído` + `BL-02 concluído` + `BL-03 em andamento` + revisão/produção
+- Matheus Pinheiro Barbosa — `BL-01 concluído` + `BL-02 concluído` + `BL-03 concluído` + revisão/produção
 - Victor Gabriel Santos Silva — `BL-__`
 - Victor Augusto Ferreira Silva — `BL-__`
 - Rodrigo Ferreira dos Santos Pereira — `BL-__`

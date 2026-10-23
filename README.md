@@ -121,7 +121,7 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Fundação FastAPI | **Disponível** | Fábrica da aplicação, configuração e endpoint `/health`. |
 | Cadastro de aluno | **Disponível** | `POST /api/v1/students`. |
 | Gestão cadastral | **Disponível** | Detalhe, edição versionada, ativação e desativação lógica. |
-| Responsáveis múltiplos | **Disponível** | Seis rotas, principal único, matriz 35/35 e produção; smoke JWT final pendente. |
+| Responsáveis múltiplos | **Disponível** | Seis rotas, principal único, matriz 35/35 e smoke JWT aprovados em produção. |
 | Listagem e filtros | **Disponível** | `GET /api/v1/students` por status cadastral. |
 | CPF e telefone | **Disponível** | Normalização, validação, unicidade e mascaramento. |
 | DTO, mapper e caso de uso | **Disponível** | Camadas separadas no módulo `students`. |
