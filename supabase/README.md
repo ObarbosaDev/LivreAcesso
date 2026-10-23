@@ -165,3 +165,7 @@ O caminho Auth → JWT/JWKS → FastAPI em produção → RPC foi aprovado com a
 `migrations/20261021000600_profile_management.sql` cria gestão operacional de perfis: `/me`, nome próprio, listagem paginada, atribuição de papel e ativação/desativação. Ela adiciona histórico privado, concorrência por `updated_at`, constraint `pending ⇒ inativo` e proteção serializada do último coordenador ativo.
 
 A criação de contas permanece no Supabase Auth. O backend administra somente perfis já criados e não armazena senhas ou `service_role`.
+
+### Matriz de perfis
+
+`tests/profile_role_matrix.sql` foi executado em produção e aprovou 31/31 combinações. A transação foi revertida; a conta permaneceu coordenadora ativa e `profile_access_history` continuou vazio.

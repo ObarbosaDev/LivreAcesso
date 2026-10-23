@@ -70,3 +70,9 @@ Eventos duráveis:
 - `ProfileActivationChanged`.
 
 O nome atualizado é auditado, mas não precisa de outbox nesta fase.
+
+## Evidência remota
+
+A sexta migration foi aplicada ao projeto de São Paulo. A matriz `profile_role_matrix.sql` executou 31/31 verificações para coordenação, recepção, consulta, instrutor e perfil pendente/inativo, terminando com rollback.
+
+Após o teste, permaneceram uma coordenação ativa, zero outros estados, zero entradas no histórico e zero alunos. O Preview Vercel respondeu readiness e bloqueou `/me` sem JWT.
