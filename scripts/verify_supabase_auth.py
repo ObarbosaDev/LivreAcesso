@@ -15,6 +15,8 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from backend.app.core.config import Settings
 from backend.app.main import create_app
 
+_MISSING_STUDENT_ID = "00000000-0000-4000-8000-000000000099"
+
 
 class VerificationError(Exception):
     """Erro sanitizado que não carrega resposta externa nem credencial."""
@@ -61,6 +63,7 @@ class VerificationResult:
     jwt_verified: bool
     rpc_authorized: bool
     deployment_verified: bool
+    guardians_verified: bool
     student_count: int
     profile_role: str
 
@@ -108,12 +111,26 @@ def _authenticate(
         raise VerificationError("Supabase Auth retornou um contrato inesperado.") from error
 
 
+def _assert_guardian_probe(response: httpx2.Response) -> None:
+    """Confirma a nova RPC por um 404 controlado, sem criar dado sintético."""
+
+    if response.status_code != 404:
+        raise VerificationError(
+            f"A rota de responsáveis retornou estado inesperado ({response.status_code})."
+        )
+    try:
+        if response.json().get("code") != "student_not_found":
+            raise VerificationError("A rota de responsáveis publicou um contrato inesperado.")
+    except (ValueError, AttributeError) as error:
+        raise VerificationError("A rota de responsáveis retornou JSON inválido.") from error
+
+
 def _verify_full_path(
     project_url: str,
     publishable_key: str,
     access_token: str,
 ) -> tuple[int, str]:
-    """Percorre FastAPI, JWKS, perfil e listagem RPC usando o JWT real."""
+    """Percorre FastAPI, JWKS, perfil e RPCs usando o JWT real."""
 
     settings = Settings(
         app_name="Livre Acesso Production Verification",
@@ -135,6 +152,10 @@ def _verify_full_path(
             "/api/v1/students?page=1&page_size=1",
             headers=headers,
         )
+        guardian_response = client.get(
+            f"/api/v1/students/{_MISSING_STUDENT_ID}/guardians",
+            headers=headers,
+        )
 
     if profile_response.status_code != 200:
         raise VerificationError(
@@ -151,6 +172,7 @@ def _verify_full_path(
         raise VerificationError(
             f"A API recusou o fluxo autenticado ({response.status_code}, {error_code})."
         )
+    _assert_guardian_probe(guardian_response)
 
     try:
         body = response.json()
@@ -193,6 +215,10 @@ def _verify_deployed_path(
             f"{normalized_url}/api/v1/me",
             headers={"Authorization": f"Bearer {access_token}"},
         )
+        guardians = client.get(
+            f"{normalized_url}/api/v1/students/{_MISSING_STUDENT_ID}/guardians",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
     except httpx2.HTTPError as error:
         raise VerificationError("Não foi possível alcançar o backend publicado.") from error
     finally:
@@ -212,6 +238,12 @@ def _verify_deployed_path(
             UUID(response.headers["X-Request-ID"])
         except (KeyError, ValueError) as error:
             raise VerificationError(f"Smoke de {name} não retornou request ID válido.") from error
+
+    _assert_guardian_probe(guardians)
+    try:
+        UUID(guardians.headers["X-Request-ID"])
+    except (KeyError, ValueError) as error:
+        raise VerificationError("Smoke de responsáveis não retornou request ID válido.") from error
 
     try:
         if live.json().get("status") != "alive":
@@ -256,6 +288,7 @@ def verify() -> VerificationResult:
         jwt_verified=True,
         rpc_authorized=True,
         deployment_verified=bool(backend_url),
+        guardians_verified=True,
         student_count=student_count,
         profile_role=profile_role,
     )
@@ -276,6 +309,7 @@ def main() -> int:
     print("JWT/JWKS: OK")
     print("FastAPI → RPC: OK")
     print(f"Perfil: {result.profile_role} ativo")
+    print("Responsáveis: rota protegida OK")
     print("Deploy: OK" if result.deployment_verified else "Deploy: não testado")
     print(f"Alunos encontrados: {result.student_count}")
     print("Nenhuma credencial foi gravada ou exibida.")
