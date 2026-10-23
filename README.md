@@ -127,11 +127,11 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Erros e rastreabilidade | **Disponível** | Problem Details, erros por campo e `X-Request-ID`. |
 | Eventos e listener | **Disponível** | `StudentRegistered` e auditoria sem PII. |
 | Testes automatizados | **Disponível** | Unidade, integração e guardas arquiteturais executadas localmente. |
-| Schema Supabase | **Disponível** | Cinco migrations aplicadas e verificadas no projeto de São Paulo. |
+| Schema Supabase | **Disponível** | Seis migrations aplicadas e verificadas no projeto de São Paulo. |
 | Persistência da API | **Disponível** | Gateway HTTP e adaptador de alunos usam RPCs com o JWT da requisição. |
 | Autenticação | **Disponível** | Bearer JWT/JWKS homologado com conta real do Supabase Auth. |
 | Deploy do backend | **Disponível** | Produção em `gru1`, readiness e smoke autenticado aprovados. |
-| Autorização operacional | **Disponível** | Matriz remota de perfis 31/31 aprovada; smoke HTTP final pendente. |
+| Autorização operacional | **Disponível** | Matriz remota 31/31 e `/me` autenticado como coordenação ativa aprovados em produção. |
 | Turmas e matrículas | **Planejado** | Modelo definido arquiteturalmente. |
 | Chamada e alertas | **Planejado** | Regra depende de validação com a instituição. |
 | Lista de espera | **Planejado** | Critérios operacionais e jurídicos pendentes. |
@@ -139,8 +139,8 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Relatórios | **Planejado** | Entrará após dados operacionais confiáveis. |
 | Front-end React | **Planejado** | Experiência e telas já concebidas; implementação ainda não iniciada. |
 
-> [!WARNING]
-> O repositório atual usa armazenamento **em memória**. Todo cadastro desaparece quando o processo é encerrado. Não utilize dados reais nem trate esta versão como ambiente de produção.
+> [!IMPORTANT]
+> Produção persiste no Supabase por RPCs protegidas com o JWT da requisição. O repositório em memória existe somente para `development` e `test`; configuração incompleta em produção falha fechada e não deve receber dados reais.
 
 ## Comece em 5 minutos
 

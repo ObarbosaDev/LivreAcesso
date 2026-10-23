@@ -63,7 +63,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 
 ### BL-02 — Usuários, papéis e bloqueios
 
-> **EM ANDAMENTO** · Prioridade **P1** · Matheus · Matriz 31/31 e Preview aprovados
+> **CONCLUÍDO** · Prioridade **P1** · Matheus · Produção e smoke autenticado aprovados
 
 - **Fazer:** `/me`, listagem de perfis, ativação/desativação e troca de papel.
 - **Como:** RPCs auditadas, paginação, motivo obrigatório e proteção do último coordenador ativo.
@@ -175,7 +175,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 - Giovana Oliveira de Queiroz — `BL-__`
 - Sara Adriele de Lima Andrade — `BL-__`
 - Júlio César Soares Cavalcante — `BL-__`
-- Matheus Pinheiro Barbosa — `BL-01 concluído` + `BL-02` + revisão/produção
+- Matheus Pinheiro Barbosa — `BL-01 concluído` + `BL-02 concluído` + revisão/produção
 - Victor Gabriel Santos Silva — `BL-__`
 - Victor Augusto Ferreira Silva — `BL-__`
 - Rodrigo Ferreira dos Santos Pereira — `BL-__`
