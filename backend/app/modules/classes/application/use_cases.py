@@ -257,7 +257,7 @@ class GetClass:
         ):
             # Não distinguimos turma inexistente de turma alheia na RPC; a camada
             # local usa a mesma recusa genérica para evitar enumeração por instrutor.
-            raise PermissionDeniedError
+            raise ClassNotFoundError
         return CatalogMapper.class_to_output(group)
 
 

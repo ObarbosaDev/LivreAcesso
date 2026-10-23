@@ -20,7 +20,10 @@ from backend.app.modules.classes.application.use_cases import (
     ListClasses,
 )
 from backend.app.modules.classes.domain.entities import Weekday
-from backend.app.modules.classes.domain.exceptions import ActiveClassesExistError
+from backend.app.modules.classes.domain.exceptions import (
+    ActiveClassesExistError,
+    ClassNotFoundError,
+)
 from backend.app.modules.classes.infrastructure.repositories import InMemoryClassRepository
 from backend.app.modules.identity.domain.entities import UserProfile, UserRole
 from backend.app.modules.identity.infrastructure.repositories import InMemoryProfileRepository
@@ -128,7 +131,7 @@ def test_coordinator_creates_catalog_and_instructor_sees_only_assignment() -> No
             page=1,
             page_size=25,
         )
-        with pytest.raises(PermissionDeniedError):
+        with pytest.raises(ClassNotFoundError):
             await GetClass(store, profiles, other.id).execute(assigned_class.id)
         assert other_classes.total == 1
         assert other_classes.items[0].id != assigned_class.id
