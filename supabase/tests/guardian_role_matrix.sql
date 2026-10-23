@@ -381,8 +381,9 @@ reset role;
 update public.profiles
 set role = 'coordinator', active = true
 where id = (select id from pg_temp.test_guardian_operator);
-set local role authenticated;
 
+-- As chamadas ainda validam auth.uid() internamente. O bloco administrativo
+-- consulta tabelas privadas somente para provar invariantes antes do rollback.
 do $lifecycle$
 declare
     v_student_id constant uuid := '00000000-0000-4000-8000-000000000301';
