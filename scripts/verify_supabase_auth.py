@@ -62,6 +62,7 @@ class VerificationResult:
     rpc_authorized: bool
     deployment_verified: bool
     student_count: int
+    profile_role: str
 
 
 def _prompt_value(environment_name: str, label: str, *, secret: bool = False) -> str:
@@ -107,8 +108,12 @@ def _authenticate(
         raise VerificationError("Supabase Auth retornou um contrato inesperado.") from error
 
 
-def _verify_full_path(project_url: str, publishable_key: str, access_token: str) -> int:
-    """Percorre FastAPI, verificação JWKS e listagem RPC usando o JWT real."""
+def _verify_full_path(
+    project_url: str,
+    publishable_key: str,
+    access_token: str,
+) -> tuple[int, str]:
+    """Percorre FastAPI, JWKS, perfil e listagem RPC usando o JWT real."""
 
     settings = Settings(
         app_name="Livre Acesso Production Verification",
@@ -124,11 +129,17 @@ def _verify_full_path(project_url: str, publishable_key: str, access_token: str)
     )
 
     with TestClient(create_app(settings=settings)) as client:
+        headers = {"Authorization": f"Bearer {access_token}"}
+        profile_response = client.get("/api/v1/me", headers=headers)
         response = client.get(
             "/api/v1/students?page=1&page_size=1",
-            headers={"Authorization": f"Bearer {access_token}"},
+            headers=headers,
         )
 
+    if profile_response.status_code != 200:
+        raise VerificationError(
+            f"A API recusou o perfil autenticado ({profile_response.status_code})."
+        )
     if response.status_code != 200:
         error_code = "unknown_error"
         try:
@@ -144,11 +155,16 @@ def _verify_full_path(project_url: str, publishable_key: str, access_token: str)
     try:
         body = response.json()
         total = body["total"]
+        profile_body = profile_response.json()
+        profile_role = profile_body["role"]
+        profile_active = profile_body["active"]
     except (ValueError, KeyError, TypeError) as error:
-        raise VerificationError("A listagem retornou um contrato inesperado.") from error
+        raise VerificationError("A API retornou um contrato inesperado.") from error
     if not isinstance(total, int) or total < 0:
         raise VerificationError("A listagem retornou uma contagem inválida.")
-    return total
+    if not isinstance(profile_role, str) or profile_active is not True:
+        raise VerificationError("O perfil autenticado não está ativo ou possui papel inválido.")
+    return total, profile_role
 
 
 def _verify_deployed_path(
@@ -173,13 +189,22 @@ def _verify_deployed_path(
             f"{normalized_url}/api/v1/students?page=1&page_size=1",
             headers={"Authorization": f"Bearer {access_token}"},
         )
+        profile = client.get(
+            f"{normalized_url}/api/v1/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
     except httpx2.HTTPError as error:
         raise VerificationError("Não foi possível alcançar o backend publicado.") from error
     finally:
         if owns_client:
             client.close()
 
-    responses = (("liveness", live), ("readiness", ready), ("listagem", students))
+    responses = (
+        ("liveness", live),
+        ("readiness", ready),
+        ("listagem", students),
+        ("perfil", profile),
+    )
     for name, response in responses:
         if response.status_code != 200:
             raise VerificationError(f"Smoke de {name} falhou ({response.status_code}).")
@@ -195,6 +220,9 @@ def _verify_deployed_path(
             raise VerificationError("Readiness publicou um contrato inesperado.")
         if not isinstance(students.json().get("total"), int):
             raise VerificationError("Listagem publicada retornou um contrato inesperado.")
+        profile_body = profile.json()
+        if profile_body.get("role") != "coordenador" or profile_body.get("active") is not True:
+            raise VerificationError("Perfil publicado não corresponde à coordenação ativa.")
     except (ValueError, AttributeError) as error:
         raise VerificationError("O backend publicado retornou JSON inválido.") from error
 
@@ -215,7 +243,7 @@ def verify() -> VerificationResult:
         raise VerificationError("Senha da conta sintética não foi informada.")
 
     access_token = _authenticate(project_url, publishable_key, email, password)
-    student_count = _verify_full_path(project_url, publishable_key, access_token)
+    student_count, profile_role = _verify_full_path(project_url, publishable_key, access_token)
 
     backend_url = os.getenv("BACKEND_BASE_URL", "").strip()
     if not backend_url:
@@ -229,6 +257,7 @@ def verify() -> VerificationResult:
         rpc_authorized=True,
         deployment_verified=bool(backend_url),
         student_count=student_count,
+        profile_role=profile_role,
     )
 
 
@@ -246,6 +275,7 @@ def main() -> int:
     print("Auth: OK")
     print("JWT/JWKS: OK")
     print("FastAPI → RPC: OK")
+    print(f"Perfil: {result.profile_role} ativo")
     print("Deploy: OK" if result.deployment_verified else "Deploy: não testado")
     print(f"Alunos encontrados: {result.student_count}")
     print("Nenhuma credencial foi gravada ou exibida.")
