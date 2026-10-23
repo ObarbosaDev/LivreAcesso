@@ -180,22 +180,22 @@ Abra:
 
 - API: <http://127.0.0.1:8000>
 - Swagger/OpenAPI: <http://127.0.0.1:8000/docs>
-- Health check: <http://127.0.0.1:8000/health>
+- Health check: <http://127.0.0.1:8000/health/live>
+- Readiness: <http://127.0.0.1:8000/health/ready>
 
 Ou teste pelo PowerShell:
 
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/health"
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/health/live"
 ```
 
 Resultado esperado:
 
 ```json
 {
-  "status": "ok",
+  "status": "alive",
   "service": "Livre Acesso API",
-  "version": "0.1.0",
-  "environment": "development"
+  "version": "0.1.0"
 }
 ```
 
@@ -350,7 +350,9 @@ As regras exatas — quantidade de faltas, prazo de inatividade e liberação de
 | Método | Rota | Autenticação | Descrição | Sucesso |
 | --- | --- | --- | --- | --- |
 | `GET` | `/` | Pública | Metadados e link da documentação. | `200` |
-| `GET` | `/health` | Pública | Disponibilidade do processo. | `200` |
+| `GET` | `/health` | Pública | Compatibilidade com o liveness anterior. | `200` |
+| `GET` | `/health/live` | Pública | Confirma apenas que o processo responde. | `200` |
+| `GET` | `/health/ready` | Pública | Confirma que a persistência está disponível. | `200/503` |
 | `GET` | `/docs` | Pública | Interface interativa OpenAPI. | `200` |
 | `GET` | `/openapi.json` | Pública | Contrato OpenAPI em JSON. | `200` |
 | `GET` | `/api/v1/students` | Bearer JWT | Pesquisa paginada com filtros. | `200` |
@@ -793,6 +795,7 @@ O projeto está alinhado principalmente a:
 | [`docs/architecture.md`](docs/architecture.md) | Decisões, módulos, persistência, eventos, segurança e evolução. |
 | [`docs/backend-blueprint.md`](docs/backend-blueprint.md) | Fluxos do backend, Supabase, sensibilidade, eventos e critérios de pronto. |
 | [`docs/backend-task-plan.md`](docs/backend-task-plan.md) | Fonte atualizável dos 10 blocos de trabalho do backend. |
+| [`docs/deployment.md`](docs/deployment.md) | Deploy do FastAPI na Vercel, variáveis, smoke e rollback. |
 | [`docs/LivreAcesso-Plano-Tarefas-Backend.pdf`](docs/LivreAcesso-Plano-Tarefas-Backend.pdf) | PDF de cinco páginas para distribuição à equipe. |
 | [`docs/security-decisions.md`](docs/security-decisions.md) | Decisões, exceções conhecidas e controles compensatórios de segurança. |
 | [`docs/domain-glossary.md`](docs/domain-glossary.md) | Linguagem comum, conceitos e regras pendentes do negócio. |

@@ -151,3 +151,7 @@ O comando valida primeiro se a chave começa com `sb_publishable_` e se o Supaba
 - `E-mail ou senha não conferem`: a chave foi aceita e o problema está nas credenciais da conta em Authentication → Users.
 
 O corpo retornado pelo Supabase não é exibido, pois pode conter detalhes sobre a conta.
+
+## Quinta migration
+
+`migrations/20261021000500_health_check.sql` cria `public.health_check()` para readiness da API. A função é `security invoker`, retorna somente `{ "status": "ok" }`, não consulta tabelas e não exige JWT. Sua única finalidade é provar que gateway, Data API e PostgreSQL estão disponíveis.
