@@ -127,9 +127,10 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Erros e rastreabilidade | **Disponível** | Problem Details, erros por campo e `X-Request-ID`. |
 | Eventos e listener | **Disponível** | `StudentRegistered` e auditoria sem PII. |
 | Testes automatizados | **Disponível** | Unidade, integração e guardas arquiteturais executadas localmente. |
-| Schema Supabase | **Disponível** | Quatro migrations aplicadas e verificadas no projeto de São Paulo. |
+| Schema Supabase | **Disponível** | Cinco migrations aplicadas e verificadas no projeto de São Paulo. |
 | Persistência da API | **Disponível** | Gateway HTTP e adaptador de alunos usam RPCs com o JWT da requisição. |
-| Autenticação | **Disponível** | Bearer JWT validado localmente por JWKS do Supabase. |
+| Autenticação | **Disponível** | Bearer JWT/JWKS homologado com conta real do Supabase Auth. |
+| Deploy do backend | **Parcial** | Preview Vercel saudável em `gru1`; promoção para produção pendente. |
 | Autorização operacional | **Parcial** | Matriz SQL 25/25 aprovada; fluxo HTTP com JWT real ainda pendente. |
 | Turmas e matrículas | **Planejado** | Modelo definido arquiteturalmente. |
 | Chamada e alertas | **Planejado** | Regra depende de validação com a instituição. |
@@ -621,9 +622,11 @@ Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra 
 - [x] schema inicial, constraints, auditoria e outbox;
 - [x] autenticação Bearer e validação local de JWT por JWKS;
 - [x] implementar o gateway e o adaptador Supabase na API;
-- [x] aplicar e validar as quatro migrations no projeto Supabase de São Paulo;
+- [x] aplicar e validar as cinco migrations no projeto Supabase de São Paulo;
 - [x] executar matriz SQL de 25 permissões com rollback;
-- [ ] validar FastAPI e PostgREST com JWT real;
+- [x] validar FastAPI e PostgREST com JWT real;
+- [x] publicar e validar Preview do FastAPI em `gru1`;
+- [ ] promover o backend para produção e repetir o smoke test;
 - [x] CRUD seguro de alunos e responsável principal;
 - [x] detalhe sensível auditado e CPF imutável no fluxo comum;
 - [x] atualização com concorrência otimista;
