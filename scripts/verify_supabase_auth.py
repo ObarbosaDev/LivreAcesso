@@ -5,6 +5,8 @@ import logging
 import os
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlparse
+from uuid import UUID
 
 import httpx2
 from fastapi.testclient import TestClient
@@ -58,6 +60,7 @@ class VerificationResult:
     authenticated: bool
     jwt_verified: bool
     rpc_authorized: bool
+    deployment_verified: bool
     student_count: int
 
 
@@ -148,6 +151,54 @@ def _verify_full_path(project_url: str, publishable_key: str, access_token: str)
     return total
 
 
+def _verify_deployed_path(
+    backend_url: str,
+    access_token: str,
+    *,
+    http_client: httpx2.Client | None = None,
+) -> None:
+    """Executa smoke read-only no backend publicado sem revelar o JWT."""
+
+    normalized_url = backend_url.strip().rstrip("/")
+    parsed_url = urlparse(normalized_url)
+    if parsed_url.scheme != "https" or not parsed_url.netloc:
+        raise VerificationError("A URL publicada do backend precisa usar HTTPS.")
+
+    client = http_client or httpx2.Client(timeout=10.0, follow_redirects=False)
+    owns_client = http_client is None
+    try:
+        live = client.get(f"{normalized_url}/health/live")
+        ready = client.get(f"{normalized_url}/health/ready")
+        students = client.get(
+            f"{normalized_url}/api/v1/students?page=1&page_size=1",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+    except httpx2.HTTPError as error:
+        raise VerificationError("Não foi possível alcançar o backend publicado.") from error
+    finally:
+        if owns_client:
+            client.close()
+
+    responses = (("liveness", live), ("readiness", ready), ("listagem", students))
+    for name, response in responses:
+        if response.status_code != 200:
+            raise VerificationError(f"Smoke de {name} falhou ({response.status_code}).")
+        try:
+            UUID(response.headers["X-Request-ID"])
+        except (KeyError, ValueError) as error:
+            raise VerificationError(f"Smoke de {name} não retornou request ID válido.") from error
+
+    try:
+        if live.json().get("status") != "alive":
+            raise VerificationError("Liveness publicou um contrato inesperado.")
+        if ready.json().get("status") != "ready":
+            raise VerificationError("Readiness publicou um contrato inesperado.")
+        if not isinstance(students.json().get("total"), int):
+            raise VerificationError("Listagem publicada retornou um contrato inesperado.")
+    except (ValueError, AttributeError) as error:
+        raise VerificationError("O backend publicado retornou JSON inválido.") from error
+
+
 def verify() -> VerificationResult:
     project_url = _prompt_value("SUPABASE_URL", "URL do projeto").rstrip("/")
     publishable_key = _prompt_value(
@@ -165,10 +216,18 @@ def verify() -> VerificationResult:
 
     access_token = _authenticate(project_url, publishable_key, email, password)
     student_count = _verify_full_path(project_url, publishable_key, access_token)
+
+    backend_url = os.getenv("BACKEND_BASE_URL", "").strip()
+    if not backend_url:
+        backend_url = input("URL do backend publicado (Enter para pular): ").strip()
+    if backend_url:
+        _verify_deployed_path(backend_url, access_token)
+
     return VerificationResult(
         authenticated=True,
         jwt_verified=True,
         rpc_authorized=True,
+        deployment_verified=bool(backend_url),
         student_count=student_count,
     )
 
@@ -187,6 +246,7 @@ def main() -> int:
     print("Auth: OK")
     print("JWT/JWKS: OK")
     print("FastAPI → RPC: OK")
+    print("Deploy: OK" if result.deployment_verified else "Deploy: não testado")
     print(f"Alunos encontrados: {result.student_count}")
     print("Nenhuma credencial foi gravada ou exibida.")
     return 0
