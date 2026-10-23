@@ -30,9 +30,14 @@ from backend.app.modules.identity.domain.exceptions import (
 )
 from backend.app.modules.students.domain.exceptions import (
     DuplicateCPFError,
+    GuardianAlreadyLinkedError,
+    GuardianNotFoundError,
+    GuardianVersionConflictError,
     InvalidCPFError,
+    InvalidGuardianUnlinkReasonError,
     InvalidPhoneError,
     InvalidStatusReasonError,
+    PrimaryGuardianRequiredError,
     StudentDomainError,
     StudentNotFoundError,
     StudentVersionConflictError,
@@ -311,6 +316,15 @@ def install_problem_handlers(application: FastAPI) -> None:
                 code=exception.code,
             )
 
+        if isinstance(exception, GuardianNotFoundError):
+            return _problem_response(
+                request,
+                response_status=status.HTTP_404_NOT_FOUND,
+                title="Responsável não encontrado",
+                detail=str(exception),
+                code=exception.code,
+            )
+
         if isinstance(exception, StudentVersionConflictError):
             return _problem_response(
                 request,
@@ -320,11 +334,38 @@ def install_problem_handlers(application: FastAPI) -> None:
                 code=exception.code,
             )
 
+        if isinstance(exception, GuardianVersionConflictError):
+            return _problem_response(
+                request,
+                response_status=status.HTTP_409_CONFLICT,
+                title="Responsável alterado por outra pessoa",
+                detail=str(exception),
+                code=exception.code,
+            )
+
+        if isinstance(exception, GuardianAlreadyLinkedError):
+            return _problem_response(
+                request,
+                response_status=status.HTTP_409_CONFLICT,
+                title="Responsável já vinculado",
+                detail=str(exception),
+                code=exception.code,
+            )
+
+        if isinstance(exception, PrimaryGuardianRequiredError):
+            return _problem_response(
+                request,
+                response_status=status.HTTP_409_CONFLICT,
+                title="Responsável principal obrigatório",
+                detail=str(exception),
+                code=exception.code,
+            )
+
         if isinstance(exception, InvalidCPFError):
             field = "cpf"
         elif isinstance(exception, InvalidPhoneError):
             field = "guardian.phone"
-        elif isinstance(exception, InvalidStatusReasonError):
+        elif isinstance(exception, (InvalidStatusReasonError, InvalidGuardianUnlinkReasonError)):
             field = "reason"
         else:
             field = "request"
