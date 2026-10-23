@@ -185,6 +185,8 @@ Módulos futuros acrescentarão:
 
 A terceira migration, `supabase/migrations/20261021000300_registration_timestamps.sql`, faz o cadastro devolver os timestamps autoritativos do PostgreSQL. Isso impede conflito falso na primeira edição quando o relógio da API e o relógio do banco diferem.
 
+A sexta migration, `supabase/migrations/20261021000600_profile_management.sql`, adiciona perfil atual, administração paginada, histórico de acesso, atribuição de papéis e ativação/desativação com concorrência. O banco impede perfil pendente ativo e serializa alterações para preservar ao menos uma coordenação ativa.
+
 Regras estruturais importantes:
 
 - CPF normalizado com índice único;
