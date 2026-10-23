@@ -216,7 +216,7 @@ def test_supabase_management_rpc_flow_preserves_version_and_status() -> None:
                 200,
                 json=detail_payload(status=current_status, updated_at=current_version),
             )
-        if rpc_name == "update_student_with_guardian":
+        if rpc_name == "update_student":
             current_version = updated_version
             return httpx2.Response(200, json={"updated_at": current_version.isoformat()})
         if rpc_name == "change_student_status":
@@ -237,11 +237,6 @@ def test_supabase_management_rpc_flow_preserves_version_and_status() -> None:
                 "expected_updated_at": initial_version.isoformat(),
                 "full_name": "Sophia Almeida Ramos da Silva",
                 "birth_date": "2015-05-10",
-                "guardian": {
-                    "full_name": "Camila Ramos",
-                    "phone": "61988881234",
-                    "email": "camila@example.com",
-                },
             },
         )
         inactive = client.post(
@@ -263,7 +258,7 @@ def test_supabase_management_rpc_flow_preserves_version_and_status() -> None:
     assert rpc_names == [
         "get_student_detail",
         "get_student_detail",
-        "update_student_with_guardian",
+        "update_student",
         "get_student_detail",
         "change_student_status",
     ]
@@ -469,3 +464,175 @@ def test_profile_list_denial_happens_before_admin_rpc() -> None:
     assert response.status_code == 403
     assert response.json()["code"] == "permission_denied"
     assert rpc_names == ["get_my_profile"]
+
+
+def test_guardian_management_crosses_fastapi_and_supabase_rpcs() -> None:
+    student_id = "00000000-0000-4000-8000-000000000030"
+    initial_guardian_id = "00000000-0000-4000-8000-000000000031"
+    new_guardian_id: str | None = None
+    student_version = datetime(2026, 10, 22, 19, 0, tzinfo=UTC)
+    guardian_version = datetime(2026, 10, 22, 19, 1, tzinfo=UTC)
+    rpc_names: list[str] = []
+
+    def guardian_detail(
+        guardian_id: str,
+        *,
+        relationship: str,
+        is_primary: bool,
+        changed: bool,
+    ) -> dict[str, object]:
+        return {
+            "student_id": student_id,
+            "student_updated_at": student_version.isoformat(),
+            "id": guardian_id,
+            "full_name": "Roberto Almeida",
+            "phone": "61988881234",
+            "email": "roberto@example.com",
+            "relationship": relationship,
+            "is_primary": is_primary,
+            "receives_communications": True,
+            "active": True,
+            "linked_at": datetime(2026, 10, 22, 18, 0, tzinfo=UTC).isoformat(),
+            "guardian_updated_at": guardian_version.isoformat(),
+            "changed": changed,
+        }
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        nonlocal new_guardian_id, student_version, guardian_version
+        rpc_name = request.url.path.rsplit("/", maxsplit=1)[-1]
+        rpc_names.append(rpc_name)
+        payload = json.loads(request.content)
+        assert request.headers["Authorization"] == f"Bearer {_ACCESS_TOKEN}"
+
+        if rpc_name == "list_student_guardians":
+            return httpx2.Response(
+                200,
+                json={
+                    "student_id": student_id,
+                    "student_updated_at": student_version.isoformat(),
+                    "items": [
+                        {
+                            "id": initial_guardian_id,
+                            "full_name": "Camila Ramos",
+                            "phone_masked": "(61) *****-1234",
+                            "email_masked": "c***@example.com",
+                            "relationship": "responsible_contact",
+                            "is_primary": True,
+                            "receives_communications": True,
+                            "linked_at": student_version.isoformat(),
+                            "guardian_updated_at": guardian_version.isoformat(),
+                        }
+                    ],
+                },
+            )
+        if rpc_name == "add_student_guardian":
+            new_guardian_id = str(payload["p_guardian_id"])
+            student_version = datetime(2026, 10, 22, 19, 2, tzinfo=UTC)
+            return httpx2.Response(
+                200,
+                json=guardian_detail(
+                    new_guardian_id,
+                    relationship=str(payload["p_relationship"]),
+                    is_primary=False,
+                    changed=True,
+                ),
+            )
+        if rpc_name == "update_student_guardian":
+            guardian_version = datetime(2026, 10, 22, 19, 3, tzinfo=UTC)
+            student_version = datetime(2026, 10, 22, 19, 4, tzinfo=UTC)
+            assert new_guardian_id is not None
+            return httpx2.Response(
+                200,
+                json=guardian_detail(
+                    new_guardian_id,
+                    relationship=str(payload["p_relationship"]),
+                    is_primary=False,
+                    changed=True,
+                ),
+            )
+        if rpc_name == "set_primary_student_guardian":
+            student_version = datetime(2026, 10, 22, 19, 5, tzinfo=UTC)
+            assert new_guardian_id is not None
+            return httpx2.Response(
+                200,
+                json=guardian_detail(
+                    new_guardian_id,
+                    relationship="parent",
+                    is_primary=True,
+                    changed=True,
+                ),
+            )
+        if rpc_name == "unlink_student_guardian":
+            student_version = datetime(2026, 10, 22, 19, 6, tzinfo=UTC)
+            return httpx2.Response(
+                200,
+                json={
+                    "student_id": student_id,
+                    "guardian_id": initial_guardian_id,
+                    "student_updated_at": student_version.isoformat(),
+                    "changed": True,
+                },
+            )
+        return httpx2.Response(404, json={"message": "function_not_found"})
+
+    application, http_client = build_application(respond)
+
+    with TestClient(
+        application,
+        headers={"Authorization": f"Bearer {_ACCESS_TOKEN}"},
+    ) as client:
+        listed = client.get(f"/api/v1/students/{student_id}/guardians")
+        added = client.post(
+            f"/api/v1/students/{student_id}/guardians",
+            json={
+                "expected_student_updated_at": listed.json()["student_updated_at"],
+                "relationship": "responsavel_legal",
+                "guardian": {
+                    "full_name": "Roberto Almeida",
+                    "phone": "61988881234",
+                    "email": "roberto@example.com",
+                },
+            },
+        )
+        updated = client.put(
+            f"/api/v1/students/{student_id}/guardians/{added.json()['id']}",
+            json={
+                "expected_student_updated_at": added.json()["student_updated_at"],
+                "expected_guardian_updated_at": added.json()["guardian_updated_at"],
+                "full_name": "Roberto Almeida",
+                "phone": "61988881234",
+                "email": "roberto@example.com",
+                "relationship": "pai_ou_mae",
+                "receives_communications": True,
+            },
+        )
+        promoted = client.post(
+            f"/api/v1/students/{student_id}/guardians/{added.json()['id']}/primary",
+            json={"expected_student_updated_at": updated.json()["student_updated_at"]},
+        )
+        unlinked = client.post(
+            f"/api/v1/students/{student_id}/guardians/{initial_guardian_id}/unlink",
+            json={
+                "expected_student_updated_at": promoted.json()["student_updated_at"],
+                "reason": "Vínculo anterior confirmado como incorreto",
+            },
+        )
+
+    asyncio.run(http_client.aclose())
+
+    assert listed.status_code == 200
+    assert "61999991234" not in listed.text
+    assert added.status_code == 201
+    assert added.json()["relationship"] == "responsavel_legal"
+    assert updated.status_code == 200
+    assert updated.json()["relationship"] == "pai_ou_mae"
+    assert promoted.status_code == 200
+    assert promoted.json()["is_primary"] is True
+    assert unlinked.status_code == 200
+    assert rpc_names == [
+        "list_student_guardians",
+        "add_student_guardian",
+        "update_student_guardian",
+        "set_primary_student_guardian",
+        "unlink_student_guardian",
+    ]
