@@ -1,5 +1,7 @@
 """Testes de integração da camada HTTP."""
 
+from datetime import UTC, datetime
+from typing import cast
 from uuid import UUID, uuid4
 
 import pytest
@@ -7,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from backend.app.core.config import Settings
-from backend.app.core.container import build_container
+from backend.app.core.container import ApplicationContainer, build_container
 from backend.app.main import create_app
 from backend.app.modules.identity.application.authentication import (
     AccessToken,
@@ -16,6 +18,7 @@ from backend.app.modules.identity.application.authentication import (
     TokenVerifier,
     UnavailableTokenVerifier,
 )
+from backend.app.modules.identity.domain.entities import UserProfile, UserRole
 
 _TEST_TOKEN = "token-sintetico-de-teste"
 _TEST_USER_ID = UUID("00000000-0000-4000-8000-000000000001")
@@ -36,7 +39,12 @@ class TestTokenVerifier:
         )
 
 
-def build_application(token_verifier: TokenVerifier | None = None) -> FastAPI:
+def build_application(
+    token_verifier: TokenVerifier | None = None,
+    *,
+    role: UserRole = UserRole.COORDINATOR,
+    active: bool = True,
+) -> FastAPI:
     settings = Settings(
         app_name="Livre Acesso API - Test",
         version="test",
@@ -47,9 +55,22 @@ def build_application(token_verifier: TokenVerifier | None = None) -> FastAPI:
         api_prefix="/api/v1",
         cors_origins=("http://localhost:5173",),
     )
+    container = build_container(settings)
+    assert container.in_memory_profile_store is not None
+    now = datetime.now(UTC)
+    container.in_memory_profile_store.seed(
+        UserProfile(
+            id=_TEST_USER_ID,
+            full_name="Coordenação Teste",
+            role=role,
+            active=active,
+            created_at=now,
+            updated_at=now,
+        )
+    )
     return create_app(
         settings=settings,
-        container=build_container(settings),
+        container=container,
         token_verifier=token_verifier or TestTokenVerifier(),
     )
 
@@ -330,3 +351,133 @@ def test_local_liveness_and_readiness_have_distinct_contracts() -> None:
     assert ready.status_code == 200
     assert ready.json()["status"] == "ready"
     assert ready.json()["persistence"] == "up"
+
+
+def seed_profile(
+    application: FastAPI,
+    *,
+    full_name: str,
+    role: UserRole,
+    active: bool,
+) -> UserProfile:
+    container = cast(ApplicationContainer, application.state.container)
+    assert container.in_memory_profile_store is not None
+    now = datetime.now(UTC)
+    profile = UserProfile(
+        id=uuid4(),
+        full_name=full_name,
+        role=role,
+        active=active,
+        created_at=now,
+        updated_at=now,
+    )
+    container.in_memory_profile_store.seed(profile)
+    return profile
+
+
+def test_my_profile_returns_role_state_and_capabilities() -> None:
+    with build_client() as client:
+        response = client.get("/api/v1/me")
+
+    assert response.status_code == 200
+    assert response.json()["id"] == str(_TEST_USER_ID)
+    assert response.json()["role"] == "coordenador"
+    assert response.json()["active"] is True
+    assert "profiles:manage" in response.json()["capabilities"]
+
+
+def test_my_profile_can_update_own_display_name() -> None:
+    with build_client() as client:
+        current = client.get("/api/v1/me").json()
+        updated = client.put(
+            "/api/v1/me",
+            json={
+                "expected_updated_at": current["updated_at"],
+                "full_name": "Coordenação Principal",
+            },
+        )
+
+    assert updated.status_code == 200
+    assert updated.json()["full_name"] == "Coordenação Principal"
+    assert updated.json()["role"] == "coordenador"
+
+
+def test_coordinator_lists_and_assigns_pending_profile() -> None:
+    application = build_application()
+    pending = seed_profile(
+        application,
+        full_name="Nova Recepção",
+        role=UserRole.PENDING,
+        active=False,
+    )
+
+    with TestClient(
+        application,
+        headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+    ) as client:
+        listed = client.get("/api/v1/profiles?role=pendente")
+        assigned = client.post(
+            f"/api/v1/profiles/{pending.id}/role",
+            json={
+                "expected_updated_at": pending.updated_at.isoformat(),
+                "role": "recepcao",
+                "reason": "Acesso aprovado pela coordenação responsável",
+            },
+        )
+        activated = client.post(
+            f"/api/v1/profiles/{pending.id}/activate",
+            json={
+                "expected_updated_at": assigned.json()["updated_at"],
+                "reason": "Acesso aprovado pela coordenação responsável",
+            },
+        )
+
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 1
+    assert assigned.status_code == 200
+    assert assigned.json()["role"] == "recepcao"
+    assert assigned.json()["active"] is False
+    assert activated.status_code == 200
+    assert activated.json()["active"] is True
+
+
+def test_receptionist_cannot_list_or_manage_profiles() -> None:
+    application = build_application(role=UserRole.RECEPTIONIST)
+    target = seed_profile(
+        application,
+        full_name="Consulta Teste",
+        role=UserRole.READ_ONLY,
+        active=True,
+    )
+
+    with TestClient(
+        application,
+        headers={"Authorization": f"Bearer {_TEST_TOKEN}"},
+    ) as client:
+        listed = client.get("/api/v1/profiles")
+        changed = client.post(
+            f"/api/v1/profiles/{target.id}/deactivate",
+            json={
+                "expected_updated_at": target.updated_at.isoformat(),
+                "reason": "Bloqueio solicitado pela coordenação responsável",
+            },
+        )
+
+    assert listed.status_code == 403
+    assert listed.json()["code"] == "permission_denied"
+    assert changed.status_code == 403
+
+
+def test_last_active_coordinator_cannot_be_deactivated() -> None:
+    with build_client() as client:
+        current = client.get("/api/v1/me").json()
+        response = client.post(
+            f"/api/v1/profiles/{_TEST_USER_ID}/deactivate",
+            json={
+                "expected_updated_at": current["updated_at"],
+                "reason": "Bloqueio solicitado pela coordenação responsável",
+            },
+        )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "last_active_coordinator"
