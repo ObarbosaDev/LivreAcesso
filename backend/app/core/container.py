@@ -1,8 +1,25 @@
 """Ponto único de composição das dependências da aplicação."""
 
 from dataclasses import dataclass
+from uuid import UUID
 
 from backend.app.core.config import Settings, get_settings
+from backend.app.modules.classes.application.use_cases import (
+    ChangeClassActivation,
+    ChangeModalityActivation,
+    CreateClass,
+    CreateModality,
+    GetClass,
+    GetModality,
+    ListClasses,
+    ListModalities,
+    UpdateClass,
+    UpdateModality,
+)
+from backend.app.modules.classes.infrastructure.repositories import InMemoryClassRepository
+from backend.app.modules.classes.infrastructure.supabase_repository import (
+    SupabaseClassRepository,
+)
 from backend.app.modules.identity.application.use_cases import (
     ChangeProfileActivation,
     ChangeProfileRole,
@@ -77,6 +94,24 @@ class StudentServices:
 
 
 @dataclass(frozen=True, slots=True)
+class ClassServices:
+    """Casos de uso do catálogo vinculados ao perfil da requisição."""
+
+    list_modalities: ListModalities
+    get_modality: GetModality
+    create_modality: CreateModality
+    update_modality: UpdateModality
+    activate_modality: ChangeModalityActivation
+    deactivate_modality: ChangeModalityActivation
+    list_classes: ListClasses
+    get_class: GetClass
+    create_class: CreateClass
+    update_class: UpdateClass
+    activate_class: ChangeClassActivation
+    deactivate_class: ChangeClassActivation
+
+
+@dataclass(frozen=True, slots=True)
 class ApplicationContainer:
     """Mantém recursos globais e cria serviços seguros por requisição."""
 
@@ -85,6 +120,7 @@ class ApplicationContainer:
     in_memory_profile_store: InMemoryProfileRepository | None
     in_memory_student_store: InMemoryStudentRepository | None
     supabase_gateway: SupabaseRPCGateway | None
+    in_memory_class_store: InMemoryClassRepository | None = None
 
     def identity_for(self, context: RequestContext) -> IdentityServices:
         if self.supabase_gateway is not None:
@@ -150,6 +186,49 @@ class ApplicationContainer:
             unlink_guardian=UnlinkStudentGuardian(store, self.event_bus),
         )
 
+    def classes_for(self, context: RequestContext) -> ClassServices:
+        actor_id = context.user.user_id
+        if self.supabase_gateway is not None:
+            catalog = SupabaseClassRepository(self.supabase_gateway, context)
+            profiles = SupabaseProfileRepository(self.supabase_gateway, context)
+            return self._class_services(catalog, profiles, actor_id)
+        if self.in_memory_class_store is None or self.in_memory_profile_store is None:
+            raise RuntimeError("O container não possui armazenamento de turmas.")
+        return self._class_services(
+            self.in_memory_class_store,
+            self.in_memory_profile_store,
+            actor_id,
+        )
+
+    def _class_services(
+        self,
+        catalog: InMemoryClassRepository | SupabaseClassRepository,
+        profiles: InMemoryProfileRepository | SupabaseProfileRepository,
+        actor_id: UUID,
+    ) -> ClassServices:
+        return ClassServices(
+            list_modalities=ListModalities(catalog, profiles, actor_id),
+            get_modality=GetModality(catalog, profiles, actor_id),
+            create_modality=CreateModality(catalog, profiles, self.event_bus, actor_id),
+            update_modality=UpdateModality(catalog, profiles, self.event_bus, actor_id),
+            activate_modality=ChangeModalityActivation(
+                catalog, profiles, self.event_bus, actor_id, True
+            ),
+            deactivate_modality=ChangeModalityActivation(
+                catalog, profiles, self.event_bus, actor_id, False
+            ),
+            list_classes=ListClasses(catalog, profiles, actor_id),
+            get_class=GetClass(catalog, profiles, actor_id),
+            create_class=CreateClass(catalog, catalog, profiles, self.event_bus, actor_id),
+            update_class=UpdateClass(catalog, catalog, profiles, self.event_bus, actor_id),
+            activate_class=ChangeClassActivation(
+                catalog, catalog, profiles, self.event_bus, actor_id, True
+            ),
+            deactivate_class=ChangeClassActivation(
+                catalog, catalog, profiles, self.event_bus, actor_id, False
+            ),
+        )
+
     async def close(self) -> None:
         """Encerra pools criados pela aplicação sem tocar em clientes injetados."""
 
@@ -180,6 +259,7 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
             in_memory_profile_store=None,
             in_memory_student_store=None,
             supabase_gateway=gateway,
+            in_memory_class_store=None,
         )
 
     if current_settings.environment not in {"development", "test"}:
@@ -193,4 +273,5 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         in_memory_profile_store=InMemoryProfileRepository(),
         in_memory_student_store=InMemoryStudentRepository(),
         supabase_gateway=None,
+        in_memory_class_store=InMemoryClassRepository(),
     )

@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import Settings, get_settings
 from backend.app.core.container import ApplicationContainer, build_container
+from backend.app.modules.classes.presentation.routes import build_classes_router
 from backend.app.modules.identity.application.authentication import (
     TokenVerifier,
     UnavailableTokenVerifier,
@@ -91,6 +92,10 @@ def create_app(
     )
     application.include_router(
         build_identity_router(current_container),
+        prefix=current_settings.api_prefix,
+    )
+    application.include_router(
+        build_classes_router(current_container),
         prefix=current_settings.api_prefix,
     )
     application.include_router(
