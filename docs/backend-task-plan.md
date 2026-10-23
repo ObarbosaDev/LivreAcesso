@@ -175,7 +175,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 - Giovana Oliveira de Queiroz — `BL-__`
 - Sara Adriele de Lima Andrade — `BL-__`
 - Júlio César Soares Cavalcante — `BL-__`
-- Matheus Pinheiro Barbosa — revisão/produção
+- Matheus Pinheiro Barbosa — `BL-01` + revisão/produção
 - Victor Gabriel Santos Silva — `BL-__`
 - Victor Augusto Ferreira Silva — `BL-__`
 - Rodrigo Ferreira dos Santos Pereira — `BL-__`
