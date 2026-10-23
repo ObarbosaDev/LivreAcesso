@@ -68,6 +68,7 @@ def build_application(
     container = ApplicationContainer(
         event_bus=EventBus(),
         readiness_probe=SupabaseReadinessProbe(gateway),
+        in_memory_profile_store=None,
         in_memory_student_store=None,
         supabase_gateway=gateway,
     )
@@ -304,3 +305,167 @@ def test_readiness_failure_returns_sanitized_503() -> None:
     assert response.json()["code"] == "service_not_ready"
     assert response.headers["Retry-After"] == "30"
     assert "internal_database_detail" not in response.text
+
+
+def test_profile_management_crosses_fastapi_and_supabase_rpcs() -> None:
+    target_id = "00000000-0000-4000-8000-000000000020"
+    created_at = datetime(2026, 10, 22, tzinfo=UTC)
+    actor_version = datetime(2026, 10, 23, 10, 0, tzinfo=UTC)
+    target_version = datetime(2026, 10, 23, 10, 1, tzinfo=UTC)
+    role_version = datetime(2026, 10, 23, 10, 2, tzinfo=UTC)
+    active_version = datetime(2026, 10, 23, 10, 3, tzinfo=UTC)
+    target_role = "pending"
+    target_active = False
+    target_updated_at = target_version
+    rpc_names: list[str] = []
+
+    def profile_row(
+        profile_id: str,
+        name: str,
+        role: str,
+        active: bool,
+        updated_at: datetime,
+    ) -> dict[str, object]:
+        return {
+            "id": profile_id,
+            "full_name": name,
+            "role": role,
+            "active": active,
+            "created_at": created_at.isoformat(),
+            "updated_at": updated_at.isoformat(),
+        }
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        nonlocal target_role, target_active, target_updated_at
+        rpc_name = request.url.path.rsplit("/", maxsplit=1)[-1]
+        rpc_names.append(rpc_name)
+        assert request.headers["Authorization"] == f"Bearer {_ACCESS_TOKEN}"
+
+        if rpc_name == "get_my_profile":
+            return httpx2.Response(
+                200,
+                json=profile_row(
+                    str(_USER_ID),
+                    "Coordenação Teste",
+                    "coordinator",
+                    True,
+                    actor_version,
+                ),
+            )
+        if rpc_name == "list_profiles":
+            return httpx2.Response(
+                200,
+                json={
+                    "items": [
+                        profile_row(
+                            target_id,
+                            "Nova Recepção",
+                            target_role,
+                            target_active,
+                            target_updated_at,
+                        )
+                    ],
+                    "total": 1,
+                },
+            )
+        if rpc_name == "get_profile_detail":
+            return httpx2.Response(
+                200,
+                json=profile_row(
+                    target_id,
+                    "Nova Recepção",
+                    target_role,
+                    target_active,
+                    target_updated_at,
+                ),
+            )
+        if rpc_name == "change_profile_role":
+            target_role = "receptionist"
+            target_updated_at = role_version
+            return httpx2.Response(200, json={"updated_at": role_version.isoformat()})
+        if rpc_name == "change_profile_activation":
+            target_active = True
+            target_updated_at = active_version
+            return httpx2.Response(200, json={"updated_at": active_version.isoformat()})
+        return httpx2.Response(404, json={"message": "function_not_found"})
+
+    application, http_client = build_application(respond)
+
+    with TestClient(
+        application,
+        headers={"Authorization": f"Bearer {_ACCESS_TOKEN}"},
+    ) as client:
+        current = client.get("/api/v1/me")
+        listed = client.get("/api/v1/profiles?role=pendente")
+        assigned = client.post(
+            f"/api/v1/profiles/{target_id}/role",
+            json={
+                "expected_updated_at": target_version.isoformat(),
+                "role": "recepcao",
+                "reason": "Acesso aprovado pela coordenação responsável",
+            },
+        )
+        activated = client.post(
+            f"/api/v1/profiles/{target_id}/activate",
+            json={
+                "expected_updated_at": role_version.isoformat(),
+                "reason": "Acesso aprovado pela coordenação responsável",
+            },
+        )
+
+    asyncio.run(http_client.aclose())
+
+    assert current.status_code == 200
+    assert current.json()["role"] == "coordenador"
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 1
+    assert assigned.status_code == 200
+    assert assigned.json()["role"] == "recepcao"
+    assert assigned.json()["active"] is False
+    assert activated.status_code == 200
+    assert activated.json()["active"] is True
+    assert "profiles:manage" not in activated.json()["capabilities"]
+    assert rpc_names == [
+        "get_my_profile",
+        "get_my_profile",
+        "list_profiles",
+        "get_my_profile",
+        "get_profile_detail",
+        "change_profile_role",
+        "get_my_profile",
+        "get_profile_detail",
+        "change_profile_activation",
+    ]
+
+
+def test_profile_list_denial_happens_before_admin_rpc() -> None:
+    rpc_names: list[str] = []
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        rpc_name = request.url.path.rsplit("/", maxsplit=1)[-1]
+        rpc_names.append(rpc_name)
+        return httpx2.Response(
+            200,
+            json={
+                "id": str(_USER_ID),
+                "full_name": "Recepção Teste",
+                "role": "receptionist",
+                "active": True,
+                "created_at": datetime(2026, 10, 22, tzinfo=UTC).isoformat(),
+                "updated_at": datetime(2026, 10, 23, tzinfo=UTC).isoformat(),
+            },
+        )
+
+    application, http_client = build_application(respond)
+
+    with TestClient(
+        application,
+        headers={"Authorization": f"Bearer {_ACCESS_TOKEN}"},
+    ) as client:
+        response = client.get("/api/v1/profiles")
+
+    asyncio.run(http_client.aclose())
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "permission_denied"
+    assert rpc_names == ["get_my_profile"]
