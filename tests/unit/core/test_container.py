@@ -31,6 +31,7 @@ def settings(
 def test_without_supabase_uses_memory_in_test_environment() -> None:
     container = build_container(settings())
 
+    assert container.in_memory_profile_store is not None
     assert container.in_memory_student_store is not None
     assert container.supabase_gateway is None
 
@@ -44,6 +45,7 @@ def test_complete_supabase_configuration_uses_remote_gateway() -> None:
         )
     )
 
+    assert container.in_memory_profile_store is None
     assert container.in_memory_student_store is None
     assert container.supabase_gateway is not None
     asyncio.run(container.close())
