@@ -25,7 +25,7 @@
 
 ### MVP restante
 
-- **Produção:** JWT real, readiness, Vercel, CI e backup;
+- **Produção:** BL-01 concluído; ainda faltam CI e backup;
 - **Base:** usuários, responsáveis, modalidades, turmas e instrutores;
 - **Operação:** matrículas, capacidade, chamada, faltas, alertas e relatório básico;
 - **Depois do piloto:** espera avançada e integração real com WhatsApp.
@@ -53,7 +53,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 
 ### BL-01 — Homologação real e deploy do backend
 
-> Prioridade **P0** · 1 pessoa · 3–5h · Precisa da conta coordenadora
+> **CONCLUÍDO** · Prioridade **P0** · Matheus · Produção homologada
 
 - **Fazer:** concluir `livre-acesso-verify-supabase`, criar liveness/readiness e publicar FastAPI na Vercel.
 - **Como:** usar somente Publishable key, configurar variáveis no painel e testar cold start, JWT e RPC.
@@ -175,7 +175,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 - Giovana Oliveira de Queiroz — `BL-__`
 - Sara Adriele de Lima Andrade — `BL-__`
 - Júlio César Soares Cavalcante — `BL-__`
-- Matheus Pinheiro Barbosa — `BL-01` + revisão/produção
+- Matheus Pinheiro Barbosa — `BL-01 concluído` + revisão/produção
 - Victor Gabriel Santos Silva — `BL-__`
 - Victor Augusto Ferreira Silva — `BL-__`
 - Rodrigo Ferreira dos Santos Pereira — `BL-__`
