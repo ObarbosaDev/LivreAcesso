@@ -112,7 +112,7 @@ Sem `SUPABASE_URL`, o backend usa um verificador que falha fechado com `503`. Is
 
 ### Estado remoto
 
-As quatro migrations foram aplicadas ao projeto `LivreAcesso` em São Paulo. A inspeção confirmou RLS nas tabelas públicas, ausência de grants diretos nas tabelas pessoais, JWKS `ES256` e advisor de desempenho sem problemas. O banco permanece vazio e aguarda contas sintéticas para a matriz funcional por papel.
+As cinco migrations foram aplicadas ao projeto `LivreAcesso` em São Paulo. A inspeção confirmou RLS nas tabelas públicas, ausência de grants diretos nas tabelas pessoais, JWKS `ES256` e advisor de desempenho sem problemas. O banco permanece vazio e aguarda contas sintéticas para a matriz funcional por papel.
 
 ## Matriz de papéis
 

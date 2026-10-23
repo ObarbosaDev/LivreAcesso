@@ -61,7 +61,7 @@ Projeto homologado estruturalmente: `LivreAcesso`, região `South America (São 
 
 Verificações concluídas:
 
-- quatro migrations locais e remotas sincronizadas;
+- cinco migrations locais e remotas sincronizadas;
 - tabelas públicas com RLS ativo;
 - tabelas pessoais sem grants diretos para `anon` ou `authenticated`;
 - RPC de cadastro antiga sem permissão externa;
