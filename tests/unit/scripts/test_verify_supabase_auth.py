@@ -62,6 +62,12 @@ def test_deployed_smoke_checks_live_ready_and_authenticated_list() -> None:
         if request.url.path == "/health/ready":
             return httpx2.Response(200, headers=headers, json={"status": "ready"})
         assert request.headers["Authorization"] == "Bearer token-sintetico"
+        if request.url.path == "/api/v1/me":
+            return httpx2.Response(
+                200,
+                headers=headers,
+                json={"role": "coordenador", "active": True},
+            )
         return httpx2.Response(200, headers=headers, json={"total": 0})
 
     with httpx2.Client(transport=httpx2.MockTransport(respond)) as client:
@@ -71,7 +77,12 @@ def test_deployed_smoke_checks_live_ready_and_authenticated_list() -> None:
             http_client=client,
         )
 
-    assert paths == ["/health/live", "/health/ready", "/api/v1/students"]
+    assert paths == [
+        "/health/live",
+        "/health/ready",
+        "/api/v1/students",
+        "/api/v1/me",
+    ]
 
 
 def test_deployed_smoke_requires_https() -> None:
