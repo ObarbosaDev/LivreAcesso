@@ -8,6 +8,7 @@ import pytest
 
 from scripts.verify_supabase_auth import (
     VerificationError,
+    _assert_guardian_probe,
     _AuthResponse,
     _validate_publishable_key,
     _verify_deployed_path,
@@ -51,7 +52,7 @@ def test_verifier_rejects_non_publishable_key_before_network() -> None:
         _validate_publishable_key("https://example.supabase.co", "wrong-key-type")
 
 
-def test_deployed_smoke_checks_live_ready_and_authenticated_list() -> None:
+def test_deployed_smoke_checks_live_ready_and_authenticated_routes() -> None:
     paths: list[str] = []
 
     def respond(request: httpx2.Request) -> httpx2.Response:
@@ -68,6 +69,12 @@ def test_deployed_smoke_checks_live_ready_and_authenticated_list() -> None:
                 headers=headers,
                 json={"role": "coordenador", "active": True},
             )
+        if request.url.path.endswith("/guardians"):
+            return httpx2.Response(
+                404,
+                headers=headers,
+                json={"code": "student_not_found"},
+            )
         return httpx2.Response(200, headers=headers, json={"total": 0})
 
     with httpx2.Client(transport=httpx2.MockTransport(respond)) as client:
@@ -82,6 +89,7 @@ def test_deployed_smoke_checks_live_ready_and_authenticated_list() -> None:
         "/health/ready",
         "/api/v1/students",
         "/api/v1/me",
+        "/api/v1/students/00000000-0000-4000-8000-000000000099/guardians",
     ]
 
 
@@ -103,3 +111,11 @@ def test_deployed_smoke_rejects_missing_request_id() -> None:
             "token-sintetico",
             http_client=client,
         )
+
+
+def test_guardian_probe_requires_controlled_student_not_found() -> None:
+    with pytest.raises(VerificationError, match="estado inesperado"):
+        _assert_guardian_probe(httpx2.Response(200, json={"items": []}))
+
+    with pytest.raises(VerificationError, match="contrato inesperado"):
+        _assert_guardian_probe(httpx2.Response(404, json={"code": "unknown"}))
