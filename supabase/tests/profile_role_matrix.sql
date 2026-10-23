@@ -9,6 +9,8 @@ from public.profiles
 where role = 'coordinator'
   and active;
 
+grant select on table pg_temp.test_profile_operator to authenticated;
+
 do $guard$
 begin
     if (select count(*) from pg_temp.test_profile_operator) <> 1 then
