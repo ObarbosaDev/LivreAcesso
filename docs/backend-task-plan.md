@@ -63,7 +63,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 
 ### BL-02 — Usuários, papéis e bloqueios
 
-> Prioridade **P1** · 1–2 pessoas · 5–8h · Depende de BL-01
+> **EM ANDAMENTO** · Prioridade **P1** · Matheus · Implementação local concluída
 
 - **Fazer:** `/me`, listagem de perfis, ativação/desativação e troca de papel.
 - **Como:** RPCs auditadas, paginação, motivo obrigatório e proteção do último coordenador ativo.
@@ -175,7 +175,7 @@ Cada integrante escolhe um bloco `BL-01` a `BL-10`; blocos de 6–8h podem ter d
 - Giovana Oliveira de Queiroz — `BL-__`
 - Sara Adriele de Lima Andrade — `BL-__`
 - Júlio César Soares Cavalcante — `BL-__`
-- Matheus Pinheiro Barbosa — `BL-01 concluído` + revisão/produção
+- Matheus Pinheiro Barbosa — `BL-01 concluído` + `BL-02` + revisão/produção
 - Victor Gabriel Santos Silva — `BL-__`
 - Victor Augusto Ferreira Silva — `BL-__`
 - Rodrigo Ferreira dos Santos Pereira — `BL-__`
