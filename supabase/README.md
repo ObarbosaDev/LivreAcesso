@@ -155,3 +155,7 @@ O corpo retornado pelo Supabase não é exibido, pois pode conter detalhes sobre
 ## Quinta migration
 
 `migrations/20261021000500_health_check.sql` cria `public.health_check()` para readiness da API. A função é `security invoker`, retorna somente `{ "status": "ok" }`, não consulta tabelas e não exige JWT. Sua única finalidade é provar que gateway, Data API e PostgreSQL estão disponíveis.
+
+### Homologação concluída
+
+O caminho Auth → JWT/JWKS → FastAPI em produção → RPC foi aprovado com a conta sintética de coordenação. O banco continuou com zero alunos, e nenhuma credencial foi gravada ou exibida.
