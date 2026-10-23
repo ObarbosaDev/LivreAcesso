@@ -33,7 +33,7 @@ dev = [
 ]
 
 [tool.vercel]
-entrypoint = "main.py:app"
+entrypoint = "main:app"
 
 [tool.setuptools.packages.find]
 where = ["."]
