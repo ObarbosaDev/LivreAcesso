@@ -42,10 +42,14 @@
 
 :root[data-theme='light'] body { color: #172015; }
 :root[data-theme='light'] .text-white { color: #172015 !important; }
-:root[data-theme='light'] .text-white\/50, :root[data-theme='light'] .text-white\/55, :root[data-theme='light'] .text-white\/60, :root[data-theme='light'] .text-white\/45, :root[data-theme='light'] .text-white\/35 { color: #5d685a !important; }
-:root[data-theme='light'] .border-white\/8, :root[data-theme='light'] .border-white\/10, :root[data-theme='light'] .border-white\/15 { border-color: #d6ddd0 !important; }
+:root[data-theme='light'] .text-white\/30, :root[data-theme='light'] .text-white\/35, :root[data-theme='light'] .text-white\/40, :root[data-theme='light'] .text-white\/45, :root[data-theme='light'] .text-white\/50, :root[data-theme='light'] .text-white\/55, :root[data-theme='light'] .text-white\/60, :root[data-theme='light'] .text-white\/65, :root[data-theme='light'] .text-white\/70, :root[data-theme='light'] .text-white\/75 { color: #5d685a !important; }
+:root[data-theme='light'] .border-white\/8, :root[data-theme='light'] .border-white\/10, :root[data-theme='light'] .border-white\/12, :root[data-theme='light'] .border-white\/15, :root[data-theme='light'] .border-white\/20 { border-color: #cbd5c4 !important; }
 :root[data-theme='light'] .bg-black { background: #ffffff !important; }
-:root[data-theme='light'] .bg-white\/\[\.02\] { background: rgba(63, 141, 37, .04) !important; }
+:root[data-theme='light'] .bg-white\/5, :root[data-theme='light'] .bg-white\/8, :root[data-theme='light'] .bg-white\/10, :root[data-theme='light'] .bg-white\/\[\.02\], :root[data-theme='light'] .bg-white\/\[\.04\] { background: rgba(63, 141, 37, .06) !important; }
+:root[data-theme='light'] .placeholder\:text-white\/30::placeholder, :root[data-theme='light'] .placeholder\:text-white\/35::placeholder { color: #71806d !important; opacity: 1; }
+:root[data-theme='light'] .theme-toggle { border-color: #cbd5c4; color: #4c5d48; }
+:root[data-theme='light'] .liquid-glass { border-color: #cbd5c4; }
+:root[data-theme='light'] input:-webkit-autofill, :root[data-theme='light'] input:-webkit-autofill:hover, :root[data-theme='light'] input:-webkit-autofill:focus { -webkit-text-fill-color: #172015; box-shadow: 0 0 0 1000px #ffffff inset; }
 
 body {
   margin: 0;
