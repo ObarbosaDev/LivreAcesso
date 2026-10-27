@@ -122,5 +122,7 @@ body { font-variant-numeric: tabular-nums; }
   body { background: #fff !important; color: #111 !important; }
   aside, header, nav, button, .report-page > :not(main) { display: none !important; }
   .report-page, .report-page main, .report-page section, .report-page article { color: #111 !important; background: #fff !important; border-color: #d1d5db !important; box-shadow: none !important; }
-  .report-page p, .report-page h1, .report-page h2, .report-page th, .report-page td, .report-page dt, .report-page dd { color: #111 !important; }
+  .report-page p, .report-page h1, .report-page h2, .report-page th, .report-page td, .report-page dt, .report-page dd, .student-report p, .student-report h2, .student-report h3 { color: #111 !important; }
+  .student-report button { display: none !important; }
+  .student-report section, .student-report > div { color: #111 !important; background: #fff !important; border-color: #d1d5db !important; }
 }
