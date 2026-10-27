@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.app.core.config import Settings
+from backend.app.core.config import Settings, _as_bool
 
 
 def settings(**overrides: object) -> Settings:
@@ -68,3 +68,26 @@ def test_origins_and_supabase_values_are_normalized() -> None:
     assert current_settings.cors_origins == ("http://localhost:5173",)
     assert current_settings.supabase_url == "https://project-ref.supabase.co"
     assert current_settings.supabase_publishable_key == "publishable-key"
+
+
+@pytest.mark.parametrize(
+    ("value", "default", "expected"),
+    [(None, False, False), (None, True, True), ("ON", False, True), ("off", True, False)],
+)
+def test_boolean_environment_values_are_interpreted_safely(
+    value: str | None, default: bool, expected: bool
+) -> None:
+    assert _as_bool(value, default=default) is expected
+
+
+def test_invalid_cors_origin_is_rejected() -> None:
+    with pytest.raises(ValueError, match="origem inv\u00e1lida"):
+        settings(cors_origins=("not-an-origin",))
+
+
+def test_production_accepts_https_origin() -> None:
+    current_settings = settings(
+        environment="production",
+        cors_origins=("https://app.livreacesso.com.br",),
+    )
+    assert current_settings.cors_origins == ("https://app.livreacesso.com.br",)
