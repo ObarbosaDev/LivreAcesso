@@ -1,4 +1,4 @@
-import { Loader2, Search, Users } from 'lucide-react'
+import { ArrowUpRight, Loader2, Search, SlidersHorizontal, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -72,30 +72,35 @@ export function StudentsPage() {
   }, [debouncedQuery, status, page])
 
   return (
-    <div>
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="page-enter mx-auto max-w-[1400px] pb-12">
+      <div className="flex flex-wrap items-end justify-between gap-5">
         <div className="flex flex-col gap-1">
-          <h1 className="font-display text-2xl font-semibold text-white">Estudantes</h1>
-          <p className="text-sm text-white/55">
-            {data ? `${data.total} ${data.total === 1 ? 'cadastro' : 'cadastros'}` : 'Carregando…'}
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-green">Cadastro e acompanhamento</p>
+          <h1 className="mt-2 font-display text-4xl font-semibold tracking-[-0.04em] text-white">Estudantes</h1>
+          <p className="mt-2 text-sm text-white/50">Pessoas atendidas pelo instituto e seus responsáveis.</p>
         </div>
         <Link
           to="/estudantes/novo"
-          className="inline-flex h-12 items-center justify-center rounded-xl bg-brand-green px-5 text-sm font-semibold text-ink transition hover:-translate-y-px hover:bg-brand-green-soft"
+          className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-semibold text-ink transition hover:-translate-y-px hover:bg-brand-green-soft"
         >
-          Novo estudante
+          Novo estudante <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-8 grid gap-3 sm:grid-cols-3">
+        <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Total cadastrado</p><p className="mt-1 font-display text-2xl font-semibold text-white">{data?.total ?? '—'}</p></div>
+        <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Filtro atual</p><p className="mt-1 text-sm font-semibold text-white">{status ? STUDENT_STATUS_LABELS[status] : 'Todos os status'}</p></div>
+        <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Atualização</p><p className="mt-1 text-sm font-semibold text-white">Em tempo real</p></div>
+      </div>
+
+      <div className="liquid-glass mt-6 flex flex-col gap-4 rounded-3xl p-4 sm:flex-row sm:items-end">
         <Input
           label="Pesquisar"
           placeholder="Buscar por nome…"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           icon={<Search className="h-4 w-4" aria-hidden="true" />}
-          className="sm:max-w-xs"
+          className="sm:max-w-md"
         />
         <div className="flex flex-col gap-2 sm:w-44">
           <label htmlFor="status-filter" className="text-sm font-medium text-white">
@@ -118,6 +123,7 @@ export function StudentsPage() {
             </option>
           </select>
         </div>
+        <div className="hidden items-center gap-2 pb-3 text-xs text-white/35 sm:flex"><SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Filtros aplicados automaticamente</div>
       </div>
 
       <div className="@container mt-6">
@@ -150,11 +156,12 @@ export function StudentsPage() {
             {/* Tabela em telas largas o bastante; vira cartões quando o espaço aperta — a medida é do container, não da janela, porque esta área divide espaço com o menu lateral. */}
             <table className="hidden w-full text-left text-sm @2xl:table">
               <thead>
-                <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-white/40">
-                  <th className="py-3 font-medium">Nome</th>
-                  <th className="py-3 font-medium">Status</th>
-                  <th className="py-3 font-medium">Responsável</th>
-                  <th className="py-3 font-medium">Cadastro</th>
+                <tr className="border-b border-white/10 text-[11px] uppercase tracking-[0.16em] text-white/35">
+                  <th className="px-4 py-4 font-medium">Estudante</th>
+                  <th className="py-4 font-medium">Status</th>
+                  <th className="py-4 font-medium">Responsável</th>
+                  <th className="py-4 font-medium">Cadastro</th>
+                  <th className="py-4 pr-4" />
                 </tr>
               </thead>
               <tbody>
@@ -162,17 +169,16 @@ export function StudentsPage() {
                   <tr
                     key={student.id}
                     onClick={() => navigate(`/estudantes/${student.id}`)}
-                    className="cursor-pointer border-b border-white/5 transition hover:bg-white/5"
+                    className="group cursor-pointer border-b border-white/5 transition hover:bg-white/[.045]"
                   >
-                    <td className="py-3 text-white">{student.full_name}</td>
-                    <td className="py-3">
-                      <StatusBadge
-                        label={STUDENT_STATUS_LABELS[student.status]}
-                        tone={student.status === 'ativo' ? 'success' : 'neutral'}
-                      />
-                    </td>
-                    <td className="py-3 text-white/60">{student.guardian_name ?? '—'}</td>
-                    <td className="py-3 text-white/60">{formatDate(student.created_at)}</td>
+                    <td className="px-4 py-4"><span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/15 text-sm font-bold text-brand-green">{student.full_name.slice(0, 1).toUpperCase()}</span><span><span className="block font-semibold text-white">{student.full_name}</span><span className="block text-xs text-white/35">{student.cpf_masked}</span></span></span></td>
+                    <td className="py-4"><StatusBadge
+                      label={STUDENT_STATUS_LABELS[student.status]}
+                      tone={student.status === 'ativo' ? 'success' : 'neutral'}
+                    /></td>
+                    <td className="py-4 text-white/60">{student.guardian_name ?? '—'}</td>
+                    <td className="py-4 text-white/60">{formatDate(student.created_at)}</td>
+                    <td className="py-4 pr-4 text-right"><ArrowUpRight className="ml-auto h-4 w-4 text-white/20 transition group-hover:text-brand-green" aria-hidden="true" /></td>
                   </tr>
                 ))}
               </tbody>
