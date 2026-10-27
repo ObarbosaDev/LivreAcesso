@@ -27,3 +27,13 @@ class EnrollmentOutput(BaseModel):
     status: EnrollmentStatus
     created_at: datetime
     updated_at: datetime
+
+
+class EnrollmentPageOutput(BaseModel):
+    """Página paginada para não carregar a turma inteira na API."""
+
+    items: list[EnrollmentOutput]
+    page: int
+    page_size: int
+    total: int
+    total_pages: int
