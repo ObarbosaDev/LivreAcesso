@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, status
 from backend.app.core.container import ApplicationContainer
 from backend.app.modules.enrollments.application.dtos import (
     EnrollmentInput,
+    EnrollmentOccupancyOutput,
     EnrollmentOutput,
     EnrollmentPageOutput,
     EnrollmentStatusInput,
@@ -49,6 +50,13 @@ def build_enrollments_router(container: ApplicationContainer) -> APIRouter:
         context: Annotated[RequestContext, Depends(require_request_context)],
     ) -> EnrollmentOutput:
         return await container.enrollments_for(context).create.execute(payload)
+
+    @router.get("/occupancy/{class_id}", response_model=EnrollmentOccupancyOutput)
+    async def enrollment_occupancy(
+        class_id: UUID,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> EnrollmentOccupancyOutput:
+        return await container.enrollments_for(context).occupancy.execute(class_id)
 
     @router.get(
         "/{enrollment_id}",
