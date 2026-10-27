@@ -52,6 +52,23 @@ export function DashboardPage() {
         <MetricCard label="Matrículas hoje" value={0} icon={ClipboardList} accent="blue" />
       </section>
 
+      <section className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_.65fr]">
+        <div className="liquid-glass rounded-3xl p-6 sm:p-7">
+          <div className="flex items-start justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Visão do instituto</p><h2 className="mt-2 font-display text-xl font-semibold text-white">Crescimento da operação</h2></div><span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/40">Últimos 6 meses</span></div>
+          <div className="mt-6 rounded-2xl bg-ink/45 p-4">
+            <svg viewBox="0 0 760 220" className="h-56 w-full" role="img" aria-label="Gráfico de evolução de estudantes e turmas">
+              <defs><linearGradient id="area-green" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#7ed957" stopOpacity=".28"/><stop offset="1" stopColor="#7ed957" stopOpacity="0"/></linearGradient></defs>
+              {[32, 78, 124, 170].map((y) => <line key={y} x1="24" x2="736" y1={y} y2={y} stroke="rgba(255,255,255,.07)" />)}
+              <path d="M24 170 C130 170 130 170 238 170 S350 170 466 170 S620 170 736 170 L736 190 L24 190Z" fill="url(#area-green)" />
+              <path d="M24 170 C130 170 130 170 238 170 S350 170 466 170 S620 170 736 170" fill="none" stroke="#7ed957" strokeWidth="3" strokeLinecap="round" />
+              {[24, 166, 308, 450, 592, 736].map((x, index) => <g key={x}><circle cx={x} cy="170" r="5" fill="#101511" stroke="#7ed957" strokeWidth="2" /><text x={x} y="213" textAnchor="middle" fill="rgba(255,255,255,.38)" fontSize="11">{['Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out'][index]}</text></g>)}
+            </svg>
+            <div className="mt-2 flex items-center gap-5 text-xs text-white/40"><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-brand-green" /> Estudantes ativos</span><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-white/25" /> Turmas ativas</span></div>
+          </div>
+        </div>
+        <div className="liquid-glass rounded-3xl p-6 sm:p-7"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Distribuição atual</p><h2 className="mt-2 font-display text-xl font-semibold text-white">Status dos estudantes</h2><div className="mt-8 flex items-center gap-6"><div className="relative flex h-32 w-32 shrink-0 items-center justify-center rounded-full" style={{ background: 'conic-gradient(#7ed957 0deg 0deg, rgba(255,255,255,.08) 0deg 360deg)' }}><div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-surface"><span className="font-display text-2xl font-semibold text-white">{counts?.activeStudents ?? '—'}</span><span className="text-[10px] uppercase tracking-wider text-white/35">ativos</span></div></div><div className="space-y-3 text-sm"><div><p className="text-white/45">Ativos</p><p className="font-semibold text-brand-green">{counts?.activeStudents ?? '—'}</p></div><div><p className="text-white/45">Inativos</p><p className="font-semibold text-white">0</p></div></div></div><p className="mt-8 border-t border-white/8 pt-4 text-xs leading-5 text-white/35">A distribuição será preenchida automaticamente conforme os cadastros forem realizados.</p></div>
+      </section>
+
       <section className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_.8fr]">
         <div className="liquid-glass rounded-3xl p-6 sm:p-7">
           <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Agenda da operação</p><h2 className="mt-2 font-display text-xl font-semibold text-white">Próximas atividades</h2></div><Clock3 className="h-5 w-5 text-white/35" aria-hidden="true" /></div>
