@@ -118,6 +118,20 @@ class SupabaseEnrollmentRepository(EnrollmentRepository):
             raise PersistenceUnavailableError
         return [self._to_domain(item) for item in result["items"]], result["total"]
 
+    async def occupancy(self, class_id: UUID) -> tuple[int, int, int]:
+        result = await self._call(
+            "get_class_enrollment_occupancy", {"p_class_id": str(class_id)}
+        )
+        if not isinstance(result, dict):
+            raise PersistenceUnavailableError
+        try:
+            capacity = int(result["capacity"])
+            enrolled = int(result["enrolled"])
+            available = int(result["available"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise PersistenceUnavailableError from error
+        return capacity, enrolled, available
+
     @staticmethod
     def _to_domain(result: object) -> Enrollment:
         try:
