@@ -89,6 +89,35 @@ class SupabaseEnrollmentRepository(EnrollmentRepository):
         )
         return self._to_domain(result)
 
+    async def list(
+        self,
+        *,
+        student_id: UUID | None,
+        class_id: UUID | None,
+        status: str | None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Enrollment], int]:
+        # A RPC devolve items e total no mesmo contrato, evitando uma segunda
+        # consulta e preservando paginação correta quando a página está vazia.
+        result = await self._call(
+            "list_enrollments",
+            {
+                "p_student_id": str(student_id) if student_id else None,
+                "p_class_id": str(class_id) if class_id else None,
+                "p_status": status,
+                "p_limit": limit,
+                "p_offset": offset,
+            },
+        )
+        if (
+            not isinstance(result, dict)
+            or not isinstance(result.get("items"), list)
+            or not isinstance(result.get("total"), int)
+        ):
+            raise PersistenceUnavailableError
+        return [self._to_domain(item) for item in result["items"]], result["total"]
+
     @staticmethod
     def _to_domain(result: object) -> Enrollment:
         try:
