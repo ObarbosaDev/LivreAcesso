@@ -22,6 +22,7 @@ import { Button } from '@/shared/ui/Button'
 import { FullScreenState } from '@/shared/ui/FullScreenState'
 import { Input } from '@/shared/ui/Input'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { PageFrame } from '@/shared/ui/PageFrame'
 
 type Tab = 'dados' | 'responsaveis'
 
@@ -68,7 +69,7 @@ export function StudentDetailPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <PageFrame eyebrow="Prontuário operacional" title={student.full_name} description={`${student.age} anos · CPF ${student.cpf_masked}`}>
       <Link
         to="/estudantes"
         className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-white/50 transition hover:text-white"
@@ -79,7 +80,6 @@ export function StudentDetailPage() {
 
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-white">{student.full_name}</h1>
           <p className="mt-1 text-sm text-white/55">
             {student.age} anos · CPF {student.cpf_masked}
           </p>
@@ -114,7 +114,7 @@ export function StudentDetailPage() {
           <ResponsaveisTab student={student} />
         )}
       </div>
-    </div>
+    </PageFrame>
   )
 }
 
