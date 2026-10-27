@@ -20,6 +20,12 @@ from backend.app.modules.classes.infrastructure.repositories import InMemoryClas
 from backend.app.modules.classes.infrastructure.supabase_repository import (
     SupabaseClassRepository,
 )
+from backend.app.modules.enrollments.application.use_cases import (
+    ChangeEnrollmentStatus,
+    CreateEnrollment,
+    GetEnrollment,
+)
+from backend.app.modules.enrollments.infrastructure.repositories import InMemoryEnrollmentRepository
 from backend.app.modules.identity.application.use_cases import (
     ChangeProfileActivation,
     ChangeProfileRole,
@@ -112,6 +118,14 @@ class ClassServices:
 
 
 @dataclass(frozen=True, slots=True)
+class EnrollmentServices:
+    create: CreateEnrollment
+    get: GetEnrollment
+    cancel: ChangeEnrollmentStatus
+    reactivate: ChangeEnrollmentStatus
+
+
+@dataclass(frozen=True, slots=True)
 class ApplicationContainer:
     """Mantém recursos globais e cria serviços seguros por requisição."""
 
@@ -121,6 +135,7 @@ class ApplicationContainer:
     in_memory_student_store: InMemoryStudentRepository | None
     supabase_gateway: SupabaseRPCGateway | None
     in_memory_class_store: InMemoryClassRepository | None = None
+    in_memory_enrollment_store: InMemoryEnrollmentRepository | None = None
 
     def identity_for(self, context: RequestContext) -> IdentityServices:
         if self.supabase_gateway is not None:
@@ -200,6 +215,19 @@ class ApplicationContainer:
             actor_id,
         )
 
+    def enrollments_for(self, context: RequestContext) -> EnrollmentServices:
+        del context
+        if self.supabase_gateway is not None:
+            raise NotImplementedError("Persistência Supabase de matrículas ainda não conectada.")
+        if self.in_memory_enrollment_store is None:
+            raise RuntimeError("O container não possui armazenamento de matrículas.")
+        return EnrollmentServices(
+            create=CreateEnrollment(self.in_memory_enrollment_store),
+            get=GetEnrollment(self.in_memory_enrollment_store),
+            cancel=ChangeEnrollmentStatus(self.in_memory_enrollment_store, False),
+            reactivate=ChangeEnrollmentStatus(self.in_memory_enrollment_store, True),
+        )
+
     def _class_services(
         self,
         catalog: InMemoryClassRepository | SupabaseClassRepository,
@@ -274,4 +302,5 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         in_memory_student_store=InMemoryStudentRepository(),
         supabase_gateway=None,
         in_memory_class_store=InMemoryClassRepository(),
+        in_memory_enrollment_store=InMemoryEnrollmentRepository(),
     )
