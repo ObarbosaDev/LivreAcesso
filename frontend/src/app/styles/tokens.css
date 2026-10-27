@@ -1,0 +1,97 @@
+@import 'tailwindcss';
+
+/*
+ * Paleta extraída da logo do Instituto Livre Acesso: verde vívido (arco) sobre
+ * preto (tipografia). A base do sistema é escura para dar contraste ao verde
+ * e ao vidro líquido; mantemos contraste AA e foco visível em todo componente
+ * interativo, porque a estética ousada não pode custar acessibilidade.
+ */
+@theme {
+  --font-display: 'Archivo', 'Inter Tight', system-ui, sans-serif;
+  --font-sans: 'Inter Tight', system-ui, sans-serif;
+
+  --color-ink: #050a05;
+  --color-surface: #0d120d;
+  --color-surface-raised: #141b14;
+  --color-brand-green: #7ed957;
+  --color-brand-green-soft: #a6e884;
+  --color-brand-green-deep: #4f9e2e;
+  --color-danger: #ff6b6b;
+  --color-warning: #ffc857;
+  --color-success: #7ed957;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: #f4f7f3;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-brand-green);
+  color: var(--color-ink);
+}
+
+/* O navegador pinta o fundo do autofill de amarelo por padrão, quebrando
+   qualquer tema escuro. O truque do inset shadow substitui essa cor sem
+   depender de !important nem de propriedades que o Chrome ignora. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f4f7f3;
+  box-shadow: 0 0 0 1000px var(--color-surface-raised) inset;
+  transition: background-color 999999s ease-in-out 0s;
+}
+
+/* Vidro líquido: usado em cartões e painéis sobre o fundo escuro com glow. */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.08),
+    0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+/* Foco visível obrigatório: nunca removemos o outline, só o redesenhamos. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-green);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Faixa de módulos do sistema, rolando devagar e pausando no hover. */
+.marquee-track {
+  animation: marquee-scroll 28s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
