@@ -1,5 +1,6 @@
-import { Loader2, MapPin, Search, Users as UsersIcon } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Loader2, MapPin, Search, Users as UsersIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { getClassOccupancy, listClasses } from '@/features/classes/api'
 import type { SchoolClass } from '@/entities/class/types'
@@ -9,6 +10,9 @@ import { useDebouncedValue } from '@/shared/lib/useDebouncedValue'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
 import { Input } from '@/shared/ui/Input'
 import { OccupancyBar } from '@/shared/ui/OccupancyBar'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { MetricCard } from '@/shared/ui/MetricCard'
+import { PageFrame } from '@/shared/ui/PageFrame'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 
 const PAGE_SIZE = 25
@@ -69,22 +73,16 @@ export function ClassesPage() {
   }, [debouncedQuery, page])
 
   return (
-    <div>
-      <div className="flex flex-col gap-1">
-        <h1 className="font-display text-2xl font-semibold text-white">Turmas</h1>
-        <p className="text-sm text-white/55">
-          {data ? `${data.total} ${data.total === 1 ? 'turma ativa' : 'turmas ativas'}` : 'Carregando…'}
-        </p>
-      </div>
-
-      <Input
+    <PageFrame eyebrow="Programação e capacidade" title="Turmas" description="Organize horários, instrutores e ocupação sem perder a visão do todo." actions={<Link to="/turmas/nova" className="group inline-flex h-11 items-center gap-2 rounded-full bg-brand-green px-5 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-brand-green-soft">Nova turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>}>
+      <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turmas ativas" value={data?.total ?? '—'} icon={CalendarDays} /><MetricCard label="Capacidade cadastrada" value={data ? Object.values(occupancy).reduce((sum, item) => sum + item.capacity, 0) : '—'} icon={UsersIcon} tone="amber" /><MetricCard label="Vagas ocupadas" value={data ? Object.values(occupancy).reduce((sum, item) => sum + item.enrolled, 0) : '—'} icon={UsersIcon} tone="blue" /></div>
+      <div className="liquid-glass mt-6 rounded-3xl p-4"><Input
         label="Pesquisar"
         placeholder="Buscar por nome da turma…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         icon={<Search className="h-4 w-4" aria-hidden="true" />}
-        className="mt-6 max-w-xs"
-      />
+        className="max-w-md"
+      /></div>
 
       <div className="mt-6">
         {loading && !data && (
@@ -101,14 +99,7 @@ export function ClassesPage() {
         )}
 
         {!loading && !error && data && data.items.length === 0 && (
-          <div className="liquid-glass flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
-            <UsersIcon className="h-6 w-6 text-white/40" aria-hidden="true" />
-            <p className="text-sm text-white/55">
-              {debouncedQuery
-                ? 'Nenhuma turma encontrada para esta busca.'
-                : 'Esta turma ainda não possui estudantes.'}
-            </p>
-          </div>
+          <EmptyState icon={UsersIcon} title={debouncedQuery ? 'Nenhuma turma encontrada' : 'A programação ainda está vazia'} description={debouncedQuery ? 'Tente outro termo ou limpe a busca para ver todas as turmas.' : 'Crie a primeira turma para começar a organizar horários, instrutores e matrículas.'} action={!debouncedQuery && <Link to="/turmas/nova" className="inline-flex items-center gap-2 rounded-full bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink">Criar primeira turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>} />
         )}
 
         {!error && data && data.items.length > 0 && (
@@ -116,7 +107,7 @@ export function ClassesPage() {
             {data.items.map((schoolClass) => {
               const occ = occupancy[schoolClass.id]
               return (
-                <div key={schoolClass.id} className="liquid-glass flex flex-col gap-4 rounded-2xl p-5">
+                  <div key={schoolClass.id} className="liquid-glass group flex flex-col gap-4 rounded-3xl p-5 transition hover:-translate-y-1 hover:border-brand-green/25">
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="font-display text-base font-semibold text-white">
                       {schoolClass.name}
@@ -179,6 +170,6 @@ export function ClassesPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageFrame>
   )
 }
