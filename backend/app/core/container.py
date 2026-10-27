@@ -24,6 +24,7 @@ from backend.app.modules.enrollments.application.use_cases import (
     ChangeEnrollmentStatus,
     CreateEnrollment,
     GetEnrollment,
+    ListEnrollments,
 )
 from backend.app.modules.enrollments.domain.repositories import EnrollmentRepository
 from backend.app.modules.enrollments.infrastructure.repositories import InMemoryEnrollmentRepository
@@ -127,6 +128,7 @@ class EnrollmentServices:
     get: GetEnrollment
     cancel: ChangeEnrollmentStatus
     reactivate: ChangeEnrollmentStatus
+    list: ListEnrollments
 
 
 @dataclass(frozen=True, slots=True)
@@ -232,6 +234,7 @@ class ApplicationContainer:
             get=GetEnrollment(store),
             cancel=ChangeEnrollmentStatus(store, False),
             reactivate=ChangeEnrollmentStatus(store, True),
+            list=ListEnrollments(store),
         )
 
     def _class_services(
