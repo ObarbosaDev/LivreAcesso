@@ -1,8 +1,8 @@
-import { ClipboardList, Loader2, Search, UserPlus } from 'lucide-react'
+import { ArrowUpRight, ClipboardList, Loader2, Search, UserPlus, UsersRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { getClassOccupancy, listClasses } from '@/features/classes/api'
-import { createEnrollment, listEnrollments } from '@/features/enrollments/api'
+import { changeEnrollmentStatus, createEnrollment, listEnrollments } from '@/features/enrollments/api'
 import { getStudentSummary, listStudents } from '@/features/students/api'
 import type { SchoolClass } from '@/entities/class/types'
 import { ENROLLMENT_STATUS_LABELS } from '@/entities/enrollment/types'
@@ -15,6 +15,9 @@ import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { OccupancyBar } from '@/shared/ui/OccupancyBar'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { EmptyState } from '@/shared/ui/EmptyState'
+import { MetricCard } from '@/shared/ui/MetricCard'
+import { PageFrame } from '@/shared/ui/PageFrame'
 
 /**
  * Matrícula é escopada por turma: a API não devolve nome de aluno nem de
@@ -100,6 +103,23 @@ export function EnrollmentsPage() {
     return () => controller.abort()
   }, [debouncedSearch, showAddForm])
 
+  async function reloadEnrollments() {
+    const [enrollmentPage, occ] = await Promise.all([
+      listEnrollments({ classId: selectedClassId, page: 1, pageSize: 50 }),
+      getClassOccupancy(selectedClassId),
+    ])
+    setEnrollments(enrollmentPage.items)
+    setOccupancy({ capacity: occ.capacity, enrolled: occ.enrolled })
+    const pairs = await Promise.all(
+      enrollmentPage.items.map((enrollment) =>
+        getStudentSummary(enrollment.student_id)
+          .then((student) => [enrollment.student_id, student.full_name] as const)
+          .catch(() => [enrollment.student_id, 'Estudante não encontrado'] as const),
+      ),
+    )
+    setStudentNames(Object.fromEntries(pairs))
+  }
+
   async function handleAdd(studentId: string) {
     if (adding) return
     setAdding(true)
@@ -109,21 +129,7 @@ export function EnrollmentsPage() {
       setShowAddForm(false)
       setSearchQuery('')
       setSearchResults([])
-      // Recarrega a lista e a ocupação para refletir a matrícula recém-criada.
-      const [enrollmentPage, occ] = await Promise.all([
-        listEnrollments({ classId: selectedClassId, page: 1, pageSize: 50 }),
-        getClassOccupancy(selectedClassId),
-      ])
-      setEnrollments(enrollmentPage.items)
-      setOccupancy({ capacity: occ.capacity, enrolled: occ.enrolled })
-      const pairs = await Promise.all(
-        enrollmentPage.items.map((enrollment) =>
-          getStudentSummary(enrollment.student_id)
-            .then((student) => [enrollment.student_id, student.full_name] as const)
-            .catch(() => [enrollment.student_id, 'Estudante não encontrado'] as const),
-        ),
-      )
-      setStudentNames(Object.fromEntries(pairs))
+      await reloadEnrollments()
     } catch (caught) {
       setAddError(friendlyMessage(caught))
     } finally {
@@ -131,12 +137,30 @@ export function EnrollmentsPage() {
     }
   }
 
-  return (
-    <div>
-      <h1 className="font-display text-2xl font-semibold text-white">Matrículas</h1>
-      <p className="mt-2 text-sm text-white/55">Escolha uma turma para ver e gerenciar as matrículas.</p>
+  async function handleStatusChange(enrollment: Enrollment) {
+    const action = enrollment.status === 'ativa' ? 'cancel' : 'reactivate'
+    const reason = window.prompt(
+      action === 'cancel'
+        ? 'Motivo do cancelamento (mínimo 10 caracteres):'
+        : 'Motivo da reativação (mínimo 10 caracteres):',
+    )
+    if (!reason || reason.trim().length < 10) return
+    try {
+      await changeEnrollmentStatus(enrollment.id, action, {
+        expected_updated_at: enrollment.updated_at,
+        reason,
+      })
+      await reloadEnrollments()
+    } catch (caught) {
+      setError(friendlyMessage(caught))
+    }
+  }
 
-      <div className="mt-6 max-w-xs">
+  return (
+    <PageFrame eyebrow="Vínculos e ocupação" title="Matrículas" description="Acompanhe quem está em cada turma, controle vagas e registre mudanças com histórico.">
+      <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turma selecionada" value={selectedClass?.name ?? '—'} icon={ClipboardList} /><MetricCard label="Vagas ocupadas" value={occupancy?.enrolled ?? '—'} icon={UsersRound} tone="blue" /><MetricCard label="Capacidade" value={occupancy?.capacity ?? '—'} icon={UsersRound} tone="amber" /></div>
+
+      <div className="liquid-glass mt-6 rounded-3xl p-5">
         <label htmlFor="class-select" className="text-sm font-medium text-white">
           Turma
         </label>
@@ -159,18 +183,13 @@ export function EnrollmentsPage() {
       </div>
 
       {!selectedClassId && classes && classes.length === 0 && (
-        <div className="liquid-glass mt-8 flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
-          <ClipboardList className="h-6 w-6 text-white/40" aria-hidden="true" />
-          <p className="text-sm text-white/55">
-            Nenhuma turma ativa ainda. Crie uma turma antes de matricular um estudante.
-          </p>
-        </div>
+        <div className="mt-8"><EmptyState icon={ClipboardList} title="Nenhuma turma disponível" description="Crie uma turma antes de começar a registrar matrículas e acompanhar ocupação." action={<a href="/turmas/nova" className="inline-flex items-center gap-2 rounded-full bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink">Criar turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></a>} /></div>
       )}
 
       {selectedClassId && (
         <div className="mt-8 flex flex-col gap-6">
           {occupancy && selectedClass && (
-            <div className="liquid-glass max-w-xs rounded-2xl p-5">
+          <div className="liquid-glass rounded-3xl p-6">
               <p className="text-sm font-medium text-white">{selectedClass.name}</p>
               <div className="mt-3">
                 <OccupancyBar capacity={occupancy.capacity} enrolled={occupancy.enrolled} />
@@ -178,8 +197,8 @@ export function EnrollmentsPage() {
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-base font-semibold text-white">Estudantes matriculados</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/35">Lista da turma</p><h2 className="mt-1 font-display text-xl font-semibold text-white">Estudantes matriculados</h2></div>
             <Button
               variant="secondary"
               onClick={() => setShowAddForm((value) => !value)}
@@ -246,16 +265,29 @@ export function EnrollmentsPage() {
                   <span className="text-sm text-white">
                     {studentNames[enrollment.student_id] ?? 'Carregando…'}
                   </span>
-                  <StatusBadge
-                    label={ENROLLMENT_STATUS_LABELS[enrollment.status]}
-                    tone={enrollment.status === 'ativa' ? 'success' : 'neutral'}
-                  />
+                  <div className="flex items-center gap-3">
+                    <StatusBadge
+                      label={ENROLLMENT_STATUS_LABELS[enrollment.status]}
+                      tone={enrollment.status === 'ativa' ? 'success' : 'neutral'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange(enrollment)}
+                      className={
+                        enrollment.status === 'ativa'
+                          ? 'text-xs font-medium text-danger/80 hover:text-danger'
+                          : 'text-xs font-medium text-brand-green hover:text-brand-green-soft'
+                      }
+                    >
+                      {enrollment.status === 'ativa' ? 'Cancelar' : 'Reativar'}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </div>
       )}
-    </div>
+    </PageFrame>
   )
 }
