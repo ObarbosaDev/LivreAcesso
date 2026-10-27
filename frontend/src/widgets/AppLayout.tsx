@@ -18,6 +18,11 @@ const NAV_ITEMS = [
 ]
 
 /** Casca fixa do sistema: menu lateral (drawer no celular), cabeçalho e área de conteúdo. */
+function SidebarStatus() {
+  const today = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date())
+  return <div className="mt-auto mx-4 mb-3 border border-brand-green/20 bg-brand-green/[.06] p-4"><div className="flex items-center justify-between"><p className="text-xs font-semibold text-brand-green">Operação</p><span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-brand-green"><span className="h-1.5 w-1.5 bg-brand-green" /> online</span></div><p className="mt-3 text-xs capitalize text-white/50">{today}</p><p className="mt-3 border-t border-brand-green/15 pt-3 text-[10px] uppercase tracking-[0.12em] text-white/30">Ctrl K · busca rápida</p></div>
+}
+
 export function AppLayout() {
   const { profile, signOut } = useAuth()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -77,7 +82,8 @@ export function AppLayout() {
         </div>
         <div className="mb-4 px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">Operação</div>
         {navLinks}
-        <div className="mt-auto mx-4 rounded-2xl border border-brand-green/15 bg-brand-green/[.06] p-4">
+        <SidebarStatus />
+        <div className="mx-4 rounded-2xl border border-brand-green/15 bg-brand-green/[.06] p-4">
           <p className="text-xs font-semibold text-brand-green">Livre Acesso</p>
           <p className="mt-1 text-xs leading-5 text-white/40">Gestão com cuidado, dados e presença.</p>
         </div>
