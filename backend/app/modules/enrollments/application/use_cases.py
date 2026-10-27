@@ -6,6 +6,7 @@ from uuid import UUID
 from backend.app.modules.enrollments.application.dtos import (
     EnrollmentInput,
     EnrollmentOutput,
+    EnrollmentPageOutput,
     EnrollmentStatusInput,
 )
 from backend.app.modules.enrollments.domain.entities import Enrollment
@@ -45,9 +46,7 @@ class ChangeEnrollmentStatus:
     repository: EnrollmentRepository
     active: bool
 
-    async def execute(
-        self, enrollment_id: UUID, dto: EnrollmentStatusInput
-    ) -> EnrollmentOutput:
+    async def execute(self, enrollment_id: UUID, dto: EnrollmentStatusInput) -> EnrollmentOutput:
         item = await self.repository.get(enrollment_id)
         if item is None:
             raise EnrollmentNotFoundError
@@ -57,4 +56,33 @@ class ChangeEnrollmentStatus:
             item.cancel()
         return _output(
             await self.repository.update(item, expected_updated_at=dto.expected_updated_at)
+        )
+
+
+@dataclass(slots=True)
+class ListEnrollments:
+    repository: EnrollmentRepository
+
+    async def execute(
+        self,
+        *,
+        student_id: UUID | None,
+        class_id: UUID | None,
+        status: str | None,
+        page: int,
+        page_size: int,
+    ) -> EnrollmentPageOutput:
+        items, total = await self.repository.list(
+            student_id=student_id,
+            class_id=class_id,
+            status=status,
+            limit=page_size,
+            offset=(page - 1) * page_size,
+        )
+        return EnrollmentPageOutput(
+            items=[_output(item) for item in items],
+            page=page,
+            page_size=page_size,
+            total=total,
+            total_pages=(total + page_size - 1) // page_size if total else 0,
         )
