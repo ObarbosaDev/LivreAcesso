@@ -48,6 +48,10 @@ from backend.app.modules.operations.application.health import (
 from backend.app.modules.operations.infrastructure.supabase_health import (
     SupabaseReadinessProbe,
 )
+from backend.app.modules.students.application.evaluation_use_cases import (
+    CreateStudentEvaluation,
+    ListStudentEvaluations,
+)
 from backend.app.modules.students.application.listeners import (
     StudentRegisteredAuditListener,
 )
@@ -65,7 +69,14 @@ from backend.app.modules.students.application.use_cases import (
     UpdateStudentGuardian,
 )
 from backend.app.modules.students.domain.entities import StudentStatus
+from backend.app.modules.students.domain.evaluation_repositories import StudentEvaluationRepository
 from backend.app.modules.students.domain.events import StudentRegistered
+from backend.app.modules.students.infrastructure.evaluation_repository import (
+    SupabaseStudentEvaluationRepository,
+)
+from backend.app.modules.students.infrastructure.in_memory_evaluation_repository import (
+    InMemoryStudentEvaluationRepository,
+)
 from backend.app.modules.students.infrastructure.repositories import InMemoryStudentRepository
 from backend.app.modules.students.infrastructure.supabase_repository import (
     SupabaseStudentRepository,
@@ -134,6 +145,12 @@ class EnrollmentServices:
 
 
 @dataclass(frozen=True, slots=True)
+class EvaluationServices:
+    create: CreateStudentEvaluation
+    list: ListStudentEvaluations
+
+
+@dataclass(frozen=True, slots=True)
 class ApplicationContainer:
     """Mantém recursos globais e cria serviços seguros por requisição."""
 
@@ -144,6 +161,7 @@ class ApplicationContainer:
     supabase_gateway: SupabaseRPCGateway | None
     in_memory_class_store: InMemoryClassRepository | None = None
     in_memory_enrollment_store: InMemoryEnrollmentRepository | None = None
+    in_memory_evaluation_store: InMemoryStudentEvaluationRepository | None = None
 
     def identity_for(self, context: RequestContext) -> IdentityServices:
         if self.supabase_gateway is not None:
@@ -240,6 +258,19 @@ class ApplicationContainer:
             occupancy=GetEnrollmentOccupancy(store),
         )
 
+    def evaluations_for(self, context: RequestContext) -> EvaluationServices:
+        store: StudentEvaluationRepository
+        if self.supabase_gateway is not None:
+            store = SupabaseStudentEvaluationRepository(self.supabase_gateway)
+        elif self.in_memory_evaluation_store is not None:
+            store = self.in_memory_evaluation_store
+        else:
+            raise RuntimeError("O container não possui armazenamento de avaliações.")
+        return EvaluationServices(
+            create=CreateStudentEvaluation(store),
+            list=ListStudentEvaluations(store),
+        )
+
     def _class_services(
         self,
         catalog: InMemoryClassRepository | SupabaseClassRepository,
@@ -300,6 +331,7 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
             in_memory_student_store=None,
             supabase_gateway=gateway,
             in_memory_class_store=None,
+            in_memory_evaluation_store=None,
         )
 
     if current_settings.environment not in {"development", "test"}:
@@ -315,4 +347,5 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         supabase_gateway=None,
         in_memory_class_store=InMemoryClassRepository(),
         in_memory_enrollment_store=InMemoryEnrollmentRepository(),
+        in_memory_evaluation_store=InMemoryStudentEvaluationRepository(),
     )

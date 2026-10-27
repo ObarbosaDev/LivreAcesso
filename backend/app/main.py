@@ -18,6 +18,9 @@ from backend.app.modules.identity.application.authentication import (
 from backend.app.modules.identity.infrastructure.supabase_jwt import SupabaseJWTVerifier
 from backend.app.modules.identity.presentation.routes import build_identity_router
 from backend.app.modules.operations.presentation.routes import build_operations_router
+from backend.app.modules.students.presentation.evaluation_routes import (
+    build_student_evaluations_router,
+)
 from backend.app.modules.students.presentation.routes import build_students_router
 from backend.app.shared.presentation.problem_details import (
     RequestIdMiddleware,
@@ -105,6 +108,10 @@ def create_app(
     )
     application.include_router(
         build_students_router(current_container),
+        prefix=current_settings.api_prefix,
+    )
+    application.include_router(
+        build_student_evaluations_router(current_container),
         prefix=current_settings.api_prefix,
     )
     return application
