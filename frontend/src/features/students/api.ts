@@ -16,6 +16,10 @@ export function registerStudent(payload: RegisterStudentPayload) {
   return httpClient.post<Student>('/api/v1/students', payload)
 }
 
+export function getStudent(studentId: string, signal?: AbortSignal) {
+  return httpClient.get<Student>(`/api/v1/students/${studentId}`, signal)
+}
+
 interface ListStudentsParams {
   status?: StudentStatus
   query?: string

@@ -3,8 +3,8 @@ import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/app/routes/ProtectedRoute'
 import { AppLayout } from '@/widgets/AppLayout'
 import { ClassesPage } from '@/pages/ClassesPage'
-import { ComingSoonPage } from '@/pages/ComingSoonPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { EnrollmentsPage } from '@/pages/EnrollmentsPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NewStudentPage } from '@/pages/NewStudentPage'
@@ -27,7 +27,7 @@ export function AppRoutes() {
           <Route path="/estudantes" element={<StudentsPage />} />
           <Route path="/estudantes/novo" element={<NewStudentPage />} />
           <Route path="/turmas" element={<ClassesPage />} />
-          <Route path="/matriculas" element={<ComingSoonPage title="Matrículas" />} />
+          <Route path="/matriculas" element={<EnrollmentsPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
         </Route>
       </Route>
