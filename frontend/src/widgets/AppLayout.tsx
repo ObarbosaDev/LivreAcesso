@@ -1,5 +1,5 @@
-import { CalendarRange, ClipboardList, LayoutDashboard, Menu, ShieldCheck, Users, X } from 'lucide-react'
-import { useState } from 'react'
+import { CalendarRange, ClipboardList, LayoutDashboard, Menu, Search, ShieldCheck, Users, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/AuthProvider'
@@ -19,10 +19,24 @@ const NAV_ITEMS = [
 export function AppLayout() {
   const { profile, signOut } = useAuth()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
+  const [commandQuery, setCommandQuery] = useState('')
 
-  const navItems = profile?.capabilities.includes('profiles:manage')
-    ? [...NAV_ITEMS, { to: '/equipe', label: 'Equipe', icon: ShieldCheck }]
-    : NAV_ITEMS
+  const navItems = useMemo(() => profile?.capabilities.includes('profiles:manage') ? [...NAV_ITEMS, { to: '/equipe', label: 'Equipe', icon: ShieldCheck }] : NAV_ITEMS, [profile?.capabilities])
+
+  const commandItems = useMemo(() => navItems.filter(({ label }) => label.toLowerCase().includes(commandQuery.toLowerCase())), [commandQuery, navItems])
+
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setCommandOpen(true)
+      }
+      if (event.key === 'Escape') setCommandOpen(false)
+    }
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [])
 
   const navLinks = (
     <nav aria-label="Navegação principal" className="flex flex-1 flex-col gap-2 px-4">
@@ -103,6 +117,7 @@ export function AppLayout() {
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
 
+          <button type="button" onClick={() => setCommandOpen(true)} className="hidden h-10 min-w-64 items-center gap-3 border border-white/10 bg-surface px-3 text-left text-sm text-white/35 transition hover:border-brand-green/40 hover:text-white/60 md:flex"><Search className="h-4 w-4" aria-hidden="true" /><span className="flex-1">Ir para uma área...</span><kbd className="border border-white/10 px-1.5 py-0.5 text-[10px] text-white/35">CTRL K</kbd></button>
           <div className="ml-auto flex items-center gap-3">
             {profile && (
               <Link to="/perfil" className="group flex items-center gap-3 rounded-full py-1 pl-2 pr-3 transition hover:bg-white/[.05]">
@@ -118,6 +133,8 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {commandOpen && <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[16vh]"><button type="button" aria-label="Fechar busca" className="absolute inset-0 bg-black/70" onClick={() => setCommandOpen(false)} /><div className="relative w-full max-w-xl border border-white/15 bg-surface shadow-2xl" role="dialog" aria-modal="true" aria-label="Busca de áreas"><div className="flex items-center gap-3 border-b border-white/10 px-4"><Search className="h-4 w-4 text-brand-green" aria-hidden="true" /><input value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} placeholder="Buscar área do sistema..." className="h-14 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" /></div><div className="p-2">{commandItems.map(({ to, label, icon: Icon, end }) => <NavLink key={to} to={to} end={end} onClick={() => { setCommandOpen(false); setCommandQuery('') }} className="flex items-center gap-3 px-3 py-3 text-sm text-white/65 transition hover:bg-brand-green/10 hover:text-brand-green"><Icon className="h-4 w-4" aria-hidden="true" />{label}<span className="ml-auto text-xs text-white/25">Abrir</span></NavLink>)}{commandItems.length === 0 && <p className="px-3 py-8 text-center text-sm text-white/40">Nenhuma área encontrada.</p>}</div></div></div>}
     </div>
   )
 }
