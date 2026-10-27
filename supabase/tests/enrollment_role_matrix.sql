@@ -112,5 +112,70 @@ begin
 end;
 $lifecycle$;
 
-select '4/4 permission checks passed; transaction rolled back' as result;
+-- A matrícula respeita a mesma matriz de papéis do catálogo: recepção pode
+-- cadastrar, consulta e instrutor podem consultar, e somente coordenação muda
+-- status. O perfil é alternado apenas dentro da transação desta matriz.
+set local role postgres;
+update public.profiles
+set role = 'receptionist', active = true
+where id = (select id from pg_temp.test_enrollment_operator);
+set local role authenticated;
+do $reception$
+begin
+    begin
+        perform public.change_enrollment_status(
+            '00000000-0000-4000-8000-000000000914', 'cancelada', now(),
+            'Recepção não deve alterar status', gen_random_uuid()
+        );
+        raise exception 'receptionist_status_change_was_allowed';
+    exception when sqlstate '42501' then null;
+    end;
+end;
+$reception$;
+
+set local role postgres;
+update public.profiles
+set role = 'read_only', active = true
+where id = (select id from pg_temp.test_enrollment_operator);
+set local role authenticated;
+do $readonly$
+begin
+    if public.get_enrollment('00000000-0000-4000-8000-000000000914')->>'status' <> 'ativa' then
+        raise exception 'read_only_could_not_read_enrollment';
+    end if;
+end;
+$readonly$;
+
+set local role postgres;
+update public.profiles
+set role = 'instructor', active = true
+where id = (select id from pg_temp.test_enrollment_operator);
+set local role authenticated;
+do $instructor$
+begin
+    if public.get_active_enrollment(
+        '00000000-0000-4000-8000-000000000913',
+        '00000000-0000-4000-8000-000000000912'
+    ) is null then
+        raise exception 'instructor_could_not_read_enrollment';
+    end if;
+end;
+$instructor$;
+
+set local role postgres;
+update public.profiles
+set role = 'pending', active = false
+where id = (select id from pg_temp.test_enrollment_operator);
+set local role authenticated;
+do $pending$
+begin
+    begin
+        perform public.get_enrollment('00000000-0000-4000-8000-000000000914');
+        raise exception 'pending_read_was_allowed';
+    exception when sqlstate '42501' then null;
+    end;
+end;
+$pending$;
+
+select '8/8 permission checks passed; transaction rolled back' as result;
 rollback;
