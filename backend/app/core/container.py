@@ -25,7 +25,11 @@ from backend.app.modules.enrollments.application.use_cases import (
     CreateEnrollment,
     GetEnrollment,
 )
+from backend.app.modules.enrollments.domain.repositories import EnrollmentRepository
 from backend.app.modules.enrollments.infrastructure.repositories import InMemoryEnrollmentRepository
+from backend.app.modules.enrollments.infrastructure.supabase_repository import (
+    SupabaseEnrollmentRepository,
+)
 from backend.app.modules.identity.application.use_cases import (
     ChangeProfileActivation,
     ChangeProfileRole,
@@ -216,16 +220,18 @@ class ApplicationContainer:
         )
 
     def enrollments_for(self, context: RequestContext) -> EnrollmentServices:
-        del context
+        store: EnrollmentRepository
         if self.supabase_gateway is not None:
-            raise NotImplementedError("Persistência Supabase de matrículas ainda não conectada.")
-        if self.in_memory_enrollment_store is None:
+            store = SupabaseEnrollmentRepository(self.supabase_gateway, context)
+        elif self.in_memory_enrollment_store is not None:
+            store = self.in_memory_enrollment_store
+        else:
             raise RuntimeError("O container não possui armazenamento de matrículas.")
         return EnrollmentServices(
-            create=CreateEnrollment(self.in_memory_enrollment_store),
-            get=GetEnrollment(self.in_memory_enrollment_store),
-            cancel=ChangeEnrollmentStatus(self.in_memory_enrollment_store, False),
-            reactivate=ChangeEnrollmentStatus(self.in_memory_enrollment_store, True),
+            create=CreateEnrollment(store),
+            get=GetEnrollment(store),
+            cancel=ChangeEnrollmentStatus(store, False),
+            reactivate=ChangeEnrollmentStatus(store, True),
         )
 
     def _class_services(
