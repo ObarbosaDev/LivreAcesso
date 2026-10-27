@@ -1,0 +1,2 @@
+export type SupportLevel = 'intenso' | 'moderado' | 'leve' | 'independente'
+export interface StudentEvaluation { id: string; student_id: string; evaluator_id: string; period_start: string; period_end: string; performance_score: number; evolution_score: number; interaction_score: number; participation_score: number; autonomy_score: number; wellbeing_score: number; support_level: SupportLevel; observations: string; effective_strategies: string; next_objective: string; created_at: string; updated_at: string }
