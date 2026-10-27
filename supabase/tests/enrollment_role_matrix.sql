@@ -59,6 +59,11 @@ select public.register_student_with_guardian_v2(
     'Estudante Sintético BL-05', '52998224725', date '2015-05-10',
     'Responsável Sintético', '61999991234', null, 'responsible_contact'
 );
+select public.register_student_with_guardian_v2(
+    '00000000-0000-4000-8000-000000000915', gen_random_uuid(), gen_random_uuid(),
+    'Segundo Estudante Sintético BL-05', '11144477735', date '2014-06-12',
+    'Segundo Responsável Sintético', '61999991235', null, 'responsible_contact'
+);
 
 do $lifecycle$
 declare
@@ -80,7 +85,7 @@ begin
     end;
 
     begin
-        perform public.register_enrollment(gen_random_uuid(), gen_random_uuid(), '00000000-0000-4000-8000-000000000912', gen_random_uuid());
+        perform public.register_enrollment(gen_random_uuid(), '00000000-0000-4000-8000-000000000915', '00000000-0000-4000-8000-000000000912', gen_random_uuid());
         raise exception 'capacity_was_not_checked';
     exception when raise_exception then
         if sqlerrm <> 'class_capacity_reached' then raise; end if;
@@ -97,11 +102,12 @@ begin
         'Reativação sintética aprovada pela coordenação', gen_random_uuid()
     );
     if v_result->>'status' <> 'ativa' then raise exception 'reactivation_failed'; end if;
+    v_version := (v_result->>'updated_at')::timestamptz;
     begin
-        perform public.change_enrollment_status('00000000-0000-4000-8000-000000000914', 'cancelada', now(), 'Conflito sintético de versão', gen_random_uuid());
+        perform public.change_enrollment_status('00000000-0000-4000-8000-000000000914', 'cancelada', v_version - interval '1 second', 'Conflito sintético de versão', gen_random_uuid());
         raise exception 'stale_version_was_allowed';
-    exception when raise_exception then
-        if sqlerrm <> 'enrollment_version_conflict' then raise; end if;
+    exception when sqlstate '40001' then
+        null;
     end;
 end;
 $lifecycle$;
