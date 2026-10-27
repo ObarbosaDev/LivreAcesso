@@ -5,6 +5,7 @@ from uuid import UUID
 
 from backend.app.modules.enrollments.application.dtos import (
     EnrollmentInput,
+    EnrollmentOccupancyOutput,
     EnrollmentOutput,
     EnrollmentPageOutput,
     EnrollmentStatusInput,
@@ -85,4 +86,18 @@ class ListEnrollments:
             page_size=page_size,
             total=total,
             total_pages=(total + page_size - 1) // page_size if total else 0,
+        )
+
+
+@dataclass(slots=True)
+class GetEnrollmentOccupancy:
+    repository: EnrollmentRepository
+
+    async def execute(self, class_id: UUID) -> EnrollmentOccupancyOutput:
+        capacity, enrolled, available = await self.repository.occupancy(class_id)
+        return EnrollmentOccupancyOutput(
+            class_id=class_id,
+            capacity=capacity,
+            enrolled=enrolled,
+            available=available,
         )
