@@ -33,9 +33,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  background-image:
-    radial-gradient(circle at 92% -10%, rgba(126, 217, 87, 0.11), transparent 28rem),
-    radial-gradient(circle at 15% 110%, rgba(126, 217, 87, 0.06), transparent 24rem);
+  background-image: none;
 }
 
 ::selection {
@@ -56,9 +54,10 @@ input:-webkit-autofill:focus {
 
 /* Vidro líquido: usado em cartões e painéis sobre o fundo escuro com glow. */
 .liquid-glass {
-  background: linear-gradient(145deg, rgba(28, 36, 29, 0.94), rgba(14, 19, 15, 0.94));
+  background: var(--color-surface);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22), inset 0 1px rgba(255, 255, 255, 0.045);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
 }
 
 .panel-grid {
