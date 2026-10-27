@@ -9,6 +9,7 @@ from backend.app.modules.students.application.dtos import (
     RegisterStudentInput,
     SetPrimaryGuardianInput,
     UnlinkStudentGuardianInput,
+    UpdateStudentGuardianInput,
 )
 from backend.app.modules.students.application.use_cases import (
     AddStudentGuardian,
@@ -16,11 +17,13 @@ from backend.app.modules.students.application.use_cases import (
     RegisterStudent,
     SetPrimaryGuardian,
     UnlinkStudentGuardian,
+    UpdateStudentGuardian,
 )
 from backend.app.modules.students.domain.entities import GuardianRelationship
 from backend.app.modules.students.domain.events import (
     StudentGuardianLinked,
     StudentGuardianUnlinked,
+    StudentGuardianUpdated,
     StudentPrimaryGuardianChanged,
 )
 from backend.app.modules.students.infrastructure.repositories import InMemoryStudentRepository
@@ -116,5 +119,39 @@ def test_primary_change_precedes_safe_unlink() -> None:
         assert unlinked.guardian_id == initial_id
         assert len(promoted_events) == 1
         assert len(unlinked_events) == 1
+
+    asyncio.run(scenario())
+
+
+def test_update_guardian_publishes_only_when_the_link_changes() -> None:
+    async def scenario() -> None:
+        repository = InMemoryStudentRepository()
+        event_bus = EventBus()
+        created = await RegisterStudent(repository, event_bus).execute(
+            RegisterStudentInput(
+                full_name="Sophia Almeida Ramos",
+                cpf="52998224725",
+                birth_date=date(2015, 5, 10),
+                guardian=GuardianInput(full_name="Camila Ramos", phone="61999991234"),
+            )
+        )
+        listed = await ListStudentGuardians(repository).execute(created.id)
+        current = listed.items[0]
+        updated_events: list[object] = []
+        event_bus.subscribe(StudentGuardianUpdated, updated_events.append)
+        output = await UpdateStudentGuardian(repository, event_bus).execute(
+            created.id,
+            current.id,
+            UpdateStudentGuardianInput(
+                expected_student_updated_at=created.updated_at,
+                expected_guardian_updated_at=current.guardian_updated_at,
+                full_name="Camila Almeida Ramos",
+                phone="61999991234",
+                relationship=current.relationship,
+                receives_communications=current.receives_communications,
+            ),
+        )
+        assert output.full_name == "Camila Almeida Ramos"
+        assert len(updated_events) == 1
 
     asyncio.run(scenario())
