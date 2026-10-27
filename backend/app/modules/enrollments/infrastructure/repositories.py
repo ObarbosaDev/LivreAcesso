@@ -93,3 +93,14 @@ class InMemoryEnrollmentRepository:
             ]
             items.sort(key=lambda item: item.created_at, reverse=True)
             return items[offset : offset + limit], len(items)
+
+    async def occupancy(self, class_id: UUID) -> tuple[int, int, int]:
+        with self._lock:
+            capacity = self._capacities.get(class_id)
+            if capacity is None:
+                raise EnrollmentNotFoundError
+            enrolled = sum(
+                item.class_id == class_id and item.status is EnrollmentStatus.ACTIVE
+                for item in self._items.values()
+            )
+            return capacity, enrolled, max(capacity - enrolled, 0)
