@@ -99,6 +99,9 @@ artifacts/
 # Local tooling
 .cache/
 .agent/
+.agents/
+.claude/
+skills-lock.json
 .vercel/
 .supabase/
 supabase/.temp/
