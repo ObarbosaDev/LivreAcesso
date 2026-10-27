@@ -67,10 +67,14 @@ class SupabaseEnrollmentRepository(EnrollmentRepository):
             return None
 
     async def find_active(self, student_id: UUID, class_id: UUID) -> Enrollment | None:
-        del student_id, class_id
-        raise NotImplementedError(
-            "A consulta de matrícula ativa será adicionada à RPC de listagem."
+        # Esta consulta existe como RPC própria para manter a tabela protegida
+        # e permitir que a aplicação valide duplicidade com o mesmo contrato
+        # usado pelo PostgREST em produção.
+        result = await self._call(
+            "get_active_enrollment",
+            {"p_student_id": str(student_id), "p_class_id": str(class_id)},
         )
+        return self._to_domain(result) if result is not None else None
 
     async def update(self, enrollment: Enrollment, *, expected_updated_at: datetime) -> Enrollment:
         result = await self._call(
