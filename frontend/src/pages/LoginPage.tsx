@@ -10,6 +10,7 @@ import { Input } from '@/shared/ui/Input'
 import { FullScreenState } from '@/shared/ui/FullScreenState'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
 import { AuthHero, AuthPanel } from '@/widgets/AuthHero'
+import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 
 export function LoginPage() {
   usePageTitle('Entrar')
@@ -70,7 +71,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-ink">
+    <div className="relative flex min-h-screen bg-ink">
+      <div className="absolute right-6 top-6 z-10"><ThemeToggle /></div>
       <AuthHero
         title={
           <>

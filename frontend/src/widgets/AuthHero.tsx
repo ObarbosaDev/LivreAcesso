@@ -66,6 +66,10 @@ function GatewayRings() {
   )
 }
 
+function SignalPanel() {
+  return <div className="mt-12 grid grid-cols-2 border border-white/10 bg-black/20 text-xs text-white/55"><div className="border-b border-r border-white/10 p-4"><p className="text-brand-green">01</p><p className="mt-2">Cuidado</p></div><div className="border-b border-white/10 p-4"><p className="text-brand-green">02</p><p className="mt-2">Presença</p></div><div className="border-r border-white/10 p-4"><p className="text-brand-green">03</p><p className="mt-2">Evolução</p></div><div className="p-4"><p className="text-brand-green">04</p><p className="mt-2">Continuidade</p></div></div>
+}
+
 interface AuthHeroProps {
   title: ReactNode
   description: string
@@ -100,6 +104,7 @@ export function AuthHero({ title, description, showModules = true }: AuthHeroPro
         {showModules && (
           <motion.div variants={item}>
             <ModuleMarquee />
+            <SignalPanel />
           </motion.div>
         )}
       </motion.div>

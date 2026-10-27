@@ -26,6 +26,27 @@
   color-scheme: dark;
 }
 
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-ink: #f1f3ed;
+  --color-surface: #f8faf5;
+  --color-surface-raised: #ffffff;
+  --color-surface-warm: #e7ecdf;
+  --color-brand-green: #3f8d25;
+  --color-brand-green-soft: #2f6f1e;
+  --color-brand-green-deep: #2d681d;
+  --color-danger: #b42318;
+  --color-warning: #9a6700;
+  --color-success: #3f8d25;
+}
+
+:root[data-theme='light'] body { color: #172015; }
+:root[data-theme='light'] .text-white { color: #172015 !important; }
+:root[data-theme='light'] .text-white\/50, :root[data-theme='light'] .text-white\/55, :root[data-theme='light'] .text-white\/60, :root[data-theme='light'] .text-white\/45, :root[data-theme='light'] .text-white\/35 { color: #5d685a !important; }
+:root[data-theme='light'] .border-white\/8, :root[data-theme='light'] .border-white\/10, :root[data-theme='light'] .border-white\/15 { border-color: #d6ddd0 !important; }
+:root[data-theme='light'] .bg-black { background: #ffffff !important; }
+:root[data-theme='light'] .bg-white\/\[\.02\] { background: rgba(63, 141, 37, .04) !important; }
+
 body {
   margin: 0;
   background: var(--color-ink);
