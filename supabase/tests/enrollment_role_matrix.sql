@@ -150,6 +150,14 @@ set local role postgres;
 update public.profiles
 set role = 'instructor', active = true
 where id = (select id from pg_temp.test_enrollment_operator);
+set local role postgres;
+insert into public.class_instructors (class_id, instructor_id, created_by)
+values (
+    '00000000-0000-4000-8000-000000000912',
+    (select id from pg_temp.test_enrollment_operator),
+    (select id from pg_temp.test_enrollment_operator)
+);
+set local role authenticated;
 set local role authenticated;
 do $instructor$
 begin
