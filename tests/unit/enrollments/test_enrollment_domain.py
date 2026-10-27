@@ -87,10 +87,10 @@ def test_enrollment_queries_and_status_changes_cover_success_and_conflicts() -> 
     asyncio.run(scenario())
 
 
-def test_enrollment_entity_rejects_invalid_status_transitions() -> None:
+def test_enrollment_entity_transitions_are_idempotent() -> None:
     item = Enrollment.create(student_id=uuid4(), class_id=uuid4())
-    with pytest.raises(ValueError):
-        item.reactivate()
-    item.cancel()
-    with pytest.raises(ValueError):
-        item.cancel()
+    assert item.reactivate() is False
+    assert item.cancel() is True
+    assert item.cancel() is False
+    assert item.reactivate() is True
+    assert item.status is EnrollmentStatus.ACTIVE
