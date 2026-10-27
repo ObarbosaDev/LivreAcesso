@@ -12,12 +12,19 @@ from backend.app.modules.classes.domain.entities import (
     Modality,
     Weekday,
 )
-from backend.app.modules.classes.domain.events import ClassUpdated, ModalityCreated
+from backend.app.modules.classes.domain.events import (
+    ClassActivationChanged,
+    ClassUpdated,
+    ModalityActivationChanged,
+    ModalityCreated,
+    ModalityUpdated,
+)
 from backend.app.modules.classes.domain.exceptions import (
     InvalidCapacityError,
     InvalidClassDataError,
     InvalidScheduleError,
 )
+from backend.app.modules.classes.domain.value_objects import ClassChangeReason
 from backend.app.modules.identity.domain.entities import Capability, UserRole, capabilities_for_role
 
 
@@ -169,3 +176,57 @@ def test_operational_roles_receive_only_needed_class_capabilities() -> None:
         Capability.CLASSES_READ,
     )
     assert capabilities_for_role(UserRole.PENDING) == ()
+
+
+def test_schedule_and_instructor_value_objects_reject_invalid_data() -> None:
+    with pytest.raises(InvalidScheduleError):
+        ClassSchedule(Weekday.MONDAY, time(10), time(10))
+    with pytest.raises(InvalidScheduleError):
+        ClassSchedule(
+            Weekday.MONDAY,
+            time(10, tzinfo=UTC),
+            time(11, tzinfo=UTC),
+        )
+    with pytest.raises(InvalidScheduleError):
+        ClassGroup.create(
+            modality_id=uuid4(),
+            name="Turma sem horário",
+            capacity=10,
+            location="Sala 1",
+            minimum_age=None,
+            maximum_age=None,
+            schedules=(),
+            instructors=(instructor(),),
+        )
+    with pytest.raises(InvalidClassDataError):
+        ClassInstructor(id=uuid4(), full_name="A")
+    with pytest.raises(InvalidClassDataError):
+        ClassGroup.create(
+            modality_id=uuid4(),
+            name="Turma sem instrutor",
+            capacity=10,
+            location="Sala 1",
+            minimum_age=None,
+            maximum_age=None,
+            schedules=schedules(),
+            instructors=(),
+        )
+
+
+def test_catalog_activation_and_persistence_events_are_consumed() -> None:
+    modality = Modality.create(name="Teatro", description=None)
+    assert modality.pull_events()
+    assert modality.update(name="Teatro", description="Expressão") == ("description",)
+    assert isinstance(modality.pull_events()[0], ModalityUpdated)
+    reason = ClassChangeReason("Atualização confirmada pela coordenação")
+    assert modality.change_activation(False, reason) is True
+    assert isinstance(modality.pull_events()[0], ModalityActivationChanged)
+    assert modality.change_activation(False, reason) is False
+
+    current = group()
+    current.pull_events()
+    assert current.change_activation(False, reason) is True
+    assert isinstance(current.pull_events()[0], ClassActivationChanged)
+    assert current.change_activation(False, reason) is False
+    current.mark_created(datetime.now(UTC), datetime.now(UTC))
+    current.mark_persisted(datetime.now(UTC))
