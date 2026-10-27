@@ -117,3 +117,10 @@ body { font-variant-numeric: tabular-nums; }
     scroll-behavior: auto !important;
   }
 }
+
+@media print {
+  body { background: #fff !important; color: #111 !important; }
+  aside, header, nav, button, .report-page > :not(main) { display: none !important; }
+  .report-page, .report-page main, .report-page section, .report-page article { color: #111 !important; background: #fff !important; border-color: #d1d5db !important; box-shadow: none !important; }
+  .report-page p, .report-page h1, .report-page h2, .report-page th, .report-page td, .report-page dt, .report-page dd { color: #111 !important; }
+}
