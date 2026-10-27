@@ -1,4 +1,4 @@
-import { ArrowLeft, Mail, Phone, User } from 'lucide-react'
+import { ArrowLeft, Check, Mail, Phone, User } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -8,6 +8,7 @@ import { ApiError, friendlyMessage } from '@/shared/api/problemDetails'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
+import { PageFrame } from '@/shared/ui/PageFrame'
 
 interface FieldErrors {
   [field: string]: string
@@ -66,7 +67,8 @@ export function NewStudentPage() {
   }
 
   return (
-    <div className="max-w-xl">
+    <PageFrame eyebrow="Cadastro de pessoas" title="Novo estudante" description="Registre os dados essenciais do estudante e do responsável principal. A matrícula em uma turma acontece em seguida.">
+      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-brand-green/15 bg-brand-green/[.05] px-4 py-3 text-sm text-white/60"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-green text-ink"><Check className="h-4 w-4" aria-hidden="true" /></span><span><strong className="font-semibold text-white">Etapa 1 de 2</strong> · Cadastro pessoal antes da matrícula</span></div>
       <Link
         to="/estudantes"
         className="mb-6 inline-flex items-center gap-1.5 text-xs font-medium text-white/50 transition hover:text-white"
@@ -75,7 +77,6 @@ export function NewStudentPage() {
         Voltar para estudantes
       </Link>
 
-      <h1 className="font-display text-2xl font-semibold text-white">Cadastrar estudante</h1>
       <p className="mt-2 text-sm text-white/55">
         Cria o cadastro pessoal e o responsável principal. A matrícula em uma turma é feita depois,
         em um passo separado.
@@ -153,6 +154,6 @@ export function NewStudentPage() {
           {submitting ? 'Salvando…' : 'Cadastrar estudante'}
         </Button>
       </form>
-    </div>
+    </PageFrame>
   )
 }
