@@ -15,6 +15,7 @@ const NewStudentPage = lazy(() => import('@/pages/NewStudentPage').then((module)
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((module) => ({ default: module.ProfilePage })))
 const ProfilesAdminPage = lazy(() => import('@/pages/ProfilesAdminPage').then((module) => ({ default: module.ProfilesAdminPage })))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })))
+const ReportsPage = lazy(() => import('@/pages/ReportsPage').then((module) => ({ default: module.ReportsPage })))
 const StudentDetailPage = lazy(() => import('@/pages/StudentDetailPage').then((module) => ({ default: module.StudentDetailPage })))
 const StudentsPage = lazy(() => import('@/pages/StudentsPage').then((module) => ({ default: module.StudentsPage })))
 const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage').then((module) => ({ default: module.UnauthorizedPage })))
@@ -37,6 +38,7 @@ export function AppRoutes() {
           <Route path="/turmas" element={<ClassesPage />} />
           <Route path="/turmas/nova" element={<NewClassPage />} />
           <Route path="/matriculas" element={<EnrollmentsPage />} />
+          <Route path="/relatorios" element={<ReportsPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/equipe" element={<ProfilesAdminPage />} />
         </Route>

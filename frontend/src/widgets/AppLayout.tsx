@@ -1,4 +1,4 @@
-import { CalendarRange, ClipboardList, LayoutDashboard, Menu, Search, ShieldCheck, Users, X } from 'lucide-react'
+import { BarChart3, CalendarRange, ClipboardList, LayoutDashboard, Menu, Search, ShieldCheck, Users, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/estudantes', label: 'Estudantes', icon: Users },
   { to: '/turmas', label: 'Turmas', icon: CalendarRange },
   { to: '/matriculas', label: 'Matrículas', icon: ClipboardList },
+  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ]
 
 /** Casca fixa do sistema: menu lateral (drawer no celular), cabeçalho e área de conteúdo. */
