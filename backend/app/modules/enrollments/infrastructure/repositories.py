@@ -73,3 +73,23 @@ class InMemoryEnrollmentRepository:
             enrollment.updated_at = now
             self._items[enrollment.id] = self._snapshot(enrollment)
             return self._snapshot(enrollment)
+
+    async def list(
+        self,
+        *,
+        student_id: UUID | None,
+        class_id: UUID | None,
+        status: str | None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Enrollment], int]:
+        with self._lock:
+            items = [
+                self._snapshot(item)
+                for item in self._items.values()
+                if (student_id is None or item.student_id == student_id)
+                and (class_id is None or item.class_id == class_id)
+                and (status is None or item.status.value == status)
+            ]
+            items.sort(key=lambda item: item.created_at, reverse=True)
+            return items[offset : offset + limit], len(items)
