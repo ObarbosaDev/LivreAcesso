@@ -83,7 +83,7 @@ export function AppLayout() {
         <div className="mb-4 px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">Operação</div>
         {navLinks}
         <SidebarStatus />
-        <div className="mx-4 rounded-2xl border border-brand-green/15 bg-brand-green/[.06] p-4">
+        <div className="hidden mx-4 rounded-2xl border border-brand-green/15 bg-brand-green/[.06] p-4">
           <p className="text-xs font-semibold text-brand-green">Livre Acesso</p>
           <p className="mt-1 text-xs leading-5 text-white/40">Gestão com cuidado, dados e presença.</p>
         </div>
