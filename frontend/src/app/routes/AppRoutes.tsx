@@ -6,6 +6,7 @@ import { ComingSoonPage } from '@/pages/ComingSoonPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { NewStudentPage } from '@/pages/NewStudentPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { StudentsPage } from '@/pages/StudentsPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
@@ -22,6 +23,7 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/estudantes" element={<StudentsPage />} />
+          <Route path="/estudantes/novo" element={<NewStudentPage />} />
           <Route path="/turmas" element={<ComingSoonPage title="Turmas" />} />
           <Route path="/matriculas" element={<ComingSoonPage title="Matrículas" />} />
         </Route>

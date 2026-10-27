@@ -1,5 +1,20 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { StudentPage, StudentStatus } from '@/entities/student/types'
+import type { Student, StudentPage, StudentStatus } from '@/entities/student/types'
+
+export interface RegisterStudentPayload {
+  full_name: string
+  cpf: string
+  birth_date: string
+  guardian: {
+    full_name: string
+    phone: string
+    email?: string
+  }
+}
+
+export function registerStudent(payload: RegisterStudentPayload) {
+  return httpClient.post<Student>('/api/v1/students', payload)
+}
 
 interface ListStudentsParams {
   status?: StudentStatus

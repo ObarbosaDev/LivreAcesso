@@ -1,5 +1,6 @@
 import { Loader2, Search, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { listStudents } from '@/features/students/api'
 import type { Student, StudentStatus } from '@/entities/student/types'
@@ -71,11 +72,19 @@ export function StudentsPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-1">
-        <h1 className="font-display text-2xl font-semibold text-white">Estudantes</h1>
-        <p className="text-sm text-white/55">
-          {data ? `${data.total} ${data.total === 1 ? 'cadastro' : 'cadastros'}` : 'Carregando…'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-display text-2xl font-semibold text-white">Estudantes</h1>
+          <p className="text-sm text-white/55">
+            {data ? `${data.total} ${data.total === 1 ? 'cadastro' : 'cadastros'}` : 'Carregando…'}
+          </p>
+        </div>
+        <Link
+          to="/estudantes/novo"
+          className="inline-flex h-12 items-center justify-center rounded-xl bg-brand-green px-5 text-sm font-semibold text-ink transition hover:-translate-y-px hover:bg-brand-green-soft"
+        >
+          Novo estudante
+        </Link>
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
