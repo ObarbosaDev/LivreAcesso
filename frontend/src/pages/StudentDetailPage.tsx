@@ -1,4 +1,4 @@
-import { ArrowLeft, Mail, Phone, Plus, Star, User, UserMinus } from 'lucide-react'
+import { ArrowLeft, FileText, Mail, Phone, Plus, Printer, Star, User, UserMinus } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -24,7 +24,7 @@ import { Input } from '@/shared/ui/Input'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { PageFrame } from '@/shared/ui/PageFrame'
 
-type Tab = 'dados' | 'responsaveis'
+type Tab = 'dados' | 'responsaveis' | 'relatorio'
 
 export function StudentDetailPage() {
   const { studentId } = useParams<{ studentId: string }>()
@@ -91,7 +91,7 @@ export function StudentDetailPage() {
       </div>
 
       <div className="mt-6 flex gap-1 border-b border-white/10">
-        {(['dados', 'responsaveis'] as const).map((value) => (
+        {(['dados', 'responsaveis', 'relatorio'] as const).map((value) => (
           <button
             key={value}
             type="button"
@@ -102,7 +102,7 @@ export function StudentDetailPage() {
                 : 'text-white/50 hover:text-white'
             }`}
           >
-            {value === 'dados' ? 'Dados' : 'Responsáveis'}
+            {value === 'dados' ? 'Dados' : value === 'responsaveis' ? 'Responsáveis' : 'Relatório do aluno'}
           </button>
         ))}
       </div>
@@ -110,8 +110,10 @@ export function StudentDetailPage() {
       <div className="mt-6">
         {tab === 'dados' ? (
           <DadosTab student={student} onChanged={reload} />
-        ) : (
+        ) : tab === 'responsaveis' ? (
           <ResponsaveisTab student={student} />
+        ) : (
+          <StudentReportTab student={student} />
         )}
       </div>
     </PageFrame>
@@ -223,6 +225,19 @@ function DadosTab({ student, onChanged }: { student: StudentDetail; onChanged: (
     </div>
   )
 }
+
+function StudentReportTab({ student }: { student: StudentDetail }) {
+  return <div className="student-report space-y-6">
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-green">Acompanhamento individual</p><h2 className="mt-2 font-display text-2xl font-semibold text-white">Relatório de {student.full_name}</h2><p className="mt-2 text-sm text-white/45">Documento de acompanhamento para orientar a equipe e a família.</p></div><button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-brand-green hover:text-brand-green"><Printer className="h-4 w-4" aria-hidden="true" /> Imprimir relatório</button></div>
+    <div className="grid gap-4 md:grid-cols-3"><ReportFact label="Situação cadastral" value={STUDENT_STATUS_LABELS[student.status]} /><ReportFact label="Idade" value={`${student.age} anos`} /><ReportFact label="Responsável principal" value={student.guardian.full_name} /></div>
+    <div className="grid gap-6 lg:grid-cols-2"><ReportSection title="Desenvolvimento" description="Registre avanços observados em autonomia, comunicação, interação e participação." /><ReportSection title="Desempenho" description="Acompanhamento de objetivos, atividades realizadas e evolução do estudante." /><ReportSection title="Apoios e acessibilidade" description="Informações importantes para oferecer uma experiência segura, inclusiva e adequada — especialmente em necessidades específicas como autismo." /><ReportSection title="Observações da equipe" description="Anotações relevantes para o próximo atendimento, reunião ou contato com a família." /></div>
+    <div className="border border-dashed border-white/15 bg-white/[.02] p-5"><div className="flex items-center gap-3"><FileText className="h-5 w-5 text-brand-green" aria-hidden="true" /><div><p className="text-sm font-semibold text-white">Histórico de acompanhamento</p><p className="mt-1 text-sm text-white/45">Ainda não há registros de desenvolvimento para este estudante.</p></div></div><p className="mt-4 border-t border-white/10 pt-4 text-xs leading-5 text-white/35">A estrutura do relatório já está preparada. O lançamento de avaliações e observações será conectado ao módulo pedagógico.</p></div>
+  </div>
+}
+
+function ReportFact({ label, value }: { label: string; value: string }) { return <div className="border border-white/10 bg-white/[.02] p-4"><p className="text-xs uppercase tracking-[0.12em] text-white/35">{label}</p><p className="mt-3 font-semibold text-white">{value}</p></div> }
+
+function ReportSection({ title, description }: { title: string; description: string }) { return <section className="border border-white/10 p-5"><h3 className="font-display text-lg font-semibold text-white">{title}</h3><p className="mt-2 text-sm leading-6 text-white/45">{description}</p><div className="mt-5 border border-dashed border-white/12 px-4 py-5 text-xs text-white/35">Nenhum registro lançado ainda.</div></section> }
 
 function ResponsaveisTab({ student }: { student: StudentDetail }) {
   const [guardians, setGuardians] = useState<GuardianListItem[] | null>(null)
