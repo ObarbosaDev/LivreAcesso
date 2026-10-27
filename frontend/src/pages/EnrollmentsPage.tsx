@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import { getClassOccupancy, listClasses } from '@/features/classes/api'
 import { createEnrollment, listEnrollments } from '@/features/enrollments/api'
-import { getStudent, listStudents } from '@/features/students/api'
+import { getStudentSummary, listStudents } from '@/features/students/api'
 import type { SchoolClass } from '@/entities/class/types'
 import { ENROLLMENT_STATUS_LABELS } from '@/entities/enrollment/types'
 import type { Enrollment } from '@/entities/enrollment/types'
@@ -67,7 +67,7 @@ export function EnrollmentsPage() {
         setOccupancy({ capacity: occ.capacity, enrolled: occ.enrolled })
         Promise.all(
           enrollmentPage.items.map((enrollment) =>
-            getStudent(enrollment.student_id, controller.signal)
+            getStudentSummary(enrollment.student_id, controller.signal)
               .then((student) => [enrollment.student_id, student.full_name] as const)
               .catch(() => [enrollment.student_id, 'Estudante não encontrado'] as const),
           ),
@@ -118,7 +118,7 @@ export function EnrollmentsPage() {
       setOccupancy({ capacity: occ.capacity, enrolled: occ.enrolled })
       const pairs = await Promise.all(
         enrollmentPage.items.map((enrollment) =>
-          getStudent(enrollment.student_id)
+          getStudentSummary(enrollment.student_id)
             .then((student) => [enrollment.student_id, student.full_name] as const)
             .catch(() => [enrollment.student_id, 'Estudante não encontrado'] as const),
         ),

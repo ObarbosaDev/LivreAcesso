@@ -28,3 +28,20 @@ export const STUDENT_STATUS_LABELS: Record<StudentStatus, string> = {
   ativo: 'Ativo',
   inativo: 'Inativo',
 }
+
+export interface StudentDetail {
+  id: string
+  full_name: string
+  cpf_masked: string
+  birth_date: string
+  age: number
+  status: StudentStatus
+  guardian: {
+    id: string
+    full_name: string
+    phone: string
+    email: string | null
+  }
+  created_at: string
+  updated_at: string
+}

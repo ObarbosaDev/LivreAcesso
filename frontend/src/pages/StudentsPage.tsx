@@ -1,6 +1,6 @@
 import { Loader2, Search, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { listStudents } from '@/features/students/api'
 import type { Student, StudentStatus } from '@/entities/student/types'
@@ -19,6 +19,7 @@ function formatDate(iso: string): string {
 
 export function StudentsPage() {
   usePageTitle('Estudantes')
+  const navigate = useNavigate()
 
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebouncedValue(query)
@@ -158,7 +159,11 @@ export function StudentsPage() {
               </thead>
               <tbody>
                 {data.items.map((student) => (
-                  <tr key={student.id} className="border-b border-white/5">
+                  <tr
+                    key={student.id}
+                    onClick={() => navigate(`/estudantes/${student.id}`)}
+                    className="cursor-pointer border-b border-white/5 transition hover:bg-white/5"
+                  >
                     <td className="py-3 text-white">{student.full_name}</td>
                     <td className="py-3">
                       <StatusBadge
@@ -175,7 +180,11 @@ export function StudentsPage() {
 
             <ul className="flex flex-col gap-3 @2xl:hidden">
               {data.items.map((student) => (
-                <li key={student.id} className="liquid-glass rounded-2xl p-4">
+                <li key={student.id}>
+                  <Link
+                    to={`/estudantes/${student.id}`}
+                    className="liquid-glass block rounded-2xl p-4 transition hover:border-brand-green/30"
+                  >
                   <div className="flex items-start justify-between gap-3">
                     <span className="font-medium text-white">{student.full_name}</span>
                     <StatusBadge
@@ -193,6 +202,7 @@ export function StudentsPage() {
                       <dd className="text-white/75">{formatDate(student.created_at)}</dd>
                     </div>
                   </dl>
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -10,6 +10,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { NewStudentPage } from '@/pages/NewStudentPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
+import { StudentDetailPage } from '@/pages/StudentDetailPage'
 import { StudentsPage } from '@/pages/StudentsPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 
@@ -26,6 +27,7 @@ export function AppRoutes() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/estudantes" element={<StudentsPage />} />
           <Route path="/estudantes/novo" element={<NewStudentPage />} />
+          <Route path="/estudantes/:studentId" element={<StudentDetailPage />} />
           <Route path="/turmas" element={<ClassesPage />} />
           <Route path="/matriculas" element={<EnrollmentsPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
