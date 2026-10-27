@@ -3,7 +3,7 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from backend.app.core.container import ApplicationContainer
 from backend.app.modules.enrollments.application.dtos import (
@@ -27,8 +27,8 @@ def build_enrollments_router(container: ApplicationContainer) -> APIRouter:
         student_id: UUID | None = None,
         class_id: UUID | None = None,
         status_filter: str | None = None,
-        page: int = 1,
-        page_size: int = 25,
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=25, ge=1, le=100),
     ) -> EnrollmentPageOutput:
         return await container.enrollments_for(context).list.execute(
             student_id=student_id,
