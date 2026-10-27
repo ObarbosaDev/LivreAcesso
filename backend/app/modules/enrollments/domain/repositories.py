@@ -14,3 +14,13 @@ class EnrollmentRepository(Protocol):
     async def update(
         self, enrollment: Enrollment, *, expected_updated_at: datetime
     ) -> Enrollment: ...
+
+    async def list(
+        self,
+        *,
+        student_id: UUID | None,
+        class_id: UUID | None,
+        status: str | None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Enrollment], int]: ...
