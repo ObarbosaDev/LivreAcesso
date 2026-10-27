@@ -21,6 +21,7 @@ from backend.app.modules.classes.domain.entities import (
 )
 from backend.app.modules.classes.domain.exceptions import (
     ActiveClassesExistError,
+    ClassNotFoundError,
     ClassVersionConflictError,
     DuplicateClassError,
     DuplicateModalityError,
@@ -33,7 +34,16 @@ from backend.app.modules.classes.domain.value_objects import ClassChangeReason
 from backend.app.modules.classes.infrastructure.supabase_repository import (
     SupabaseClassRepository,
 )
-from backend.app.modules.identity.application.authentication import AccessToken, AuthenticatedUser
+from backend.app.modules.identity.application.authentication import (
+    AccessToken,
+    AuthenticatedUser,
+    InvalidAccessTokenError,
+)
+from backend.app.shared.application.exceptions import (
+    PermissionDeniedError,
+    PersistenceRejectedError,
+    PersistenceUnavailableError,
+)
 from backend.app.shared.application.request_context import RequestContext
 from backend.app.shared.infrastructure.supabase_rpc import SupabaseRPCGateway
 
@@ -143,6 +153,7 @@ def test_modality_crud_uses_strict_rpc_contracts() -> None:
             assert listed.total == 1
 
     asyncio.run(scenario())
+
     assert rpc_names == [
         "create_modality",
         "get_modality",
@@ -177,6 +188,7 @@ def test_class_payload_maps_schedule_and_never_sends_viewer_identity() -> None:
             assert restored is not None and restored.instructors[0].id == _INSTRUCTOR_ID
 
     asyncio.run(scenario())
+
     assert captured[0]["p_schedules"] == [
         {"weekday": "monday", "starts_at": "14:00:00", "ends_at": "15:00:00"}
     ]
@@ -184,6 +196,80 @@ def test_class_payload_maps_schedule_and_never_sends_viewer_identity() -> None:
     assert all("viewer" not in key for payload in captured for key in payload)
 
 
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        ("duplicate_modality", DuplicateModalityError),
+        ("duplicate_class", DuplicateClassError),
+        ("modality_not_found", ModalityNotFoundError),
+        ("class_not_found", ClassNotFoundError),
+        ("modality_version_conflict", ModalityVersionConflictError),
+        ("class_version_conflict", ClassVersionConflictError),
+        ("invalid_instructor_assignment", InvalidInstructorAssignmentError),
+        ("schedule_overlap", InvalidScheduleError),
+        ("active_classes_exist", ActiveClassesExistError),
+        ("forbidden", PermissionDeniedError),
+    ],
+)
+def test_catalog_repository_maps_rpc_errors(
+    message: str, expected: type[Exception]
+) -> None:
+    def respond(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(400, json={"message": message, "code": message})
+
+    async def scenario() -> None:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            repository = SupabaseClassRepository(
+                SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client), context()
+            )
+            if expected is ModalityNotFoundError:
+                assert await repository.get_modality(_MODALITY_ID) is None
+            else:
+                with pytest.raises(expected):
+                    await repository.get_modality(_MODALITY_ID)
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize(
+    ("status_code", "expected"),
+    [
+        (401, InvalidAccessTokenError),
+        (404, PersistenceUnavailableError),
+        (500, PersistenceUnavailableError),
+        (422, PersistenceRejectedError),
+    ],
+)
+def test_catalog_repository_maps_transport_statuses(
+    status_code: int, expected: type[Exception]
+) -> None:
+    def respond(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(status_code, json={"message": "failure"})
+
+    async def scenario() -> None:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            repository = SupabaseClassRepository(
+                SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client), context()
+            )
+            with pytest.raises(expected):
+                await repository.get_modality(_MODALITY_ID)
+
+    asyncio.run(scenario())
+
+
+def test_catalog_repository_rejects_malformed_remote_projection() -> None:
+    def respond(_request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, json={"wrong": "shape"})
+
+    async def scenario() -> None:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            repository = SupabaseClassRepository(
+                SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client), context()
+            )
+            with pytest.raises(PersistenceUnavailableError):
+                await repository.get_modality(_MODALITY_ID)
+
+    asyncio.run(scenario())
 def test_class_mutations_return_authoritative_version() -> None:
     database_version = _VERSION + timedelta(minutes=1)
     rpc_names: list[str] = []
