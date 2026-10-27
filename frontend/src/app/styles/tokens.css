@@ -7,13 +7,13 @@
  * interativo, porque a estética ousada não pode custar acessibilidade.
  */
 @theme {
-  --font-display: 'Sora', 'DM Sans', system-ui, sans-serif;
-  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --font-sans: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
 
-  --color-ink: #080b09;
-  --color-surface: #101511;
-  --color-surface-raised: #171d18;
-  --color-surface-warm: #1d241d;
+  --color-ink: #000000;
+  --color-surface: #0b0c0a;
+  --color-surface-raised: #11130f;
+  --color-surface-warm: #171912;
   --color-brand-green: #7ed957;
   --color-brand-green-soft: #a6e884;
   --color-brand-green-deep: #4f9e2e;
@@ -56,14 +56,21 @@ input:-webkit-autofill:focus {
 .liquid-glass {
   background: var(--color-surface);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .panel-grid {
   background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
   background-size: 32px 32px;
 }
+
+/* O ERP usa uma superfície industrial: geometria reta e hierarquia por linhas. */
+button, input, select, textarea, .rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-full, .rounded-lg {
+  border-radius: 0 !important;
+}
+
+body { font-variant-numeric: tabular-nums; }
 
 .page-enter { animation: page-enter 560ms cubic-bezier(.22,1,.36,1) both; }
 .stagger-1 { animation-delay: 80ms; }
