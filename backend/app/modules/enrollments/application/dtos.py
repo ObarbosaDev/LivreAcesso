@@ -37,3 +37,12 @@ class EnrollmentPageOutput(BaseModel):
     page_size: int
     total: int
     total_pages: int
+
+
+class EnrollmentOccupancyOutput(BaseModel):
+    """Resumo leve para acompanhar vagas sem carregar a lista inteira."""
+
+    class_id: UUID
+    capacity: int
+    enrolled: int
+    available: int
