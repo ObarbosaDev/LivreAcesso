@@ -1,4 +1,4 @@
-import { CalendarRange, ClipboardList, LayoutDashboard, Menu, Users, X } from 'lucide-react'
+import { CalendarRange, ClipboardList, LayoutDashboard, Menu, ShieldCheck, Users, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 
@@ -20,9 +20,13 @@ export function AppLayout() {
   const { profile, signOut } = useAuth()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
+  const navItems = profile?.capabilities.includes('profiles:manage')
+    ? [...NAV_ITEMS, { to: '/equipe', label: 'Equipe', icon: ShieldCheck }]
+    : NAV_ITEMS
+
   const navLinks = (
-    <nav aria-label="Navegação principal" className="flex flex-1 flex-col gap-1 px-3">
-      {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+    <nav aria-label="Navegação principal" className="flex flex-1 flex-col gap-2 px-4">
+      {navItems.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -30,8 +34,8 @@ export function AppLayout() {
           onClick={() => setDrawerOpen(false)}
           className={({ isActive }) =>
             cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
-              isActive ? 'bg-brand-green/15 text-brand-green' : 'text-white/65 hover:bg-white/6 hover:text-white',
+              'group flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-sm font-medium transition',
+              isActive ? 'border-brand-green/15 bg-brand-green/12 text-brand-green shadow-[inset_3px_0_var(--color-brand-green)]' : 'text-white/55 hover:border-white/8 hover:bg-white/[.04] hover:text-white',
             )
           }
         >
@@ -51,11 +55,16 @@ export function AppLayout() {
         Pular para o conteúdo
       </a>
 
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-white/8 bg-surface py-6 lg:flex">
-        <div className="mb-8 px-4">
+      <aside className="fixed inset-y-0 left-0 hidden w-[272px] flex-col border-r border-white/8 bg-surface py-6 lg:flex">
+        <div className="mb-10 px-6">
           <LogoMark />
         </div>
+        <div className="mb-4 px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">Operação</div>
         {navLinks}
+        <div className="mt-auto mx-4 rounded-2xl border border-brand-green/15 bg-brand-green/[.06] p-4">
+          <p className="text-xs font-semibold text-brand-green">Livre Acesso</p>
+          <p className="mt-1 text-xs leading-5 text-white/40">Gestão com cuidado, dados e presença.</p>
+        </div>
       </aside>
 
       {drawerOpen && (
@@ -83,8 +92,8 @@ export function AppLayout() {
         </div>
       )}
 
-      <div className="flex min-h-screen flex-col lg:pl-64">
-        <header className="flex h-16 items-center justify-between border-b border-white/8 px-4 sm:px-6">
+      <div className="flex min-h-screen flex-col lg:pl-[272px]">
+        <header className="flex h-[76px] items-center justify-between border-b border-white/8 bg-ink/75 px-4 backdrop-blur-sm sm:px-8">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
@@ -94,20 +103,18 @@ export function AppLayout() {
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
 
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-3">
             {profile && (
-              <Link to="/perfil" className="text-right transition hover:opacity-80">
-                <p className="text-sm font-medium text-white">{profile.full_name}</p>
-                <p className="text-xs text-white/45">{ROLE_LABELS[profile.role]}</p>
+              <Link to="/perfil" className="group flex items-center gap-3 rounded-full py-1 pl-2 pr-3 transition hover:bg-white/[.05]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green text-sm font-bold text-ink">{profile.full_name.slice(0, 1).toUpperCase()}</span>
+                <span className="hidden text-left sm:block"><p className="text-sm font-semibold text-white group-hover:text-brand-green">{profile.full_name}</p><p className="text-xs text-white/40">{ROLE_LABELS[profile.role]}</p></span>
               </Link>
             )}
-            <Button variant="secondary" onClick={() => void signOut()}>
-              Sair
-            </Button>
+            <Button variant="secondary" onClick={() => void signOut()}>Sair</Button>
           </div>
         </header>
 
-        <main id="conteudo-principal" className="flex-1 px-4 py-8 sm:px-6">
+        <main id="conteudo-principal" className="flex-1 px-4 py-8 sm:px-8 lg:py-10">
           <Outlet />
         </main>
       </div>
