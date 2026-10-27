@@ -8,10 +8,23 @@ from uuid import UUID
 import httpx2
 import pytest
 
-from backend.app.modules.identity.application.authentication import AccessToken, AuthenticatedUser
+from backend.app.modules.identity.application.authentication import (
+    AccessToken,
+    AuthenticatedUser,
+    InvalidAccessTokenError,
+)
 from backend.app.modules.students.application.queries import StudentSearchCriteria
 from backend.app.modules.students.domain.entities import Guardian, Student, StudentStatus
-from backend.app.modules.students.domain.exceptions import DuplicateCPFError
+from backend.app.modules.students.domain.exceptions import (
+    DuplicateCPFError,
+    GuardianAlreadyLinkedError,
+    GuardianNotFoundError,
+    GuardianVersionConflictError,
+    InvalidGuardianUnlinkReasonError,
+    PrimaryGuardianRequiredError,
+    StudentNotFoundError,
+    StudentVersionConflictError,
+)
 from backend.app.modules.students.domain.value_objects import (
     CPF,
     Phone,
@@ -22,6 +35,7 @@ from backend.app.modules.students.infrastructure.supabase_repository import (
 )
 from backend.app.shared.application.exceptions import (
     PermissionDeniedError,
+    PersistenceRejectedError,
     PersistenceUnavailableError,
 )
 from backend.app.shared.application.request_context import RequestContext
@@ -121,8 +135,17 @@ def test_search_maps_only_masked_projection() -> None:
 @pytest.mark.parametrize(
     ("status_code", "body", "expected_error"),
     [
+        (401, {"message": "invalid_token"}, InvalidAccessTokenError),
         (403, {"code": "42501", "message": "forbidden"}, PermissionDeniedError),
         (409, {"code": "23505", "message": "duplicate_cpf"}, DuplicateCPFError),
+        (409, {"message": "guardian_already_linked"}, GuardianAlreadyLinkedError),
+        (404, {"message": "guardian_not_found"}, GuardianNotFoundError),
+        (409, {"message": "primary_guardian_required"}, PrimaryGuardianRequiredError),
+        (409, {"message": "guardian_version_conflict"}, GuardianVersionConflictError),
+        (422, {"message": "invalid_guardian_unlink_reason"}, InvalidGuardianUnlinkReasonError),
+        (404, {"message": "student_not_found"}, StudentNotFoundError),
+        (409, {"message": "student_version_conflict"}, StudentVersionConflictError),
+        (422, {"message": "rejected"}, PersistenceRejectedError),
         (503, {"message": "internal_detail"}, PersistenceUnavailableError),
     ],
 )
