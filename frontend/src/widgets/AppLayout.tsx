@@ -1,6 +1,6 @@
 import { CalendarRange, ClipboardList, LayoutDashboard, Menu, Users, X } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/AuthProvider'
 import { ROLE_LABELS } from '@/entities/profile/types'
@@ -96,10 +96,10 @@ export function AppLayout() {
 
           <div className="ml-auto flex items-center gap-4">
             {profile && (
-              <div className="text-right">
+              <Link to="/perfil" className="text-right transition hover:opacity-80">
                 <p className="text-sm font-medium text-white">{profile.full_name}</p>
                 <p className="text-xs text-white/45">{ROLE_LABELS[profile.role]}</p>
-              </div>
+              </Link>
             )}
             <Button variant="secondary" onClick={() => void signOut()}>
               Sair
