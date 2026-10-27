@@ -90,7 +90,7 @@ export function StudentsPage() {
       <div className="mt-8 grid gap-3 sm:grid-cols-3">
         <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Total cadastrado</p><p className="mt-1 font-display text-2xl font-semibold text-white">{data?.total ?? '—'}</p></div>
         <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Filtro atual</p><p className="mt-1 text-sm font-semibold text-white">{status ? STUDENT_STATUS_LABELS[status] : 'Todos os status'}</p></div>
-        <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Atualização</p><p className="mt-1 text-sm font-semibold text-white">Em tempo real</p></div>
+        <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Exibidos nesta página</p><p className="mt-1 text-sm font-semibold text-white">{data?.items.length ?? '—'} de {data?.total ?? '—'}</p></div>
       </div>
 
       <div className="liquid-glass mt-6 flex flex-col gap-4 rounded-3xl p-4 sm:flex-row sm:items-end">

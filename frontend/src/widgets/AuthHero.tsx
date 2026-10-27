@@ -57,13 +57,7 @@ function ModuleMarquee() {
  * elemento decorativo não pode atrapalhar a leitura.
  */
 function GatewayRings() {
-  return (
-    <div aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-[26rem] w-[26rem] overflow-hidden">
-      <div className="absolute -bottom-24 -right-24 h-[30rem] w-[30rem] rounded-full border border-brand-green/60" />
-      <div className="absolute -bottom-24 -right-24 h-[22rem] w-[22rem] rounded-full border border-brand-green/35" />
-      <div className="absolute -bottom-24 -right-24 h-[14rem] w-[14rem] rounded-full border border-brand-green/20 bg-brand-green/[0.04]" />
-    </div>
-  )
+  return <div aria-hidden="true" className="pointer-events-none absolute bottom-12 right-12 h-40 w-40 border-r border-t border-brand-green/25"><span className="absolute right-3 top-3 font-display text-[10px] text-brand-green/50">LA / 01</span></div>
 }
 
 function SignalPanel() {
