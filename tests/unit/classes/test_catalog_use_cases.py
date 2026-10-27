@@ -13,16 +13,21 @@ from backend.app.modules.classes.application.dtos import (
     ScheduleInput,
 )
 from backend.app.modules.classes.application.use_cases import (
+    ChangeClassActivation,
     ChangeModalityActivation,
     CreateClass,
     CreateModality,
     GetClass,
+    GetModality,
     ListClasses,
+    ListModalities,
 )
 from backend.app.modules.classes.domain.entities import Weekday
 from backend.app.modules.classes.domain.exceptions import (
     ActiveClassesExistError,
     ClassNotFoundError,
+    InvalidInstructorAssignmentError,
+    ModalityNotFoundError,
 )
 from backend.app.modules.classes.infrastructure.repositories import InMemoryClassRepository
 from backend.app.modules.identity.domain.entities import UserProfile, UserRole
@@ -204,5 +209,51 @@ def test_active_class_must_be_deactivated_before_modality() -> None:
                     reason="Reorganização confirmada pela coordenação",
                 ),
             )
+
+    asyncio.run(scenario())
+
+
+def test_catalog_queries_and_activation_cover_missing_and_invalid_paths() -> None:
+    async def scenario() -> None:
+        store = InMemoryClassRepository()
+        profiles = InMemoryProfileRepository()
+        coordinator = seed_profile(
+            profiles, role=UserRole.COORDINATOR, name="Coordenação Principal"
+        )
+        instructor = seed_profile(
+            profiles, role=UserRole.INSTRUCTOR, name="Instrutora Ana Silva"
+        )
+        publisher = EventBus()
+        create_modality = CreateModality(store, profiles, publisher, coordinator.id)
+        current = await create_modality.execute(
+            CreateModalityInput(name="Teatro", description="Expressão corporal")
+        )
+        modalities = await ListModalities(store, profiles, coordinator.id).execute(
+            active=True, query="teatro", page=1, page_size=10
+        )
+        assert modalities.total == 1
+        result = await GetModality(store, profiles, coordinator.id).execute(current.id)
+        assert result.id == current.id
+        with pytest.raises(ModalityNotFoundError):
+            await GetModality(store, profiles, coordinator.id).execute(uuid4())
+
+        with pytest.raises(InvalidInstructorAssignmentError):
+            await CreateClass(
+                store, store, profiles, publisher, coordinator.id
+            ).execute(class_input(current.id, uuid4(), name="Turma inválida"))
+
+        created = await CreateClass(
+            store, store, profiles, publisher, coordinator.id
+        ).execute(class_input(current.id, instructor.id, name="Turma Regular"))
+        changed = await ChangeClassActivation(
+            store, store, profiles, publisher, coordinator.id, False
+        ).execute(
+            created.id,
+            ChangeCatalogActivationInput(
+                expected_updated_at=created.updated_at,
+                reason="Pausa confirmada pela coordenação",
+            ),
+        )
+        assert changed.active is False
 
     asyncio.run(scenario())
