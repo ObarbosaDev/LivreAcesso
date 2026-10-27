@@ -27,3 +27,11 @@ export function createEnrollment(studentId: string, classId: string) {
     class_id: classId,
   })
 }
+
+export function changeEnrollmentStatus(
+  enrollmentId: string,
+  action: 'cancel' | 'reactivate',
+  payload: { expected_updated_at: string; reason: string },
+) {
+  return httpClient.post<Enrollment>(`/api/v1/enrollments/${enrollmentId}/${action}`, payload)
+}
