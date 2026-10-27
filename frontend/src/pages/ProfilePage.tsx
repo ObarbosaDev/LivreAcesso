@@ -9,6 +9,7 @@ import { friendlyMessage } from '@/shared/api/problemDetails'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
+import { PageFrame } from '@/shared/ui/PageFrame'
 
 /** Corrige só o próprio nome: papel, ativação e capacidades continuam exclusivos da coordenação. */
 export function ProfilePage() {
@@ -44,8 +45,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="max-w-md">
-      <h1 className="font-display text-2xl font-semibold text-white">Meu perfil</h1>
+    <PageFrame eyebrow="Conta e preferências" title="Meu perfil" description="Mantenha seus dados de identificação atualizados no sistema.">
       <p className="mt-2 text-sm text-white/55">
         Papel e ativação são administrados pela coordenação; aqui você corrige só o seu nome.
       </p>
@@ -81,6 +81,6 @@ export function ProfilePage() {
           </Button>
         </form>
       </div>
-    </div>
+    </PageFrame>
   )
 }
