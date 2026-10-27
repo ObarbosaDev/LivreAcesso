@@ -7,6 +7,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
+import { StudentsPage } from '@/pages/StudentsPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 
 export function AppRoutes() {
@@ -20,7 +21,7 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/estudantes" element={<ComingSoonPage title="Estudantes" />} />
+          <Route path="/estudantes" element={<StudentsPage />} />
           <Route path="/turmas" element={<ComingSoonPage title="Turmas" />} />
           <Route path="/matriculas" element={<ComingSoonPage title="Matrículas" />} />
         </Route>
