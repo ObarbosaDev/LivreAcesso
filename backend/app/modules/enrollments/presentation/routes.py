@@ -9,6 +9,7 @@ from backend.app.core.container import ApplicationContainer
 from backend.app.modules.enrollments.application.dtos import (
     EnrollmentInput,
     EnrollmentOutput,
+    EnrollmentPageOutput,
     EnrollmentStatusInput,
 )
 from backend.app.modules.identity.presentation.dependencies import require_request_context
@@ -19,6 +20,23 @@ from backend.app.shared.presentation.problem_details import ProblemDetail
 def build_enrollments_router(container: ApplicationContainer) -> APIRouter:
     router = APIRouter(prefix="/enrollments", tags=["Matrículas"])
     responses: dict[int | str, dict[str, Any]] = {409: {"model": ProblemDetail}}
+
+    @router.get("", response_model=EnrollmentPageOutput)
+    async def list_enrollments(
+        context: Annotated[RequestContext, Depends(require_request_context)],
+        student_id: UUID | None = None,
+        class_id: UUID | None = None,
+        status_filter: str | None = None,
+        page: int = 1,
+        page_size: int = 25,
+    ) -> EnrollmentPageOutput:
+        return await container.enrollments_for(context).list.execute(
+            student_id=student_id,
+            class_id=class_id,
+            status=status_filter,
+            page=page,
+            page_size=page_size,
+        )
 
     @router.post(
         "",
