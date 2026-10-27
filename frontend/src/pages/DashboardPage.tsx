@@ -20,6 +20,8 @@ export function DashboardPage() {
   usePageTitle('Início')
   const { profile } = useAuth()
   const firstName = profile?.full_name.split(' ')[0] ?? 'equipe'
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
   const [counts, setCounts] = useState<Counts | null>(null)
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function DashboardPage() {
         <div className="pointer-events-none absolute -right-4 -top-8 h-48 w-48 rounded-full border border-brand-green/10" />
         <div className="relative max-w-2xl">
           <p className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-brand-green"><span className="h-2 w-2 rounded-full bg-brand-green shadow-[0_0_16px_var(--color-brand-green)]" />Central de operação</p>
-          <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">Bom dia, {firstName}.</h1>
+          <h1 className="font-display text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">{greeting}, {firstName}.</h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-white/55">Uma visão clara do que está acontecendo no Instituto Livre Acesso, com os próximos passos da equipe sempre à mão.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             {QUICK_ACTIONS.map(({ to, label, icon: Icon }) => <Link key={to} to={to} className="group inline-flex items-center gap-2 rounded-full bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-brand-green-soft"><Icon className="h-4 w-4" aria-hidden="true" />{label}<ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" /></Link>)}
