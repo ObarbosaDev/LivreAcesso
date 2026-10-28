@@ -76,7 +76,7 @@ export function AuthHero({ title, description, showModules = true }: AuthHeroPro
   const motionProps = reduceMotion ? {} : { initial: 'hidden', animate: 'shown' }
 
   return (
-    <section className="relative hidden w-[46%] flex-col justify-between overflow-hidden border-r border-white/8 bg-surface lg:flex lg:px-14 lg:py-14">
+    <section className="auth-hero relative hidden w-[46%] flex-col justify-between overflow-hidden border-r border-white/8 bg-surface lg:flex lg:px-14 lg:py-14">
       <GatewayRings />
 
       <motion.div {...motionProps} variants={container}>

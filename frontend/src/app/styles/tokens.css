@@ -49,6 +49,8 @@
 :root[data-theme='light'] .placeholder\:text-white\/30::placeholder, :root[data-theme='light'] .placeholder\:text-white\/35::placeholder { color: #71806d !important; opacity: 1; }
 :root[data-theme='light'] .theme-toggle { border-color: #cbd5c4; color: #4c5d48; }
 :root[data-theme='light'] .liquid-glass { border-color: #cbd5c4; }
+:root[data-theme='light'] .auth-hero .bg-black\/20 { background: #ffffff !important; border-color: #cbd5c4 !important; }
+:root[data-theme='light'] .auth-hero .bg-black\/20 > div { border-color: #dce5d8 !important; }
 :root[data-theme='light'] input:-webkit-autofill, :root[data-theme='light'] input:-webkit-autofill:hover, :root[data-theme='light'] input:-webkit-autofill:focus { -webkit-text-fill-color: #172015; box-shadow: 0 0 0 1000px #ffffff inset; }
 
 body {
