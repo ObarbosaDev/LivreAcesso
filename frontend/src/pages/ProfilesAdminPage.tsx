@@ -2,7 +2,7 @@ import { Loader2, MailPlus, Search, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { changeProfileActivation, changeProfileRole, inviteProfile, listProfiles } from '@/features/profiles/api'
+import { changeProfileActivation, changeProfileRole, generateInviteLink, listProfiles } from '@/features/profiles/api'
 import type { Profile, UserRole } from '@/entities/profile/types'
 import { ROLE_LABELS } from '@/entities/profile/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
@@ -100,9 +100,9 @@ export function ProfilesAdminPage() {
 }
 
 function InviteForm({ onSent }: { onSent: () => void }) {
-  const [fullName, setFullName] = useState(''); const [email, setEmail] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null)
-  async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); setError(null); try { await inviteProfile({ full_name: fullName, email }); onSent() } catch (caught) { setError(friendlyMessage(caught)) } finally { setBusy(false) } }
-  return <form onSubmit={submit} className="mb-6 border border-brand-green/40 bg-brand-green/[.04] p-5"><div className="grid gap-4 md:grid-cols-2"><Input label="Nome completo" required minLength={3} value={fullName} onChange={(event) => setFullName(event.target.value)} /><Input label="E-mail institucional" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></div><p className="mt-3 text-xs text-white/45">A pessoa receberá um convite para definir a própria senha. O acesso começa pendente.</p>{error && <p className="mt-3 text-sm text-danger">{error}</p>}<Button type="submit" loading={busy} className="mt-4">Enviar convite</Button></form>
+  const [fullName, setFullName] = useState(''); const [email, setEmail] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null); const [link, setLink] = useState<string | null>(null)
+  async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); setError(null); try { const result = await generateInviteLink({ full_name: fullName, email }); setLink(result.action_link) } catch (caught) { setError(friendlyMessage(caught)) } finally { setBusy(false) } }
+  return <form onSubmit={submit} className="mb-6 border border-brand-green/40 bg-brand-green/[.04] p-5"><div className="grid gap-4 md:grid-cols-2"><Input label="Nome completo" required minLength={3} value={fullName} onChange={(event) => setFullName(event.target.value)} /><Input label="E-mail institucional" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></div><p className="mt-3 text-xs text-white/45">Gere um link para a pessoa definir a própria senha. O acesso começa pendente.</p>{error && <p className="mt-3 text-sm text-danger">{error}</p>}{link && <div className="mt-4 border border-brand-green/30 p-3"><p className="text-xs text-brand-green">Link gerado — compartilhe somente com a pessoa convidada.</p><input readOnly value={link} className="mt-2 w-full border border-white/15 bg-black px-3 py-2 text-xs text-white" /><button type="button" className="mt-3 text-xs font-semibold text-brand-green hover:text-white" onClick={() => void navigator.clipboard.writeText(link)}>Copiar link</button></div>}<div className="mt-4 flex flex-wrap gap-3"><Button type="submit" loading={busy}>Gerar link</Button><Button type="button" variant="secondary" onClick={onSent}>Fechar</Button></div></form>
 }
 
 function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () => void }) {

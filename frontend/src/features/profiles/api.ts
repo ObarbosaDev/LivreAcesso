@@ -58,3 +58,7 @@ export function changeProfileActivation(
 export function inviteProfile(payload: { email: string; full_name: string }) {
   return httpClient.post<{ message: string }>('/api/v1/profiles/invite', payload)
 }
+
+export function generateInviteLink(payload: { email: string; full_name: string }) {
+  return httpClient.post<{ message: string; action_link: string }>('/api/v1/profiles/invite-link', payload)
+}
