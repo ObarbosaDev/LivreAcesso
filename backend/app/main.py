@@ -24,6 +24,7 @@ from backend.app.modules.students.presentation.evaluation_routes import (
     build_student_evaluations_router,
 )
 from backend.app.modules.students.presentation.routes import build_students_router
+from backend.app.modules.waiting_list.presentation.routes import build_waiting_list_router
 from backend.app.shared.presentation.problem_details import (
     RequestIdMiddleware,
     install_problem_handlers,
@@ -121,6 +122,10 @@ def create_app(
     )
     application.include_router(
         build_student_evaluations_router(current_container),
+        prefix=current_settings.api_prefix,
+    )
+    application.include_router(
+        build_waiting_list_router(current_container),
         prefix=current_settings.api_prefix,
     )
     return application

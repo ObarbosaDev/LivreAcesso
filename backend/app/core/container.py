@@ -109,6 +109,18 @@ from backend.app.modules.students.infrastructure.repositories import InMemoryStu
 from backend.app.modules.students.infrastructure.supabase_repository import (
     SupabaseStudentRepository,
 )
+from backend.app.modules.waiting_list.application.dtos import WaitingListInput, WaitingListOutput
+from backend.app.modules.waiting_list.application.use_cases import (
+    AcceptWaitingListEntry,
+    JoinWaitingList,
+    OfferWaitingListEntry,
+)
+from backend.app.modules.waiting_list.infrastructure.repositories import (
+    InMemoryWaitingListRepository,
+)
+from backend.app.modules.waiting_list.infrastructure.supabase_repository import (
+    SupabaseWaitingListRepository,
+)
 from backend.app.shared.application.event_bus import EventBus
 from backend.app.shared.application.request_context import RequestContext
 from backend.app.shared.infrastructure.supabase_rpc import SupabaseRPCGateway
@@ -213,6 +225,35 @@ class AttendanceServices:
 
 
 @dataclass(frozen=True, slots=True)
+class WaitingListServices:
+    join_case: JoinWaitingList | None = None
+    offer_case: OfferWaitingListEntry | None = None
+    accept_case: AcceptWaitingListEntry | None = None
+    remote: SupabaseWaitingListRepository | None = None
+
+    async def join(self, payload: WaitingListInput) -> WaitingListOutput:
+        if self.remote is not None:
+            return await self.remote.join(payload)
+        if self.join_case is None:
+            raise RuntimeError("O serviço de entrada na fila não está configurado.")
+        return await self.join_case.execute(payload)
+
+    async def offer(self, entry_id: UUID) -> WaitingListOutput:
+        if self.remote is not None:
+            return await self.remote.offer(entry_id)
+        if self.offer_case is None:
+            raise RuntimeError("O serviço de oferta da fila não está configurado.")
+        return await self.offer_case.execute(entry_id)
+
+    async def accept(self, entry_id: UUID) -> WaitingListOutput:
+        if self.remote is not None:
+            return await self.remote.accept(entry_id)
+        if self.accept_case is None:
+            raise RuntimeError("O serviço de aceitação da fila não está configurado.")
+        return await self.accept_case.execute(entry_id)
+
+
+@dataclass(frozen=True, slots=True)
 class AgendaServices:
     repository: AgendaRepository
 
@@ -258,6 +299,7 @@ class ApplicationContainer:
     in_memory_enrollment_store: InMemoryEnrollmentRepository | None = None
     in_memory_evaluation_store: InMemoryStudentEvaluationRepository | None = None
     in_memory_attendance_store: InMemoryAttendanceRepository | None = None
+    in_memory_waiting_list_store: InMemoryWaitingListRepository | None = None
 
     def identity_for(self, context: RequestContext) -> IdentityServices:
         if self.supabase_gateway is not None:
@@ -386,6 +428,20 @@ class ApplicationContainer:
             close_case=CloseAttendance(store),
         )
 
+    def waiting_list_for(self, context: RequestContext) -> WaitingListServices:
+        if self.supabase_gateway is not None:
+            return WaitingListServices(
+                remote=SupabaseWaitingListRepository(self.supabase_gateway, context)
+            )
+        if self.in_memory_waiting_list_store is None:
+            raise RuntimeError("O container não possui armazenamento da fila.")
+        store = self.in_memory_waiting_list_store
+        return WaitingListServices(
+            join_case=JoinWaitingList(store),
+            offer_case=OfferWaitingListEntry(store),
+            accept_case=AcceptWaitingListEntry(store),
+        )
+
     def agenda_for(self, context: RequestContext) -> AgendaServices:
         if self.supabase_gateway is None:
             raise RuntimeError("A agenda exige persistência Supabase configurada.")
@@ -480,4 +536,5 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         in_memory_enrollment_store=InMemoryEnrollmentRepository(),
         in_memory_evaluation_store=InMemoryStudentEvaluationRepository(),
         in_memory_attendance_store=InMemoryAttendanceRepository(),
+        in_memory_waiting_list_store=InMemoryWaitingListRepository(),
     )
