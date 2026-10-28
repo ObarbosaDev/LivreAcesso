@@ -104,16 +104,11 @@ export function ClassesPage() {
 
         {!error && data && data.items.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {data.items.map((schoolClass) => {
+            {data.items.map((schoolClass, index) => {
               const occ = occupancy[schoolClass.id]
               return (
-                  <div key={schoolClass.id} className="liquid-glass group flex flex-col gap-4 rounded-3xl p-5 transition hover:-translate-y-1 hover:border-brand-green/25">
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="font-display text-base font-semibold text-white">
-                      {schoolClass.name}
-                    </h2>
-                    <StatusBadge label="Ativa" tone="success" />
-                  </div>
+                  <div key={schoolClass.id} className="liquid-glass group flex flex-col gap-4 border-l-2 border-l-brand-green/60 p-5 transition hover:border-brand-green">
+                  <div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><h2 className="font-display text-base font-semibold text-white">{schoolClass.name}</h2></div><StatusBadge label="Ativa" tone="success" /></div>
 
                   <p className="flex items-center gap-1.5 text-xs text-white/55">
                     <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
