@@ -1,6 +1,7 @@
 """Ponto único de composição das dependências da aplicação."""
 
 from dataclasses import dataclass
+from datetime import datetime
 from uuid import UUID
 
 from backend.app.core.config import Settings, get_settings
@@ -41,10 +42,16 @@ from backend.app.modules.identity.application.use_cases import (
 )
 from backend.app.modules.identity.infrastructure.repositories import InMemoryProfileRepository
 from backend.app.modules.identity.infrastructure.supabase_profiles import SupabaseProfileRepository
+from backend.app.modules.operations.application.agenda import (
+    AgendaEventInput,
+    AgendaEventOutput,
+    AgendaRepository,
+)
 from backend.app.modules.operations.application.health import (
     LocalReadinessProbe,
     ReadinessProbe,
 )
+from backend.app.modules.operations.infrastructure.agenda_repository import SupabaseAgendaRepository
 from backend.app.modules.operations.infrastructure.supabase_health import (
     SupabaseReadinessProbe,
 )
@@ -148,6 +155,24 @@ class EnrollmentServices:
 class EvaluationServices:
     create: CreateStudentEvaluation
     list: ListStudentEvaluations
+
+
+@dataclass(frozen=True, slots=True)
+class AgendaServices:
+    repository: AgendaRepository
+
+    async def list(
+        self,
+        starts_at: datetime,
+        ends_at: datetime,
+        event_type: str | None,
+        assigned_to: UUID | None,
+        context: RequestContext,
+    ) -> list[AgendaEventOutput]:
+        return await self.repository.list(starts_at, ends_at, event_type, assigned_to, context)
+
+    async def create(self, payload: AgendaEventInput, context: RequestContext) -> AgendaEventOutput:
+        return await self.repository.create(payload, context)
 
 
 @dataclass(frozen=True, slots=True)
@@ -270,6 +295,11 @@ class ApplicationContainer:
             create=CreateStudentEvaluation(store),
             list=ListStudentEvaluations(store),
         )
+
+    def agenda_for(self, context: RequestContext) -> AgendaServices:
+        if self.supabase_gateway is None:
+            raise RuntimeError("A agenda exige persistência Supabase configurada.")
+        return AgendaServices(SupabaseAgendaRepository(self.supabase_gateway))
 
     def _class_services(
         self,
