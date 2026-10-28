@@ -5,6 +5,15 @@ from datetime import datetime
 from uuid import UUID
 
 from backend.app.core.config import Settings, get_settings
+from backend.app.modules.attendance.application.use_cases import (
+    CloseAttendance,
+    OpenAttendance,
+    RecordAttendance,
+)
+from backend.app.modules.attendance.domain.repositories import AttendanceRepository
+from backend.app.modules.attendance.infrastructure.repositories import (
+    InMemoryAttendanceRepository,
+)
 from backend.app.modules.classes.application.use_cases import (
     ChangeClassActivation,
     ChangeModalityActivation,
@@ -163,6 +172,15 @@ class EvaluationServices:
 
 
 @dataclass(frozen=True, slots=True)
+class AttendanceServices:
+    """Casos de uso da chamada ligados ao armazenamento escolhido."""
+
+    open: OpenAttendance
+    record: RecordAttendance
+    close: CloseAttendance
+
+
+@dataclass(frozen=True, slots=True)
 class AgendaServices:
     repository: AgendaRepository
 
@@ -207,6 +225,7 @@ class ApplicationContainer:
     in_memory_class_store: InMemoryClassRepository | None = None
     in_memory_enrollment_store: InMemoryEnrollmentRepository | None = None
     in_memory_evaluation_store: InMemoryStudentEvaluationRepository | None = None
+    in_memory_attendance_store: InMemoryAttendanceRepository | None = None
 
     def identity_for(self, context: RequestContext) -> IdentityServices:
         if self.supabase_gateway is not None:
@@ -321,6 +340,19 @@ class ApplicationContainer:
             list=ListStudentEvaluations(store),
         )
 
+    def attendance_for(self, context: RequestContext) -> AttendanceServices:
+        del context
+        if self.supabase_gateway is not None:
+            raise RuntimeError("O adaptador Supabase de frequência ainda não foi conectado.")
+        if self.in_memory_attendance_store is None:
+            raise RuntimeError("O container não possui armazenamento de frequência.")
+        store: AttendanceRepository = self.in_memory_attendance_store
+        return AttendanceServices(
+            open=OpenAttendance(store),
+            record=RecordAttendance(store),
+            close=CloseAttendance(store),
+        )
+
     def agenda_for(self, context: RequestContext) -> AgendaServices:
         if self.supabase_gateway is None:
             raise RuntimeError("A agenda exige persistência Supabase configurada.")
@@ -414,4 +446,5 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         in_memory_class_store=InMemoryClassRepository(),
         in_memory_enrollment_store=InMemoryEnrollmentRepository(),
         in_memory_evaluation_store=InMemoryStudentEvaluationRepository(),
+        in_memory_attendance_store=InMemoryAttendanceRepository(),
     )
