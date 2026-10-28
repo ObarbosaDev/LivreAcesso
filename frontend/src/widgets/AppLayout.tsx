@@ -1,6 +1,6 @@
 import { BarChart3, CalendarRange, CalendarDays, ClipboardList, LayoutDashboard, Menu, Search, ShieldCheck, Users, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/AuthProvider'
 import { ROLE_LABELS } from '@/entities/profile/types'
@@ -32,9 +32,12 @@ function SidebarStatus() {
 
 export function AppLayout() {
   const { profile, signOut } = useAuth()
+  const navigate = useNavigate()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [commandOpen, setCommandOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState('')
+  const [keySequence, setKeySequence] = useState('')
+  const commandInputRef = useRef<HTMLInputElement>(null)
 
   const navItems = useMemo(() => profile?.capabilities.includes('profiles:manage') ? [...NAV_ITEMS, { to: '/equipe', label: 'Equipe', icon: ShieldCheck }] : NAV_ITEMS, [profile?.capabilities])
 
@@ -46,11 +49,31 @@ export function AppLayout() {
         event.preventDefault()
         setCommandOpen(true)
       }
-      if (event.key === 'Escape') setCommandOpen(false)
+      if (event.key === 'Escape') {
+        setCommandOpen(false)
+        setKeySequence('')
+      }
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return
+      if (event.key.toLowerCase() === 'g') { setKeySequence('g'); return }
+      if (keySequence === 'g') { const routes: Record<string, string> = { d: '/', e: '/estudantes', t: '/turmas', a: '/agenda', r: '/relatorios' }; if (routes[event.key.toLowerCase()]) navigate(routes[event.key.toLowerCase()]); setKeySequence(''); return }
+      const shortcuts: Record<string, string> = { n: '/estudantes/novo', t: '/turmas/nova', a: '/agenda', r: '/relatorios' }
+      if (shortcuts[event.key.toLowerCase()]) { event.preventDefault(); navigate(shortcuts[event.key.toLowerCase()]) }
     }
     window.addEventListener('keydown', handleShortcut)
     return () => window.removeEventListener('keydown', handleShortcut)
-  }, [])
+  }, [keySequence, navigate])
+
+  useEffect(() => {
+    if (!keySequence) return
+    const timeout = window.setTimeout(() => setKeySequence(''), 900)
+    return () => window.clearTimeout(timeout)
+  }, [keySequence])
+
+  useEffect(() => {
+    if (!commandOpen) return
+    const frame = window.requestAnimationFrame(() => commandInputRef.current?.focus())
+    return () => window.cancelAnimationFrame(frame)
+  }, [commandOpen])
 
   const navLinks = (
     <nav aria-label="Navegação principal" className="flex flex-1 flex-col gap-2 px-4">
@@ -150,7 +173,7 @@ export function AppLayout() {
         </main>
       </div>
 
-      {commandOpen && <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[16vh]"><button type="button" aria-label="Fechar busca" className="absolute inset-0 bg-black/70" onClick={() => setCommandOpen(false)} /><div className="relative w-full max-w-xl border border-white/15 bg-surface shadow-2xl" role="dialog" aria-modal="true" aria-label="Busca de áreas"><div className="flex items-center gap-3 border-b border-white/10 px-4"><Search className="h-4 w-4 text-brand-green" aria-hidden="true" /><input value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} placeholder="Buscar área do sistema..." className="h-14 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" /></div><div className="p-2">{commandItems.map(({ to, label, icon: Icon, end }) => <NavLink key={to} to={to} end={end} onClick={() => { setCommandOpen(false); setCommandQuery('') }} className="flex items-center gap-3 px-3 py-3 text-sm text-white/65 transition hover:bg-brand-green/10 hover:text-brand-green"><Icon className="h-4 w-4" aria-hidden="true" />{label}<span className="ml-auto text-xs text-white/25">Abrir</span></NavLink>)}{commandItems.length === 0 && <p className="px-3 py-8 text-center text-sm text-white/40">Nenhuma área encontrada.</p>}</div></div></div>}
+      {commandOpen && <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[16vh]"><button type="button" aria-label="Fechar busca" className="absolute inset-0 bg-black/70" onClick={() => setCommandOpen(false)} /><div className="relative w-full max-w-xl border border-white/15 bg-surface shadow-2xl" role="dialog" aria-modal="true" aria-label="Busca de áreas"><div className="flex items-center gap-3 border-b border-white/10 px-4"><Search className="h-4 w-4 text-brand-green" aria-hidden="true" /><input ref={commandInputRef} value={commandQuery} onChange={(event) => setCommandQuery(event.target.value)} placeholder="Buscar área do sistema..." className="h-14 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" /></div><div className="p-2">{commandItems.map(({ to, label, icon: Icon, end }) => <NavLink key={to} to={to} end={end} onClick={() => { setCommandOpen(false); setCommandQuery('') }} className="flex items-center gap-3 px-3 py-3 text-sm text-white/65 transition hover:bg-brand-green/10 hover:text-brand-green"><Icon className="h-4 w-4" aria-hidden="true" />{label}<span className="ml-auto text-xs text-white/25">Abrir</span></NavLink>)}{commandItems.length === 0 && <p className="px-3 py-8 text-center text-sm text-white/40">Nenhuma área encontrada.</p>}</div></div></div>}
     </div>
   )
 }
