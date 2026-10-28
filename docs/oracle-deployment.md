@@ -32,3 +32,16 @@ O Load Balancer deve usar `/health/live` para a API e `/health` para o frontend.
 ## Rollback
 
 Promover a imagem anterior da API e do frontend. Migrations do Supabase não são revertidas automaticamente; qualquer correção de banco deve entrar em uma migration nova.
+## Smoke test
+
+Depois de publicar as imagens e configurar o DNS, execute:
+
+```powershell
+python scripts/verify_oracle_deployment.py `
+  --api-url https://api.exemplo.org `
+  --frontend-url https://app.exemplo.org
+```
+
+O comando confirma saúde da API, prontidão com persistência, bloqueio de uma rota
+sem JWT e disponibilidade do frontend. Não envia credenciais, não cria dados e
+não imprime respostas da aplicação.
