@@ -189,9 +189,9 @@ export function EnrollmentsPage() {
       {selectedClassId && (
         <div className="mt-8 flex flex-col gap-6">
           {occupancy && selectedClass && (
-          <div className="liquid-glass rounded-3xl p-6">
-              <p className="text-sm font-medium text-white">{selectedClass.name}</p>
-              <div className="mt-3">
+            <div className="liquid-glass border-l-2 border-l-brand-green p-6">
+              <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs uppercase tracking-[0.14em] text-white/40">Turma em foco</p><p className="mt-2 font-display text-lg font-semibold text-white">{selectedClass.name}</p></div><p className="text-xs text-white/45">{occupancy.enrolled} de {occupancy.capacity} vagas ocupadas</p></div>
+              <div className="mt-5">
                 <OccupancyBar capacity={occupancy.capacity} enrolled={occupancy.enrolled} />
               </div>
             </div>
@@ -257,14 +257,12 @@ export function EnrollmentsPage() {
 
           {!loading && !error && enrollments && enrollments.length > 0 && (
             <ul className="flex flex-col gap-2">
-              {enrollments.map((enrollment) => (
+              {enrollments.map((enrollment, index) => (
                 <li
                   key={enrollment.id}
-                  className="liquid-glass flex items-center justify-between rounded-xl px-4 py-3"
+                  className="liquid-glass flex items-center justify-between border-l-2 border-l-white/10 px-4 py-3 transition hover:border-l-brand-green"
                 >
-                  <span className="text-sm text-white">
-                    {studentNames[enrollment.student_id] ?? 'Carregando…'}
-                  </span>
+                  <span className="flex items-center gap-4"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><span className="text-sm text-white">{studentNames[enrollment.student_id] ?? 'Carregando…'}</span></span>
                   <div className="flex items-center gap-3">
                     <StatusBadge
                       label={ENROLLMENT_STATUS_LABELS[enrollment.status]}
