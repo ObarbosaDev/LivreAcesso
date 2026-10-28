@@ -1,5 +1,15 @@
 @import 'tailwindcss';
 
+/* Base previsível em qualquer viewport: evita largura fantasma, zoom de input
+   no iOS e deslocamentos causados por conteúdo que não consegue encolher. */
+*, *::before, *::after { box-sizing: border-box; }
+html { min-width: 320px; overflow-x: hidden; scrollbar-gutter: stable; }
+body, #root { min-width: 0; min-height: 100%; overflow-x: clip; }
+img, svg, video, canvas { max-width: 100%; }
+button, input, select, textarea { max-width: 100%; font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+h1, h2, h3, p, td, th, label { overflow-wrap: anywhere; }
+
 /*
  * Paleta extraída da logo do Instituto Livre Acesso: verde vívido (arco) sobre
  * preto (tipografia). A base do sistema é escura para dar contraste ao verde
@@ -145,11 +155,16 @@ body { font-variant-numeric: tabular-nums; }
 }
 
 @media (max-width: 640px) {
-  .page-enter { width: 100%; }
-  .page-enter h1 { font-size: 2.25rem; line-height: 1.08; }
+  .page-enter { width: 100%; min-width: 0; }
+  .page-enter h1 { font-size: clamp(1.9rem, 8vw, 2.25rem); line-height: 1.08; }
   .page-enter h2 { line-height: 1.2; }
   .page-enter .liquid-glass { padding: 1rem; }
   .page-enter header { gap: 1rem; }
+  main { min-width: 0; padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+  header { min-width: 0; }
+  button, a { touch-action: manipulation; }
+  input, select, textarea { font-size: 16px; }
+  .overflow-x-auto { max-width: 100%; overscroll-behavior-inline: contain; }
 }
 
 @media print {

@@ -164,8 +164,8 @@ export function AppLayout() {
         </div>
       )}
 
-      <div className="flex min-h-screen flex-col lg:pl-[272px]">
-        <header className="flex h-[76px] items-center justify-between border-b border-white/8 bg-ink/75 px-4 backdrop-blur-sm sm:px-8">
+      <div className="flex min-h-screen min-w-0 flex-col lg:pl-[272px]">
+        <header className="flex min-h-[76px] items-center justify-between border-b border-white/8 bg-ink/75 px-4 backdrop-blur-sm sm:px-8">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
@@ -188,7 +188,7 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main id="conteudo-principal" className="flex-1 px-4 py-8 sm:px-8 lg:py-10">
+        <main id="conteudo-principal" className="min-w-0 flex-1 px-4 py-8 sm:px-8 lg:py-10">
           <Outlet />
         </main>
       </div>
