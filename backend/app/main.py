@@ -29,6 +29,7 @@ from backend.app.modules.students.presentation.routes import build_students_rout
 from backend.app.modules.waiting_list.presentation.routes import build_waiting_list_router
 from backend.app.shared.presentation.problem_details import (
     RequestIdMiddleware,
+    RequestMetricsMiddleware,
     install_problem_handlers,
 )
 
@@ -84,6 +85,7 @@ def create_app(
     # O middleware é adicionado por último para envolver também respostas CORS
     # e garantir um identificador rastreável em qualquer resultado HTTP.
     application.add_middleware(RequestIdMiddleware)
+    application.add_middleware(RequestMetricsMiddleware)
     install_problem_handlers(application)
 
     @application.get("/", include_in_schema=False)

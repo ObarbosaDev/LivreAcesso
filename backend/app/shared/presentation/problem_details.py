@@ -3,6 +3,7 @@
 import logging
 from collections.abc import Mapping
 from http import HTTPStatus
+from time import perf_counter
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -107,6 +108,33 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         response.headers["X-Request-ID"] = str(request_id)
         return response
+
+
+class RequestMetricsMiddleware(BaseHTTPMiddleware):
+    """Registra métricas mínimas sem capturar corpo, token ou dados pessoais."""
+
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        started = perf_counter()
+        response: Response | None = None
+        try:
+            response = await call_next(request)
+            return response
+        finally:
+            duration_ms = round((perf_counter() - started) * 1000, 2)
+            request_id = _request_id(request)
+            status_code = response.status_code if response is not None else 500
+            logger.info(
+                "request_completed method=%s path=%s status=%s duration_ms=%s request_id=%s",
+                request.method,
+                request.url.path,
+                status_code,
+                duration_ms,
+                request_id,
+            )
 
 
 def _read_request_id(raw_request_id: str | None) -> UUID:
