@@ -99,13 +99,17 @@ def student_payload(
     }
 
 
-def test_health_endpoint_has_traceable_request_id() -> None:
+def test_health_endpoint_has_traceable_request_id(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level("INFO", logger="livre_acesso.api")
     with build_client() as client:
         response = client.get("/health")
 
     assert response.status_code == 200
     assert response.json()["status"] == "alive"
     assert UUID(response.headers["X-Request-ID"])
+    records = [record.message for record in caplog.records if record.name == "livre_acesso.api"]
+    assert any("request_completed" in message for message in records)
+    assert all(_TEST_TOKEN not in message for message in records)
 
 
 def test_valid_request_id_is_preserved() -> None:
