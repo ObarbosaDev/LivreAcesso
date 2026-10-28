@@ -37,10 +37,14 @@ from backend.app.modules.identity.application.use_cases import (
     ChangeProfileActivation,
     ChangeProfileRole,
     GetMyProfile,
+    InviteProfile,
     ListProfiles,
     UpdateMyProfile,
 )
 from backend.app.modules.identity.infrastructure.repositories import InMemoryProfileRepository
+from backend.app.modules.identity.infrastructure.supabase_invitations import (
+    SupabaseInvitationService,
+)
 from backend.app.modules.identity.infrastructure.supabase_profiles import SupabaseProfileRepository
 from backend.app.modules.operations.application.agenda import (
     AgendaEventInput,
@@ -100,6 +104,7 @@ class IdentityServices:
     get_my_profile: GetMyProfile
     update_my_profile: UpdateMyProfile
     list_profiles: ListProfiles
+    invite_profile: InviteProfile | None
     change_profile_role: ChangeProfileRole
     activate_profile: ChangeProfileActivation
     deactivate_profile: ChangeProfileActivation
@@ -198,6 +203,7 @@ class ApplicationContainer:
     in_memory_profile_store: InMemoryProfileRepository | None
     in_memory_student_store: InMemoryStudentRepository | None
     supabase_gateway: SupabaseRPCGateway | None
+    invitation_service: SupabaseInvitationService | None = None
     in_memory_class_store: InMemoryClassRepository | None = None
     in_memory_enrollment_store: InMemoryEnrollmentRepository | None = None
     in_memory_evaluation_store: InMemoryStudentEvaluationRepository | None = None
@@ -220,6 +226,11 @@ class ApplicationContainer:
             get_my_profile=GetMyProfile(store, actor_id),
             update_my_profile=UpdateMyProfile(store, self.event_bus, actor_id),
             list_profiles=ListProfiles(store, store, actor_id),
+            invite_profile=(
+                InviteProfile(store, self.invitation_service, actor_id)
+                if self.invitation_service is not None
+                else None
+            ),
             change_profile_role=ChangeProfileRole(store, self.event_bus, actor_id),
             activate_profile=ChangeProfileActivation(store, self.event_bus, actor_id, True),
             deactivate_profile=ChangeProfileActivation(store, self.event_bus, actor_id, False),
@@ -349,6 +360,8 @@ class ApplicationContainer:
 
         if self.supabase_gateway is not None:
             await self.supabase_gateway.close()
+        if self.invitation_service is not None:
+            await self.invitation_service.close()
 
 
 def build_container(settings: Settings | None = None) -> ApplicationContainer:
@@ -374,6 +387,14 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
             in_memory_profile_store=None,
             in_memory_student_store=None,
             supabase_gateway=gateway,
+            invitation_service=(
+                SupabaseInvitationService(
+                    current_settings.supabase_url,
+                    current_settings.supabase_service_role_key,
+                )
+                if current_settings.supabase_service_role_key
+                else None
+            ),
             in_memory_class_store=None,
             in_memory_evaluation_store=None,
         )
@@ -389,6 +410,7 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         in_memory_profile_store=InMemoryProfileRepository(),
         in_memory_student_store=InMemoryStudentRepository(),
         supabase_gateway=None,
+        invitation_service=None,
         in_memory_class_store=InMemoryClassRepository(),
         in_memory_enrollment_store=InMemoryEnrollmentRepository(),
         in_memory_evaluation_store=InMemoryStudentEvaluationRepository(),

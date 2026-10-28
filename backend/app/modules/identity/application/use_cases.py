@@ -7,6 +7,8 @@ from uuid import UUID
 from backend.app.modules.identity.application.dtos import (
     ChangeProfileActivationInput,
     ChangeProfileRoleInput,
+    InviteProfileInput,
+    InviteProfileOutput,
     ProfileOutput,
     ProfilePageOutput,
     UpdateMyProfileInput,
@@ -23,6 +25,9 @@ from backend.app.modules.identity.domain.exceptions import (
 )
 from backend.app.modules.identity.domain.repositories import ProfileRepository
 from backend.app.modules.identity.domain.value_objects import AccessChangeReason
+from backend.app.modules.identity.infrastructure.supabase_invitations import (
+    SupabaseInvitationService,
+)
 from backend.app.shared.application.event_bus import EventPublisher
 from backend.app.shared.application.exceptions import PermissionDeniedError
 
@@ -116,6 +121,18 @@ class ListProfiles:
             has_previous=page > 1,
             has_next=page < total_pages,
         )
+
+
+@dataclass(slots=True)
+class InviteProfile:
+    repository: ProfileRepository
+    invitations: SupabaseInvitationService
+    actor_id: UUID
+
+    async def execute(self, dto: InviteProfileInput) -> InviteProfileOutput:
+        await _require_coordinator(self.repository, self.actor_id)
+        await self.invitations.invite(dto.email, dto.full_name)
+        return InviteProfileOutput(message="Convite enviado para o e-mail informado.")
 
 
 @dataclass(slots=True)

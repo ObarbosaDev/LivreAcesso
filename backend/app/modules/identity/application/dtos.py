@@ -36,6 +36,15 @@ class ChangeProfileActivationInput(DTO):
     reason: str = Field(min_length=10, max_length=500)
 
 
+class InviteProfileInput(DTO):
+    email: str = Field(min_length=5, max_length=320)
+    full_name: str = Field(min_length=3, max_length=120)
+
+
+class InviteProfileOutput(DTO):
+    message: str
+
+
 class ProfileOutput(DTO):
     id: UUID
     full_name: str

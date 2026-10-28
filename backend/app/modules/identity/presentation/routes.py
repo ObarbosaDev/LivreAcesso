@@ -9,6 +9,8 @@ from backend.app.core.container import ApplicationContainer
 from backend.app.modules.identity.application.dtos import (
     ChangeProfileActivationInput,
     ChangeProfileRoleInput,
+    InviteProfileInput,
+    InviteProfileOutput,
     ProfileOutput,
     ProfilePageOutput,
     UpdateMyProfileInput,
@@ -101,6 +103,22 @@ def build_identity_router(container: ApplicationContainer) -> APIRouter:
             profile_id,
             payload,
         )
+
+    @router.post(
+        "/profiles/invite",
+        response_model=InviteProfileOutput,
+        status_code=status.HTTP_202_ACCEPTED,
+        summary="Convidar membro da equipe",
+        responses={status.HTTP_403_FORBIDDEN: _PROBLEM_RESPONSE},
+    )
+    async def invite_profile(
+        payload: InviteProfileInput,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> InviteProfileOutput:
+        service = container.identity_for(context).invite_profile
+        if service is None:
+            raise RuntimeError("Convites não estão configurados neste ambiente.")
+        return await service.execute(payload)
 
     @router.post(
         "/profiles/{profile_id}/activate",
