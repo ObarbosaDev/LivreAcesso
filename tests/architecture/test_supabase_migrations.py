@@ -391,3 +391,16 @@ def test_communication_worker_has_a_retry_ceiling() -> None:
         "grant execute on function public.claim_pending_communications(integer) to service_role"
         in sql
     )
+
+
+def test_communication_queue_status_is_aggregated_and_private() -> None:
+    migration = MIGRATIONS_DIR / "20261028002700_communication_queue_status.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "returns jsonb" in sql
+    assert "oldest_pending_at" in sql
+    assert "recipient" not in sql
+    assert (
+        "grant execute on function public.get_communication_queue_status() to service_role"
+        in sql
+    )

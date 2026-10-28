@@ -88,3 +88,26 @@ async def test_claim_rejects_invalid_remote_row() -> None:
 
     with pytest.raises(ValueError, match="linha inválida"):
         await repository.claim_pending(limit=1, now=datetime.now(UTC))
+
+
+@pytest.mark.anyio
+async def test_queue_status_is_aggregated_without_message_content() -> None:
+    gateway = StubGateway(
+        {
+            "pending": 2,
+            "processing": 1,
+            "failed": 3,
+            "sent": 10,
+            "oldest_pending_at": "2026-10-28T12:00:00Z",
+        }
+    )
+    repository = SupabaseDeliveryRepository(gateway)  # type: ignore[arg-type]
+
+    status = await repository.get_status()
+
+    assert status.pending == 2
+    assert status.processing == 1
+    assert status.failed == 3
+    assert status.sent == 10
+    assert status.oldest_pending_at is not None
+    assert gateway.calls == [("get_communication_queue_status", {})]
