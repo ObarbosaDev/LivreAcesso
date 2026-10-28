@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 
 from backend.app.modules.communications.application.delivery import ProcessPendingDeliveries
+from backend.app.modules.communications.application.status import CommunicationQueueMonitor
 
 logger = logging.getLogger("livre_acesso.communications")
 
@@ -14,12 +15,23 @@ class CommunicationWorker:
     """Executa lotes pequenos e encerra sem deixar tarefa órfã."""
 
     processor: ProcessPendingDeliveries
+    monitor: CommunicationQueueMonitor | None = None
     batch_size: int = 20
     interval_seconds: float = 30.0
 
     async def run_once(self) -> int:
         processed = await self.processor.execute(limit=self.batch_size)
         logger.info("communication_batch_completed processed=%s", processed)
+        if self.monitor is not None:
+            status = await self.monitor.get_status()
+            log = logger.warning if status.failed > 0 else logger.info
+            log(
+                "communication_queue_status pending=%s processing=%s failed=%s sent=%s",
+                status.pending,
+                status.processing,
+                status.failed,
+                status.sent,
+            )
         return processed
 
     async def run_forever(self, stop_event: asyncio.Event) -> None:
