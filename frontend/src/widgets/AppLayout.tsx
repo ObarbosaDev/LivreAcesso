@@ -36,6 +36,7 @@ export function AppLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [commandOpen, setCommandOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState('')
+  const [commandIndex, setCommandIndex] = useState(0)
   const [keySequence, setKeySequence] = useState('')
   const commandInputRef = useRef<HTMLInputElement>(null)
 
@@ -53,6 +54,25 @@ export function AppLayout() {
         setCommandOpen(false)
         setKeySequence('')
       }
+      if (commandOpen && commandItems.length > 0) {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          setCommandIndex((index) => (index + 1) % commandItems.length)
+          return
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault()
+          setCommandIndex((index) => (index - 1 + commandItems.length) % commandItems.length)
+          return
+        }
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          navigate(commandItems[commandIndex].to)
+          setCommandOpen(false)
+          setCommandQuery('')
+          return
+        }
+      }
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return
       if (event.key.toLowerCase() === 'g') { setKeySequence('g'); return }
       if (keySequence === 'g') { const routes: Record<string, string> = { d: '/', e: '/estudantes', t: '/turmas', a: '/agenda', r: '/relatorios' }; if (routes[event.key.toLowerCase()]) navigate(routes[event.key.toLowerCase()]); setKeySequence(''); return }
@@ -61,7 +81,7 @@ export function AppLayout() {
     }
     window.addEventListener('keydown', handleShortcut)
     return () => window.removeEventListener('keydown', handleShortcut)
-  }, [keySequence, navigate])
+  }, [commandIndex, commandItems, commandOpen, keySequence, navigate])
 
   useEffect(() => {
     if (!keySequence) return
