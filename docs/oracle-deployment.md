@@ -45,3 +45,14 @@ python scripts/verify_oracle_deployment.py `
 O comando confirma saúde da API, prontidão com persistência, bloqueio de uma rota
 sem JWT e disponibilidade do frontend. Não envia credenciais, não cria dados e
 não imprime respostas da aplicação.
+
+Antes de iniciar os containers, valide o ambiente da API:
+
+```powershell
+python scripts/validate_oracle_env.py
+python scripts/validate_oracle_env.py --worker
+```
+
+O segundo comando exige também a chave `service_role` e o endpoint do provedor
+de comunicação. As mensagens mostram apenas nomes de variáveis; os valores nunca
+são exibidos.
