@@ -6,6 +6,7 @@ import { AppLayout } from '@/widgets/AppLayout'
 import { FullScreenState } from '@/shared/ui/FullScreenState'
 
 const ClassesPage = lazy(() => import('@/pages/ClassesPage').then((module) => ({ default: module.ClassesPage })))
+const AgendaPage = lazy(() => import('@/pages/AgendaPage').then((module) => ({ default: module.AgendaPage })))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((module) => ({ default: module.DashboardPage })))
 const EnrollmentsPage = lazy(() => import('@/pages/EnrollmentsPage').then((module) => ({ default: module.EnrollmentsPage })))
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })))
@@ -36,6 +37,7 @@ export function AppRoutes() {
           <Route path="/estudantes/novo" element={<NewStudentPage />} />
           <Route path="/estudantes/:studentId" element={<StudentDetailPage />} />
           <Route path="/turmas" element={<ClassesPage />} />
+          <Route path="/agenda" element={<AgendaPage />} />
           <Route path="/turmas/nova" element={<NewClassPage />} />
           <Route path="/matriculas" element={<EnrollmentsPage />} />
           <Route path="/relatorios" element={<ReportsPage />} />

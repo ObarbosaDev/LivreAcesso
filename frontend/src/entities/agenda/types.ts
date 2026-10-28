@@ -1,0 +1,2 @@
+export type AgendaEventType = 'turma' | 'reuniao' | 'atendimento' | 'evento' | 'bloqueio' | 'outro'
+export interface AgendaEvent { id: string; title: string; description: string | null; event_type: AgendaEventType; status: string; starts_at: string; ends_at: string; all_day: boolean; location: string | null; class_id: string | null; assigned_to: string | null; created_by: string; created_at: string; updated_at: string }
