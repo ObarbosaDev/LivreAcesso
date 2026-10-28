@@ -21,6 +21,7 @@ from backend.app.modules.identity.infrastructure.supabase_jwt import SupabaseJWT
 from backend.app.modules.identity.presentation.routes import build_identity_router
 from backend.app.modules.operations.presentation.agenda_routes import build_agenda_router
 from backend.app.modules.operations.presentation.routes import build_operations_router
+from backend.app.modules.reporting.presentation.routes import build_reporting_router
 from backend.app.modules.students.presentation.evaluation_routes import (
     build_student_evaluations_router,
 )
@@ -131,6 +132,10 @@ def create_app(
     )
     application.include_router(
         build_alerts_router(current_container),
+        prefix=current_settings.api_prefix,
+    )
+    application.include_router(
+        build_reporting_router(current_container),
         prefix=current_settings.api_prefix,
     )
     return application
