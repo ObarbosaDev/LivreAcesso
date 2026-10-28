@@ -163,6 +163,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// O hook precisa compartilhar o mesmo contexto privado do provider; manter os dois
+// exports aqui evita duplicar a instância de autenticação entre módulos.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext)
   if (!context) {
