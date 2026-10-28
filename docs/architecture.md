@@ -292,14 +292,16 @@ Dados pessoais não podem ser usados como identificadores de log.
 
 1. consolidar cadastro e persistência real;
 2. implementar autenticação e perfis;
-3. modelar turmas e matrículas;
-4. implementar chamada e alertas;
+3. modelar turmas, modalidades e matrículas;
+4. implementar chamada, alertas e histórico;
 5. implementar lista de espera e seleção auditável;
-6. adicionar comunicados por uma interface de provedor;
-7. criar projeções de relatórios;
+6. adicionar comunicados com outbox e processamento idempotente;
+7. criar relatórios individuais, indicadores e exportações;
 8. construir o front responsivo;
-9. executar testes de segurança, usabilidade e recuperação;
+9. executar testes automatizados de segurança e jornada;
 10. iniciar piloto controlado e medir resultados.
+
+As etapas 1 a 9 estão implementadas no repositório. O próximo passo é o piloto operacional, que depende de decisões e observações do Instituto, não de uma nova camada estrutural obrigatória.
 
 Cada etapa deve entregar um fluxo vertical utilizável, evitando criar todas as tabelas primeiro e deixar o comportamento para o final.
 

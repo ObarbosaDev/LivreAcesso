@@ -645,27 +645,31 @@ Para relatar uma vulnerabilidade, siga [`SECURITY.md`](SECURITY.md) e não abra 
 
 ### Fase 2 — Turmas e operação
 
-- [ ] modalidades, turmas, horários e capacidade;
-- [ ] matrículas e alterações de situação;
-- [ ] chamada responsiva;
-- [ ] histórico e justificativa;
-- [ ] alertas por faltas consecutivas.
+- [x] modalidades, turmas, horários e capacidade;
+- [x] matrículas e alterações de situação;
+- [x] chamada responsiva;
+- [x] histórico e justificativa;
+- [x] alertas por faltas consecutivas.
 
 ### Fase 3 — Vagas e comunicação
 
-- [ ] inatividade revisável;
-- [ ] lista de espera;
-- [ ] processo de seleção rastreável;
-- [ ] comunicados por turma;
-- [ ] entrega e leitura conforme capacidade real do provedor.
+- [x] inatividade revisável;
+- [x] lista de espera;
+- [x] processo de seleção rastreável;
+- [x] comunicados por turma com outbox transacional;
+- [x] processamento idempotente e rastreável da comunicação.
 
 ### Fase 4 — Experiência e inteligência
 
-- [ ] front-end React + TypeScript;
-- [ ] painel e relatórios;
-- [ ] acessibilidade e responsividade;
-- [ ] observabilidade e alertas técnicos;
-- [ ] testes E2E e de usabilidade.
+- [x] front-end React + TypeScript;
+- [x] painel, relatórios individuais e exportação CSV/PDF;
+- [x] acessibilidade básica e responsividade;
+- [x] health checks e alertas operacionais;
+- [x] testes automatizados de backend e frontend.
+
+### Bloco 6 — Operação integrada
+
+O bloco 6 está concluído no código e validado localmente. A jornada vertical cobre modalidade, turma, matrícula, chamada, faltas, alertas, lista de espera, comunicação, relatório individual e avaliação de desenvolvimento. A validação restante é operacional: executar o piloto com usuários reais e confirmar regras específicas da instituição.
 
 ### Fase 5 — Piloto
 
