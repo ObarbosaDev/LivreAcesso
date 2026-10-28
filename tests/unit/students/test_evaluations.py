@@ -1,7 +1,6 @@
 """Cenários centrais do acompanhamento individual."""
 
 import asyncio
-from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -45,9 +44,7 @@ def test_creates_and_lists_evaluation_without_comparing_student() -> None:
     async def scenario() -> None:
         repository = InMemoryStudentEvaluationRepository()
         student_id = uuid4()
-        item = await CreateStudentEvaluation(repository).execute(
-            student_id, _payload(), _context()
-        )
+        item = await CreateStudentEvaluation(repository).execute(student_id, _payload(), _context())
         assert item.student_id == student_id
         assert item.performance_score == 7
         assert len(await repository.list(student_id, _context())) == 1
@@ -63,4 +60,3 @@ def test_rejects_period_in_reverse_order() -> None:
             )
 
     asyncio.run(scenario())
-
