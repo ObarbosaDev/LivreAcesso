@@ -20,6 +20,7 @@ dependencies = [
 
 [project.scripts]
 livre-acesso-verify-supabase = "scripts.verify_supabase_auth:main"
+livre-acesso-process-communications = "scripts.process_communications:main"
 
 [project.optional-dependencies]
 dev = [
