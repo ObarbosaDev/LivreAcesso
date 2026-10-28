@@ -12,3 +12,6 @@ class WaitingListRepository(ABC):
 
     @abstractmethod
     async def get(self, entry_id: UUID) -> WaitingListEntry | None: ...
+
+    @abstractmethod
+    async def update(self, entry: WaitingListEntry) -> WaitingListEntry: ...
