@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 
+from backend.app.modules.communications.application.status import CommunicationQueueStatus
 from backend.app.modules.communications.application.worker import CommunicationWorker
 
 
@@ -16,6 +17,11 @@ class StubProcessor:
         return limit
 
 
+class StubMonitor:
+    async def get_status(self) -> CommunicationQueueStatus:
+        return CommunicationQueueStatus(2, 0, 1, 8, None)
+
+
 @pytest.mark.anyio
 async def test_worker_runs_once_and_returns_count() -> None:
     processor = StubProcessor()
@@ -23,6 +29,14 @@ async def test_worker_runs_once_and_returns_count() -> None:
 
     assert await worker.run_once() == 7
     assert processor.calls == 1
+
+
+@pytest.mark.anyio
+async def test_worker_reads_aggregated_queue_status() -> None:
+    processor = StubProcessor()
+    worker = CommunicationWorker(processor, monitor=StubMonitor())
+
+    assert await worker.run_once() == 20
 
 
 @pytest.mark.anyio
