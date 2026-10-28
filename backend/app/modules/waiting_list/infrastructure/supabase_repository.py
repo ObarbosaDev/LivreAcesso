@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from backend.app.modules.waiting_list.application.dtos import (
     WaitingListInput,
@@ -46,6 +46,20 @@ class SupabaseWaitingListRepository:
             {"p_entry_id": str(entry_id)},
         )
         return self._parse(result)
+
+    async def withdraw(self, entry_id: UUID) -> WaitingListOutput:
+        result = await self._call(
+            "withdraw_waiting_list_entry",
+            {"p_entry_id": str(entry_id)},
+        )
+        return self._parse(result)
+
+    async def list(self, class_id: UUID) -> tuple[WaitingListOutput, ...]:
+        result = await self._call("list_waiting_list", {"p_class_id": str(class_id)})
+        try:
+            return tuple(TypeAdapter(list[WaitingListOutput]).validate_python(result))
+        except ValidationError as error:
+            raise PersistenceUnavailableError from error
 
     async def _call(self, name: str, payload: dict[str, object]) -> object:
         try:

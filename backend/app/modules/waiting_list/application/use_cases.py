@@ -60,3 +60,23 @@ class AcceptWaitingListEntry:
             raise ValueError("Entrada da fila não encontrada.")
         entry.accept()
         return _output(await self.repository.update(entry))
+
+
+class WithdrawWaitingListEntry:
+    def __init__(self, repository: WaitingListRepository) -> None:
+        self.repository = repository
+
+    async def execute(self, entry_id: UUID) -> WaitingListOutput:
+        entry = await self.repository.get(entry_id)
+        if entry is None:
+            raise ValueError("Entrada da fila não encontrada.")
+        entry.withdraw()
+        return _output(await self.repository.update(entry))
+
+
+class ListWaitingList:
+    def __init__(self, repository: InMemoryWaitingListRepository) -> None:
+        self.repository = repository
+
+    async def execute(self, class_id: UUID) -> tuple[WaitingListOutput, ...]:
+        return tuple(_output(entry) for entry in await self.repository.list(class_id))

@@ -113,7 +113,9 @@ from backend.app.modules.waiting_list.application.dtos import WaitingListInput, 
 from backend.app.modules.waiting_list.application.use_cases import (
     AcceptWaitingListEntry,
     JoinWaitingList,
+    ListWaitingList,
     OfferWaitingListEntry,
+    WithdrawWaitingListEntry,
 )
 from backend.app.modules.waiting_list.infrastructure.repositories import (
     InMemoryWaitingListRepository,
@@ -230,6 +232,8 @@ class WaitingListServices:
     offer_case: OfferWaitingListEntry | None = None
     accept_case: AcceptWaitingListEntry | None = None
     remote: SupabaseWaitingListRepository | None = None
+    withdraw_case: WithdrawWaitingListEntry | None = None
+    list_case: ListWaitingList | None = None
 
     async def join(self, payload: WaitingListInput) -> WaitingListOutput:
         if self.remote is not None:
@@ -251,6 +255,20 @@ class WaitingListServices:
         if self.accept_case is None:
             raise RuntimeError("O serviço de aceitação da fila não está configurado.")
         return await self.accept_case.execute(entry_id)
+
+    async def withdraw(self, entry_id: UUID) -> WaitingListOutput:
+        if self.remote is not None:
+            return await self.remote.withdraw(entry_id)
+        if self.withdraw_case is None:
+            raise RuntimeError("O serviço de retirada da fila não está configurado.")
+        return await self.withdraw_case.execute(entry_id)
+
+    async def list(self, class_id: UUID) -> tuple[WaitingListOutput, ...]:
+        if self.remote is not None:
+            return await self.remote.list(class_id)
+        if self.list_case is None:
+            raise RuntimeError("O serviço de listagem da fila não está configurado.")
+        return await self.list_case.execute(class_id)
 
 
 @dataclass(frozen=True, slots=True)
@@ -440,6 +458,8 @@ class ApplicationContainer:
             join_case=JoinWaitingList(store),
             offer_case=OfferWaitingListEntry(store),
             accept_case=AcceptWaitingListEntry(store),
+            withdraw_case=WithdrawWaitingListEntry(store),
+            list_case=ListWaitingList(store),
         )
 
     def agenda_for(self, context: RequestContext) -> AgendaServices:

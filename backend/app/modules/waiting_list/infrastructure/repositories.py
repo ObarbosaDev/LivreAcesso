@@ -23,6 +23,13 @@ class InMemoryWaitingListRepository(WaitingListRepository):
         self._items[entry.id] = deepcopy(entry)
         return deepcopy(entry)
 
+    async def list(self, class_id: UUID) -> tuple[WaitingListEntry, ...]:
+        return tuple(
+            deepcopy(entry)
+            for entry in sorted(self._items.values(), key=lambda item: item.position)
+            if entry.class_id == class_id
+        )
+
     def next_position(self, class_id: UUID) -> int:
         positions = [
             entry.position

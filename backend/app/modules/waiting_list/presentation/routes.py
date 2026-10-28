@@ -38,4 +38,18 @@ def build_waiting_list_router(container: ApplicationContainer) -> APIRouter:
     ) -> WaitingListOutput:
         return await container.waiting_list_for(context).accept(entry_id)
 
+    @router.get("", response_model=tuple[WaitingListOutput, ...])
+    async def list_waiting_list(
+        class_id: UUID,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> tuple[WaitingListOutput, ...]:
+        return await container.waiting_list_for(context).list(class_id)
+
+    @router.post("/{entry_id}/withdraw", response_model=WaitingListOutput)
+    async def withdraw_waiting_list(
+        entry_id: UUID,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> WaitingListOutput:
+        return await container.waiting_list_for(context).withdraw(entry_id)
+
     return router

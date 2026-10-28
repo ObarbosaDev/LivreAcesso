@@ -18,3 +18,7 @@ class WaitingListOutput(BaseModel):
     class_id: UUID
     position: int
     status: WaitingListStatus
+
+
+class WaitingListPageOutput(BaseModel):
+    items: tuple[WaitingListOutput, ...]
