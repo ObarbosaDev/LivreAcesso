@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import Settings, get_settings
 from backend.app.core.container import ApplicationContainer, build_container
+from backend.app.modules.alerts.presentation.routes import build_alerts_router
 from backend.app.modules.attendance.presentation.routes import build_attendance_router
 from backend.app.modules.classes.presentation.routes import build_classes_router
 from backend.app.modules.enrollments.presentation.routes import build_enrollments_router
@@ -126,6 +127,10 @@ def create_app(
     )
     application.include_router(
         build_waiting_list_router(current_container),
+        prefix=current_settings.api_prefix,
+    )
+    application.include_router(
+        build_alerts_router(current_container),
         prefix=current_settings.api_prefix,
     )
     return application

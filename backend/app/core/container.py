@@ -5,6 +5,8 @@ from datetime import datetime
 from uuid import UUID
 
 from backend.app.core.config import Settings, get_settings
+from backend.app.modules.alerts.application.dtos import AlertInput, AlertOutput
+from backend.app.modules.alerts.infrastructure.supabase_repository import SupabaseAlertRepository
 from backend.app.modules.attendance.application.dtos import (
     AttendanceMarkInput,
     AttendanceSessionOutput,
@@ -272,6 +274,20 @@ class WaitingListServices:
 
 
 @dataclass(frozen=True, slots=True)
+class AlertServices:
+    repository: SupabaseAlertRepository
+
+    async def list_open(self) -> tuple[AlertOutput, ...]:
+        return await self.repository.list_open()
+
+    async def upsert(self, payload: AlertInput) -> AlertOutput:
+        return await self.repository.upsert(payload)
+
+    async def resolve(self, alert_id: UUID) -> AlertOutput:
+        return await self.repository.resolve(alert_id)
+
+
+@dataclass(frozen=True, slots=True)
 class AgendaServices:
     repository: AgendaRepository
 
@@ -461,6 +477,11 @@ class ApplicationContainer:
             withdraw_case=WithdrawWaitingListEntry(store),
             list_case=ListWaitingList(store),
         )
+
+    def alerts_for(self, context: RequestContext) -> AlertServices:
+        if self.supabase_gateway is None:
+            raise RuntimeError("Alertas exigem persistência Supabase configurada.")
+        return AlertServices(SupabaseAlertRepository(self.supabase_gateway, context))
 
     def agenda_for(self, context: RequestContext) -> AgendaServices:
         if self.supabase_gateway is None:
