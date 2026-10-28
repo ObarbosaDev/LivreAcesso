@@ -105,7 +105,7 @@ export function AppLayout() {
           onClick={() => setDrawerOpen(false)}
           className={({ isActive }) =>
             cn(
-              'group flex items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-sm font-medium transition',
+              'group flex items-center gap-3 border border-transparent border-l-2 px-3 py-3 text-sm font-medium transition',
               isActive ? 'border-brand-green/15 bg-brand-green/12 text-brand-green shadow-[inset_3px_0_var(--color-brand-green)]' : 'text-white/55 hover:border-white/8 hover:bg-white/[.04] hover:text-white',
             )
           }
@@ -179,8 +179,8 @@ export function AppLayout() {
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle />
             {profile && (
-              <Link to="/perfil" className="group flex items-center gap-3 rounded-full py-1 pl-2 pr-3 transition hover:bg-white/[.05]">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green text-sm font-bold text-ink">{profile.full_name.slice(0, 1).toUpperCase()}</span>
+            <Link to="/perfil" className="group flex items-center gap-3 border-l border-white/10 py-1 pl-3 pr-1 transition hover:border-brand-green">
+                <span className="flex h-9 w-9 items-center justify-center border border-brand-green bg-brand-green text-sm font-bold text-ink">{profile.full_name.slice(0, 1).toUpperCase()}</span>
                 <span className="hidden text-left sm:block"><p className="text-sm font-semibold text-white group-hover:text-brand-green">{profile.full_name}</p><p className="text-xs text-white/40">{ROLE_LABELS[profile.role]}</p></span>
               </Link>
             )}
