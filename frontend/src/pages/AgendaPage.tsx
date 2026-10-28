@@ -1,7 +1,7 @@
-import { CalendarDays, MapPin, Plus, RefreshCw } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Plus, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { createAgendaEvent, listAgenda } from '@/features/agenda/api'
+import { cancelAgendaEvent, createAgendaEvent, listAgenda } from '@/features/agenda/api'
 import type { AgendaEvent, AgendaEventType } from '@/entities/agenda/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
@@ -10,19 +10,23 @@ import { Input } from '@/shared/ui/Input'
 import { PageFrame } from '@/shared/ui/PageFrame'
 
 const labels: Record<AgendaEventType, string> = { turma: 'Turma', reuniao: 'Reunião', atendimento: 'Atendimento', evento: 'Evento', bloqueio: 'Bloqueio', outro: 'Outro' }
-function isoDate(date: Date) { return date.toISOString().slice(0, 10) }
-function monthRange() { const now = new Date(); return { start: isoDate(new Date(now.getFullYear(), now.getMonth(), 1)), end: isoDate(new Date(now.getFullYear(), now.getMonth() + 1, 1)) } }
+function monthRange(cursor: Date) { const start = new Date(cursor.getFullYear(), cursor.getMonth(), 1); const end = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1); return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) } }
+function monthLabel(cursor: Date) { return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(cursor) }
 
 export function AgendaPage() {
-  usePageTitle('Agenda'); const range = useMemo(() => monthRange(), []); const [events, setEvents] = useState<AgendaEvent[]>([]); const [loading, setLoading] = useState(true); const [open, setOpen] = useState(false); const [error, setError] = useState<string | null>(null)
+  usePageTitle('Agenda')
+  const [cursor, setCursor] = useState(() => { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1) })
+  const range = useMemo(() => monthRange(cursor), [cursor]); const [events, setEvents] = useState<AgendaEvent[]>([]); const [loading, setLoading] = useState(true); const [open, setOpen] = useState(false); const [error, setError] = useState<string | null>(null)
   const reload = useCallback(async () => { setLoading(true); try { setEvents(await listAgenda(range.start, range.end)); setError(null) } catch (caught) { setError(friendlyMessage(caught)) } finally { setLoading(false) } }, [range.end, range.start])
   useEffect(() => { void reload() // eslint-disable-line react-hooks/set-state-in-effect
   }, [reload])
+  async function cancelEvent(item: AgendaEvent) { const reason = window.prompt('Motivo do cancelamento (mínimo 10 caracteres):'); if (!reason || reason.trim().length < 10) return; try { await cancelAgendaEvent(item.id, item.updated_at, reason); await reload() } catch (caught) { setError(friendlyMessage(caught)) } }
+  function shiftMonth(amount: number) { setCursor((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1)) }
   return <PageFrame eyebrow="Rotina do instituto" title="Agenda" description="Horários de turma, reuniões, atendimentos e compromissos em um único lugar." actions={<Button onClick={() => setOpen((value) => !value)}><Plus className="h-4 w-4" />{open ? 'Fechar' : 'Novo compromisso'}</Button>}>
     {open && <AgendaForm onSaved={() => { setOpen(false); void reload() }} />}
     {error && <p className="border border-danger/40 p-4 text-sm text-danger">{error}</p>}
-    <div className="mt-6 flex items-center justify-between border-y border-white/10 py-4"><div><p className="text-xs uppercase tracking-[0.14em] text-white/40">Período</p><p className="mt-1 font-display text-sm text-white">{range.start} → {range.end}</p></div><Button variant="secondary" onClick={() => void reload()}><RefreshCw className="h-4 w-4" /> Atualizar</Button></div>
-    {loading ? <p className="py-12 text-sm text-white/45">Carregando agenda…</p> : events.length === 0 ? <div className="mt-6 border border-dashed border-white/15 p-8"><CalendarDays className="h-5 w-5 text-brand-green" /><p className="mt-4 font-display text-sm text-white">Nenhum compromisso neste período.</p><p className="mt-2 text-sm text-white/45">Cadastre uma reunião, atendimento ou horário para começar a organizar a rotina.</p></div> : <div className="mt-6 divide-y divide-white/10 border-y border-white/10">{events.map((event, index) => <article key={event.id} className="grid gap-3 py-5 md:grid-cols-[5rem_1fr_auto] md:items-center"><span className="font-display text-xs text-brand-green/70">{String(index + 1).padStart(2, '0')}</span><div><div className="flex flex-wrap items-center gap-3"><h2 className="font-display text-sm font-semibold text-white">{event.title}</h2><span className="text-[10px] uppercase tracking-[0.12em] text-brand-green">{labels[event.event_type]}</span></div><p className="mt-2 text-xs text-white/45">{event.description ?? 'Sem descrição registrada.'}</p>{event.location && <p className="mt-2 flex items-center gap-1.5 text-xs text-white/40"><MapPin className="h-3.5 w-3.5" />{event.location}</p>}</div><p className="font-display text-xs text-white/55">{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p></article>)}</div>}
+    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-y border-white/10 py-4"><div><p className="text-xs uppercase tracking-[0.14em] text-white/40">Período</p><p className="mt-1 font-display text-sm capitalize text-white">{monthLabel(cursor)}</p></div><div className="flex items-center gap-2"><Button variant="secondary" aria-label="Mês anterior" onClick={() => shiftMonth(-1)}><ChevronLeft className="h-4 w-4" /></Button><Button variant="secondary" aria-label="Próximo mês" onClick={() => shiftMonth(1)}><ChevronRight className="h-4 w-4" /></Button><Button variant="secondary" onClick={() => void reload()}><RefreshCw className="h-4 w-4" /> Atualizar</Button></div></div>
+    {loading ? <p className="py-12 text-sm text-white/45">Carregando agenda…</p> : events.length === 0 ? <div className="mt-6 border border-dashed border-white/15 p-8"><CalendarDays className="h-5 w-5 text-brand-green" /><p className="mt-4 font-display text-sm text-white">Nenhum compromisso neste período.</p><p className="mt-2 text-sm text-white/45">Cadastre uma reunião, atendimento ou horário para começar a organizar a rotina.</p></div> : <div className="mt-6 divide-y divide-white/10 border-y border-white/10">{events.map((event, index) => <article key={event.id} className="grid gap-3 py-5 md:grid-cols-[5rem_1fr_auto] md:items-center"><span className="font-display text-xs text-brand-green/70">{String(index + 1).padStart(2, '0')}</span><div><div className="flex flex-wrap items-center gap-3"><h2 className="font-display text-sm font-semibold text-white">{event.title}</h2><span className="text-[10px] uppercase tracking-[0.12em] text-brand-green">{labels[event.event_type]}</span></div><p className="mt-2 text-xs text-white/45">{event.description ?? 'Sem descrição registrada.'}</p>{event.location && <p className="mt-2 flex items-center gap-1.5 text-xs text-white/40"><MapPin className="h-3.5 w-3.5" />{event.location}</p>}</div><div className="flex items-center gap-4"><p className="font-display text-xs text-white/55">{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p><button type="button" onClick={() => void cancelEvent(event)} className="text-xs text-danger/70 hover:text-danger">Cancelar</button></div></article>)}</div>}
   </PageFrame>
 }
 
