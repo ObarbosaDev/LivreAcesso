@@ -43,6 +43,7 @@ class InviteProfileInput(DTO):
 
 class InviteProfileOutput(DTO):
     message: str
+    action_link: str | None = None
 
 
 class ProfileOutput(DTO):

@@ -134,6 +134,14 @@ class InviteProfile:
         await self.invitations.invite(dto.email, dto.full_name)
         return InviteProfileOutput(message="Convite enviado para o e-mail informado.")
 
+    async def generate_link(self, dto: InviteProfileInput) -> InviteProfileOutput:
+        await _require_coordinator(self.repository, self.actor_id)
+        action_link = await self.invitations.generate_link(dto.email, dto.full_name)
+        return InviteProfileOutput(
+            message="Link de convite gerado. Compartilhe-o somente com a pessoa convidada.",
+            action_link=action_link,
+        )
+
 
 @dataclass(slots=True)
 class ChangeProfileRole:

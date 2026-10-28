@@ -121,6 +121,22 @@ def build_identity_router(container: ApplicationContainer) -> APIRouter:
         return await service.execute(payload)
 
     @router.post(
+        "/profiles/invite-link",
+        response_model=InviteProfileOutput,
+        status_code=status.HTTP_201_CREATED,
+        summary="Gerar link de convite",
+        responses={status.HTTP_403_FORBIDDEN: _PROBLEM_RESPONSE},
+    )
+    async def generate_invite_link(
+        payload: InviteProfileInput,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> InviteProfileOutput:
+        service = container.identity_for(context).invite_profile
+        if service is None:
+            raise RuntimeError("Convites não estão configurados neste ambiente.")
+        return await service.generate_link(payload)
+
+    @router.post(
         "/profiles/{profile_id}/activate",
         response_model=ProfileOutput,
         summary="Ativar perfil operacional",
