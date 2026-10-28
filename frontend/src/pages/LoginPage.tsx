@@ -1,5 +1,5 @@
 import { Eye, EyeOff, Lock, Mail, TriangleAlert } from 'lucide-react'
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 
@@ -25,7 +25,12 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const [capsLockOn, setCapsLockOn] = useState(false)
+
+  useEffect(() => {
+    emailRef.current?.focus()
+  }, [])
 
   if (!publicEnv) {
     return (
@@ -49,14 +54,15 @@ export function LoginPage() {
     event.preventDefault()
     if (submitting) return
     setFormError(null)
+    setFieldErrors({})
 
     if (!email) {
-      setFormError('Informe o e-mail da sua conta.')
+      setFieldErrors({ email: 'Informe o e-mail da sua conta.' })
       emailRef.current?.focus()
       return
     }
     if (!password) {
-      setFormError('Informe sua senha.')
+      setFieldErrors({ password: 'Informe sua senha.' })
       passwordRef.current?.focus()
       return
     }
@@ -99,7 +105,8 @@ export function LoginPage() {
             spellCheck={false}
             autoCapitalize="none"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => { setEmail(event.target.value); setFieldErrors((current) => ({ ...current, email: undefined })); setFormError(null) }}
+            error={fieldErrors.email}
             disabled={submitting}
             icon={<Mail className="h-4 w-4" aria-hidden="true" />}
           />
@@ -112,12 +119,13 @@ export function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => { setPassword(event.target.value); setFieldErrors((current) => ({ ...current, password: undefined })); setFormError(null) }}
                 onKeyDown={handlePasswordKeyEvent}
                 onKeyUp={handlePasswordKeyEvent}
                 disabled={submitting}
                 className="pr-12"
                 icon={<Lock className="h-4 w-4" aria-hidden="true" />}
+                error={fieldErrors.password}
               />
               <button
                 type="button"
