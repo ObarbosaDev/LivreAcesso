@@ -19,6 +19,8 @@ class SupabaseCommunicationOutbox:
                 "p_recipient": message.recipient,
                 "p_subject": message.subject,
                 "p_body": message.body,
+                "p_requested_by": message.requested_by or self.context.user.user_id,
+                "p_request_id": message.request_id or self.context.request_id,
             },
             self.context,
         )

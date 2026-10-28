@@ -17,3 +17,5 @@ class OutboundMessage:
     channel: CommunicationChannel
     subject: str
     body: str
+    requested_by: UUID | None = None
+    request_id: UUID | None = None
