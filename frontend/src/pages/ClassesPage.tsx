@@ -80,10 +80,10 @@ export function ClassesPage() {
   }, [debouncedQuery, modalityId, page])
 
   return (
-    <PageFrame eyebrow="Programação e capacidade" title="Turmas" description="Organize horários, instrutores e ocupação sem perder a visão do todo." actions={<Link to="/turmas/nova" className="group inline-flex h-11 items-center gap-2 rounded-full bg-brand-green px-5 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-brand-green-soft">Nova turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>}>
+    <PageFrame eyebrow="Programação e capacidade" title="Turmas" description="Organize horários, instrutores e ocupação sem perder a visão do todo." actions={<Link to="/turmas/nova" className="group inline-flex h-11 items-center gap-2 border border-brand-green bg-brand-green px-5 text-sm font-semibold text-ink transition hover:bg-brand-green-soft">Nova turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>}>
       <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turmas ativas" value={data?.total ?? '—'} icon={CalendarDays} /><MetricCard label="Capacidade cadastrada" value={data ? Object.values(occupancy).reduce((sum, item) => sum + item.capacity, 0) : '—'} icon={UsersIcon} tone="amber" /><MetricCard label="Vagas ocupadas" value={data ? Object.values(occupancy).reduce((sum, item) => sum + item.enrolled, 0) : '—'} icon={UsersIcon} tone="blue" /></div>
       {modalities.length > 0 && <section className="mt-6 border-y border-white/10 py-5"><div className="flex items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.14em] text-brand-green">Catálogo</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Modalidades em operação</h2></div><span className="text-xs text-white/40">{modalities.length} cadastrada{modalities.length === 1 ? '' : 's'}</span></div><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{modalities.map((modality) => <button key={modality.id} type="button" onClick={() => { setModalityId(modality.id); setPage(1) }} className={`border-l-2 p-4 text-left transition ${modality.id === modalityId ? 'border-brand-green bg-brand-green/10' : 'border-white/15 bg-white/[.02] hover:border-brand-green/60'}`}><div className="flex items-center justify-between gap-3"><span className="font-display text-sm font-semibold text-white">{modality.name}</span><span className="text-[10px] uppercase tracking-[0.12em] text-brand-green">Ativa</span></div>{modality.description && <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/45">{modality.description}</p>}<span className="mt-3 block text-xs text-white/35">Ver turmas desta modalidade →</span></button>)}</div></section>}
-      <div className="liquid-glass mt-6 grid gap-4 rounded-3xl p-4 md:grid-cols-[minmax(0,1fr)_16rem]"><Input
+      <div className="liquid-glass mt-6 grid gap-4 border-t-2 border-t-brand-green/50 p-4 md:grid-cols-[minmax(0,1fr)_16rem]"><Input
         label="Pesquisar"
         placeholder="Buscar por nome da turma…"
         value={query}
@@ -101,13 +101,13 @@ export function ClassesPage() {
         )}
 
         {error && (
-          <div className="liquid-glass rounded-2xl p-8 text-center">
+            <div className="liquid-glass border-l-2 border-l-danger p-8 text-center">
             <p className="text-sm text-danger">{error}</p>
           </div>
         )}
 
         {!loading && !error && data && data.items.length === 0 && (
-          <EmptyState icon={UsersIcon} title={debouncedQuery ? 'Nenhuma turma encontrada' : 'A programação ainda está vazia'} description={debouncedQuery ? 'Tente outro termo ou limpe a busca para ver todas as turmas.' : 'Crie a primeira turma para começar a organizar horários, instrutores e matrículas.'} action={!debouncedQuery && <Link to="/turmas/nova" className="inline-flex items-center gap-2 rounded-full bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink">Criar primeira turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>} />
+        <EmptyState icon={UsersIcon} title={debouncedQuery ? 'Nenhuma turma encontrada' : 'A programação ainda está vazia'} description={debouncedQuery ? 'Tente outro termo ou limpe a busca para ver todas as turmas.' : 'Crie a primeira turma para começar a organizar horários, instrutores e matrículas.'} action={!debouncedQuery && <Link to="/turmas/nova" className="inline-flex items-center gap-2 border border-brand-green bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink">Criar primeira turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>} />
         )}
 
         {!error && data && data.items.length > 0 && (

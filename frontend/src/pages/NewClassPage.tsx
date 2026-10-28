@@ -195,7 +195,7 @@ export function NewClassPage() {
 
         <fieldset className="liquid-glass flex flex-col gap-4 rounded-2xl p-6">
           <legend className="px-1 font-display text-sm font-semibold text-white">Horário</legend>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="flex flex-col gap-2">
               <label htmlFor="weekday" className="text-sm font-medium text-white">
                 Dia

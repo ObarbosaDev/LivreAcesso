@@ -81,19 +81,19 @@ export function StudentsPage() {
         </div>
         <Link
           to="/estudantes/novo"
-          className="group inline-flex h-11 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-semibold text-ink transition hover:-translate-y-px hover:bg-brand-green-soft"
+          className="group inline-flex h-11 items-center justify-center gap-2 border border-brand-green bg-brand-green px-5 text-sm font-semibold text-ink transition hover:bg-brand-green-soft"
         >
           Novo estudante <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
       </div>
 
       <div className="mt-8 grid gap-3 sm:grid-cols-3">
-        <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Total cadastrado</p><p className="mt-1 font-display text-2xl font-semibold text-white">{data?.total ?? '—'}</p></div>
-        <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Filtro atual</p><p className="mt-1 text-sm font-semibold text-white">{status ? STUDENT_STATUS_LABELS[status] : 'Todos os status'}</p></div>
-        <div className="liquid-glass rounded-2xl px-4 py-3"><p className="text-xs text-white/40">Exibidos nesta página</p><p className="mt-1 text-sm font-semibold text-white">{data?.items.length ?? '—'} de {data?.total ?? '—'}</p></div>
+        <div className="liquid-glass border-l-2 border-l-brand-green px-4 py-3"><p className="text-xs text-white/40">Total cadastrado</p><p className="mt-1 font-display text-2xl font-semibold text-white">{data?.total ?? '—'}</p></div>
+        <div className="liquid-glass border-l-2 border-l-white/20 px-4 py-3"><p className="text-xs text-white/40">Filtro atual</p><p className="mt-1 text-sm font-semibold text-white">{status ? STUDENT_STATUS_LABELS[status] : 'Todos os status'}</p></div>
+        <div className="liquid-glass border-l-2 border-l-white/20 px-4 py-3"><p className="text-xs text-white/40">Exibidos nesta página</p><p className="mt-1 text-sm font-semibold text-white">{data?.items.length ?? '—'} de {data?.total ?? '—'}</p></div>
       </div>
 
-      <div className="liquid-glass mt-6 flex flex-col gap-4 rounded-3xl p-4 sm:flex-row sm:items-end">
+      <div className="liquid-glass mt-6 flex flex-col gap-4 border-t-2 border-t-brand-green/50 p-4 sm:flex-row sm:items-end">
         <Input
           label="Pesquisar"
           placeholder="Buscar por nome…"
@@ -135,13 +135,13 @@ export function StudentsPage() {
         )}
 
         {error && (
-          <div className="liquid-glass rounded-2xl p-8 text-center">
+            <div className="liquid-glass border-l-2 border-l-danger p-8 text-center">
             <p className="text-sm text-danger">{error}</p>
           </div>
         )}
 
         {!loading && !error && data && data.items.length === 0 && (
-          <div className="liquid-glass flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
+          <div className="liquid-glass flex flex-col items-center gap-3 border border-dashed border-white/15 p-12 text-center">
             <Users className="h-6 w-6 text-white/40" aria-hidden="true" />
             <p className="text-sm text-white/55">
               {debouncedQuery || status
@@ -189,7 +189,7 @@ export function StudentsPage() {
                 <li key={student.id}>
                   <Link
                     to={`/estudantes/${student.id}`}
-                    className="liquid-glass block rounded-2xl p-4 transition hover:border-brand-green/30"
+                    className="liquid-glass block border-l-2 border-l-white/15 p-4 transition hover:border-l-brand-green"
                   >
                   <div className="flex items-start justify-between gap-3">
                     <span className="font-medium text-white">{student.full_name}</span>
