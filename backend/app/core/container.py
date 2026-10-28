@@ -5,6 +5,11 @@ from datetime import datetime
 from uuid import UUID
 
 from backend.app.core.config import Settings, get_settings
+from backend.app.modules.attendance.application.dtos import (
+    AttendanceMarkInput,
+    AttendanceSessionOutput,
+    OpenAttendanceInput,
+)
 from backend.app.modules.attendance.application.use_cases import (
     CloseAttendance,
     OpenAttendance,
@@ -13,6 +18,9 @@ from backend.app.modules.attendance.application.use_cases import (
 from backend.app.modules.attendance.domain.repositories import AttendanceRepository
 from backend.app.modules.attendance.infrastructure.repositories import (
     InMemoryAttendanceRepository,
+)
+from backend.app.modules.attendance.infrastructure.supabase_repository import (
+    SupabaseAttendanceRepository,
 )
 from backend.app.modules.classes.application.use_cases import (
     ChangeClassActivation,
@@ -175,9 +183,33 @@ class EvaluationServices:
 class AttendanceServices:
     """Casos de uso da chamada ligados ao armazenamento escolhido."""
 
-    open: OpenAttendance
-    record: RecordAttendance
-    close: CloseAttendance
+    open_case: OpenAttendance | None = None
+    record_case: RecordAttendance | None = None
+    close_case: CloseAttendance | None = None
+    remote: SupabaseAttendanceRepository | None = None
+
+    async def open(self, payload: OpenAttendanceInput) -> AttendanceSessionOutput:
+        if self.remote is not None:
+            return await self.remote.open(payload)
+        if self.open_case is None:
+            raise RuntimeError("O serviço de abertura de chamada não está configurado.")
+        return await self.open_case.execute(payload)
+
+    async def record(
+        self, session_id: UUID, marks: tuple[AttendanceMarkInput, ...]
+    ) -> AttendanceSessionOutput:
+        if self.remote is not None:
+            return await self.remote.record(session_id, marks)
+        if self.record_case is None:
+            raise RuntimeError("O serviço de registro de chamada não está configurado.")
+        return await self.record_case.execute(session_id, marks)
+
+    async def close(self, session_id: UUID) -> AttendanceSessionOutput:
+        if self.remote is not None:
+            return await self.remote.close(session_id)
+        if self.close_case is None:
+            raise RuntimeError("O serviço de fechamento de chamada não está configurado.")
+        return await self.close_case.execute(session_id)
 
 
 @dataclass(frozen=True, slots=True)
@@ -341,16 +373,17 @@ class ApplicationContainer:
         )
 
     def attendance_for(self, context: RequestContext) -> AttendanceServices:
-        del context
         if self.supabase_gateway is not None:
-            raise RuntimeError("O adaptador Supabase de frequência ainda não foi conectado.")
+            return AttendanceServices(
+                remote=SupabaseAttendanceRepository(self.supabase_gateway, context)
+            )
         if self.in_memory_attendance_store is None:
             raise RuntimeError("O container não possui armazenamento de frequência.")
         store: AttendanceRepository = self.in_memory_attendance_store
         return AttendanceServices(
-            open=OpenAttendance(store),
-            record=RecordAttendance(store),
-            close=CloseAttendance(store),
+            open_case=OpenAttendance(store),
+            record_case=RecordAttendance(store),
+            close_case=CloseAttendance(store),
         )
 
     def agenda_for(self, context: RequestContext) -> AgendaServices:
