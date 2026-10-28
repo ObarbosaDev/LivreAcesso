@@ -379,3 +379,15 @@ def test_communication_worker_claims_are_private_and_concurrent_safe() -> None:
     assert "grant execute on function public.mark_communication_sent" in sql
     assert "grant execute on function public.mark_communication_failed" in sql
     assert "to authenticated" not in sql
+
+
+def test_communication_worker_has_a_retry_ceiling() -> None:
+    migration = MIGRATIONS_DIR / "20261028002600_outbox_retry_limit.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "attempts < 5" in sql
+    assert "status in ('pending', 'failed')" in sql
+    assert (
+        "grant execute on function public.claim_pending_communications(integer) to service_role"
+        in sql
+    )

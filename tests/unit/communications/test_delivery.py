@@ -86,3 +86,15 @@ async def test_rejects_invalid_batch_size() -> None:
 
     with pytest.raises(ValueError):
         await processor.execute(limit=101)
+
+
+@pytest.mark.anyio
+async def test_stops_retrying_after_maximum_attempts() -> None:
+    delivery = pending()
+    exhausted = PendingDelivery(delivery.delivery_id, delivery.message, attempts=5)
+    repository = StubRepository((exhausted,))
+    processor = ProcessPendingDeliveries(repository, FailingProvider(), max_attempts=5)
+
+    await processor.execute(now=_NOW)
+
+    assert repository.failed == [(_DELIVERY_ID, "retry_exhausted", _NOW)]
