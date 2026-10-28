@@ -160,7 +160,7 @@ export function EnrollmentsPage() {
     <PageFrame eyebrow="Vínculos e ocupação" title="Matrículas" description="Acompanhe quem está em cada turma, controle vagas e registre mudanças com histórico.">
       <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turma selecionada" value={selectedClass?.name ?? '—'} icon={ClipboardList} /><MetricCard label="Vagas ocupadas" value={occupancy?.enrolled ?? '—'} icon={UsersRound} tone="blue" /><MetricCard label="Capacidade" value={occupancy?.capacity ?? '—'} icon={UsersRound} tone="amber" /></div>
 
-      <div className="liquid-glass mt-6 rounded-3xl p-5">
+      <div className="liquid-glass mt-6 border-t-2 border-t-brand-green/50 p-4 sm:p-5">
         <label htmlFor="class-select" className="text-sm font-medium text-white">
           Turma
         </label>
@@ -249,7 +249,7 @@ export function EnrollmentsPage() {
           {error && <p className="text-sm text-danger">{error}</p>}
 
           {!loading && !error && enrollments && enrollments.length === 0 && (
-            <div className="liquid-glass flex flex-col items-center gap-3 rounded-2xl p-10 text-center">
+        <div className="liquid-glass flex flex-col items-center gap-3 border border-dashed border-white/15 p-10 text-center">
               <ClipboardList className="h-6 w-6 text-white/40" aria-hidden="true" />
               <p className="text-sm text-white/55">Esta turma ainda não possui estudantes.</p>
             </div>
@@ -260,9 +260,9 @@ export function EnrollmentsPage() {
               {enrollments.map((enrollment, index) => (
                 <li
                   key={enrollment.id}
-                  className="liquid-glass flex items-center justify-between border-l-2 border-l-white/10 px-4 py-3 transition hover:border-l-brand-green"
+                  className="liquid-glass flex flex-wrap items-center justify-between gap-3 border-l-2 border-l-white/10 px-4 py-3 transition hover:border-l-brand-green"
                 >
-                  <span className="flex items-center gap-4"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><span className="text-sm text-white">{studentNames[enrollment.student_id] ?? 'Carregando…'}</span></span>
+                  <span className="flex min-w-0 items-center gap-4"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><span className="break-words text-sm text-white">{studentNames[enrollment.student_id] ?? 'Carregando…'}</span></span>
                   <div className="flex items-center gap-3">
                     <StatusBadge
                       label={ENROLLMENT_STATUS_LABELS[enrollment.status]}
