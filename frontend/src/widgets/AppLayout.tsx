@@ -17,6 +17,11 @@ const NAV_ITEMS = [
   { to: '/matriculas', label: 'Matrículas', icon: ClipboardList },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ]
+const QUICK_ACTIONS = [
+  { to: '/estudantes/novo', label: 'Cadastrar estudante', icon: Users, end: false },
+  { to: '/turmas/nova', label: 'Criar turma', icon: CalendarRange, end: false },
+  { to: '/agenda', label: 'Abrir agenda', icon: CalendarDays, end: false },
+]
 
 /** Casca fixa do sistema: menu lateral (drawer no celular), cabeçalho e área de conteúdo. */
 function SidebarStatus() {
@@ -33,7 +38,7 @@ export function AppLayout() {
 
   const navItems = useMemo(() => profile?.capabilities.includes('profiles:manage') ? [...NAV_ITEMS, { to: '/equipe', label: 'Equipe', icon: ShieldCheck }] : NAV_ITEMS, [profile?.capabilities])
 
-  const commandItems = useMemo(() => navItems.filter(({ label }) => label.toLowerCase().includes(commandQuery.toLowerCase())), [commandQuery, navItems])
+  const commandItems = useMemo(() => { const seen = new Set<string>(); return [...navItems, ...QUICK_ACTIONS].filter(({ to, label }) => { if (seen.has(to) || !label.toLowerCase().includes(commandQuery.toLowerCase())) return false; seen.add(to); return true }) }, [commandQuery, navItems])
 
   useEffect(() => {
     function handleShortcut(event: KeyboardEvent) {
