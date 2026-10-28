@@ -1,7 +1,8 @@
-import { Loader2, Search, ShieldCheck } from 'lucide-react'
+import { Loader2, MailPlus, Search, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 
-import { changeProfileActivation, changeProfileRole, listProfiles } from '@/features/profiles/api'
+import { changeProfileActivation, changeProfileRole, inviteProfile, listProfiles } from '@/features/profiles/api'
 import type { Profile, UserRole } from '@/entities/profile/types'
 import { ROLE_LABELS } from '@/entities/profile/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
@@ -31,6 +32,7 @@ export function ProfilesAdminPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [inviteOpen, setInviteOpen] = useState(false)
 
   async function reload() {
     try {
@@ -57,7 +59,8 @@ export function ProfilesAdminPage() {
   }, [debouncedQuery])
 
   return (
-    <PageFrame eyebrow="Acesso e responsabilidades" title="Equipe" description="Administre quem pode operar cada parte do Instituto Livre Acesso.">
+    <PageFrame eyebrow="Acesso e responsabilidades" title="Equipe" description="Administre quem pode operar cada parte do Instituto Livre Acesso." actions={<Button onClick={() => setInviteOpen((value) => !value)}><MailPlus className="h-4 w-4" />{inviteOpen ? 'Fechar convite' : 'Convidar membro'}</Button>}>
+      {inviteOpen && <InviteForm onSent={() => setInviteOpen(false)} />}
       <p className="mt-2 text-sm text-white/55">
         {profiles ? `${total} ${total === 1 ? 'conta' : 'contas'}` : 'Carregando…'} · administre papel
         e ativação de cada conta.
@@ -94,6 +97,12 @@ export function ProfilesAdminPage() {
       </div>
     </PageFrame>
   )
+}
+
+function InviteForm({ onSent }: { onSent: () => void }) {
+  const [fullName, setFullName] = useState(''); const [email, setEmail] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null)
+  async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); setError(null); try { await inviteProfile({ full_name: fullName, email }); onSent() } catch (caught) { setError(friendlyMessage(caught)) } finally { setBusy(false) } }
+  return <form onSubmit={submit} className="mb-6 border border-brand-green/40 bg-brand-green/[.04] p-5"><div className="grid gap-4 md:grid-cols-2"><Input label="Nome completo" required minLength={3} value={fullName} onChange={(event) => setFullName(event.target.value)} /><Input label="E-mail institucional" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></div><p className="mt-3 text-xs text-white/45">A pessoa receberá um convite para definir a própria senha. O acesso começa pendente.</p>{error && <p className="mt-3 text-sm text-danger">{error}</p>}<Button type="submit" loading={busy} className="mt-4">Enviar convite</Button></form>
 }
 
 function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () => void }) {
