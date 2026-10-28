@@ -542,6 +542,7 @@ def build_container(settings: Settings | None = None) -> ApplicationContainer:
         gateway = SupabaseRPCGateway(
             current_settings.supabase_url,
             current_settings.supabase_publishable_key,
+            service_role_key=current_settings.supabase_service_role_key,
         )
         return ApplicationContainer(
             event_bus=event_bus,

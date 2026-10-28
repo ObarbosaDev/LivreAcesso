@@ -42,6 +42,7 @@ class SupabaseRPCGateway:
         project_url: str,
         publishable_key: str,
         *,
+        service_role_key: str | None = None,
         http_client: httpx2.AsyncClient | None = None,
     ) -> None:
         normalized_url = project_url.strip().rstrip("/")
@@ -55,6 +56,7 @@ class SupabaseRPCGateway:
         # A chave publicável identifica o projeto, mas não concede acesso sozinha.
         # Mantemos repr implícito sem campos e nunca a incluímos em exceções/logs.
         self._publishable_key = publishable_key
+        self._service_role_key = service_role_key.strip() if service_role_key else None
         self._http_client = http_client or httpx2.AsyncClient(
             timeout=10.0,
             follow_redirects=False,
@@ -86,6 +88,16 @@ class SupabaseRPCGateway:
         # Atualmente este caminho existe somente para health_check. Funções de
         # negócio continuam exigindo RequestContext e falham pela permissão SQL.
         return await self._post(function_name, payload, self._base_headers())
+
+    async def call_service(self, function_name: str, payload: dict[str, Any]) -> Any:
+        """Executa RPC interna; nunca deve ser chamada por uma requisição HTTP."""
+
+        if not self._service_role_key:
+            raise SupabaseTransportError
+        headers = self._base_headers()
+        headers["apikey"] = self._service_role_key
+        headers["Authorization"] = f"Bearer {self._service_role_key}"
+        return await self._post(function_name, payload, headers)
 
     def _base_headers(self) -> dict[str, str]:
         return {
