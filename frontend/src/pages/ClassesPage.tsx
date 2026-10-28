@@ -2,8 +2,8 @@ import { ArrowUpRight, CalendarDays, Loader2, MapPin, Search, Users as UsersIcon
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { getClassOccupancy, listClasses } from '@/features/classes/api'
-import type { SchoolClass } from '@/entities/class/types'
+import { getClassOccupancy, listClasses, listModalities } from '@/features/classes/api'
+import type { Modality, SchoolClass } from '@/entities/class/types'
 import { WEEKDAY_LABELS } from '@/entities/class/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue'
@@ -21,6 +21,8 @@ export function ClassesPage() {
   usePageTitle('Turmas')
 
   const [query, setQuery] = useState('')
+  const [modalityId, setModalityId] = useState('')
+  const [modalities, setModalities] = useState<Modality[]>([])
   const debouncedQuery = useDebouncedValue(query)
   const [page, setPage] = useState(1)
 
@@ -40,6 +42,10 @@ export function ClassesPage() {
   }
 
   useEffect(() => {
+    listModalities(true).then((result) => setModalities(result.items)).catch(() => {})
+  }, [])
+
+  useEffect(() => {
     const controller = new AbortController()
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
@@ -47,6 +53,7 @@ export function ClassesPage() {
 
     listClasses({
       active: true,
+      modalityId: modalityId || undefined,
       query: debouncedQuery.trim().length >= 2 ? debouncedQuery.trim() : undefined,
       page,
       pageSize: PAGE_SIZE,
@@ -70,19 +77,19 @@ export function ClassesPage() {
       .finally(() => setLoading(false))
 
     return () => controller.abort()
-  }, [debouncedQuery, page])
+  }, [debouncedQuery, modalityId, page])
 
   return (
     <PageFrame eyebrow="Programação e capacidade" title="Turmas" description="Organize horários, instrutores e ocupação sem perder a visão do todo." actions={<Link to="/turmas/nova" className="group inline-flex h-11 items-center gap-2 rounded-full bg-brand-green px-5 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:bg-brand-green-soft">Nova turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>}>
       <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turmas ativas" value={data?.total ?? '—'} icon={CalendarDays} /><MetricCard label="Capacidade cadastrada" value={data ? Object.values(occupancy).reduce((sum, item) => sum + item.capacity, 0) : '—'} icon={UsersIcon} tone="amber" /><MetricCard label="Vagas ocupadas" value={data ? Object.values(occupancy).reduce((sum, item) => sum + item.enrolled, 0) : '—'} icon={UsersIcon} tone="blue" /></div>
-      <div className="liquid-glass mt-6 rounded-3xl p-4"><Input
+      <div className="liquid-glass mt-6 grid gap-4 rounded-3xl p-4 md:grid-cols-[minmax(0,1fr)_16rem]"><Input
         label="Pesquisar"
         placeholder="Buscar por nome da turma…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         icon={<Search className="h-4 w-4" aria-hidden="true" />}
         className="max-w-md"
-      /></div>
+      /><label className="text-xs font-medium text-white/55">Modalidade<select value={modalityId} onChange={(event) => { setModalityId(event.target.value); setPage(1) }} className="mt-2 w-full border border-white/15 bg-black px-3 py-3 text-sm text-white"><option value="">Todas as modalidades</option>{modalities.map((modality) => <option key={modality.id} value={modality.id}>{modality.name}</option>)}</select></label></div>
 
       <div className="mt-6">
         {loading && !data && (
@@ -109,6 +116,8 @@ export function ClassesPage() {
               return (
                   <div key={schoolClass.id} className="liquid-glass group flex flex-col gap-4 border-l-2 border-l-brand-green/60 p-5 transition hover:border-brand-green">
                   <div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><h2 className="font-display text-base font-semibold text-white">{schoolClass.name}</h2></div><StatusBadge label="Ativa" tone="success" /></div>
+
+                  <p className="text-xs uppercase tracking-[0.12em] text-brand-green">{modalities.find((modality) => modality.id === schoolClass.modality_id)?.name ?? 'Modalidade não identificada'}</p>
 
                   <p className="flex items-center gap-1.5 text-xs text-white/55">
                     <MapPin className="h-3.5 w-3.5" aria-hidden="true" />

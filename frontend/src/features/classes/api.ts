@@ -3,16 +3,18 @@ import type { ClassPage, ClassSchedule, Modality, ModalityPage } from '@/entitie
 
 interface ListClassesParams {
   active?: boolean
+  modalityId?: string
   query?: string
   page: number
   pageSize: number
   signal?: AbortSignal
 }
 
-export function listClasses({ active, query, page, pageSize, signal }: ListClassesParams) {
+export function listClasses({ active, modalityId, query, page, pageSize, signal }: ListClassesParams) {
   const params = new URLSearchParams()
   if (active !== undefined) params.set('active', String(active))
   if (query) params.set('query', query)
+  if (modalityId) params.set('modality_id', modalityId)
   params.set('page', String(page))
   params.set('page_size', String(pageSize))
   return httpClient.get<ClassPage>(`/api/v1/classes?${params.toString()}`, signal)
