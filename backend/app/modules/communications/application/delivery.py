@@ -35,10 +35,13 @@ class ProcessPendingDeliveries:
     repository: DeliveryRepository
     provider: CommunicationProvider
     retry_delay: timedelta = timedelta(minutes=5)
+    max_attempts: int = 5
 
     async def execute(self, *, limit: int = 20, now: datetime | None = None) -> int:
         if not 1 <= limit <= 100:
             raise ValueError("O lote deve conter entre 1 e 100 entregas.")
+        if not 1 <= self.max_attempts <= 20:
+            raise ValueError("O limite de tentativas deve estar entre 1 e 20.")
 
         current_time = now or datetime.now(UTC)
         deliveries = await self.repository.claim_pending(limit=limit, now=current_time)
@@ -50,8 +53,14 @@ class ProcessPendingDeliveries:
                 # O detalhe do provedor não pode chegar ao banco nem ao cliente.
                 await self.repository.mark_failed(
                     delivery.delivery_id,
-                    "provider_error",
-                    current_time + self.retry_delay,
+                    (
+                        "retry_exhausted"
+                        if delivery.attempts >= self.max_attempts
+                        else "provider_error"
+                    ),
+                    current_time
+                    if delivery.attempts >= self.max_attempts
+                    else current_time + self.retry_delay,
                 )
             else:
                 await self.repository.mark_sent(delivery.delivery_id, external_id, current_time)
