@@ -363,3 +363,19 @@ def test_class_changes_are_versioned_audited_and_never_delete_catalog_records() 
     assert "delete from public.modalities" not in sql
     assert "delete from public.classes" not in sql
     assert "jsonb_build_object(p_entity_type || '_id', p_entity_id)" in sql
+
+
+def test_communication_worker_claims_are_private_and_concurrent_safe() -> None:
+    migration = MIGRATIONS_DIR / "20261028002500_outbox_worker_claims.sql"
+    sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
+
+    assert "for update skip locked" in sql
+    assert "auth.role()) <> 'service_role'" in sql
+    assert "status = 'processing'" in sql
+    assert (
+        "grant execute on function public.claim_pending_communications(integer) to service_role"
+        in sql
+    )
+    assert "grant execute on function public.mark_communication_sent" in sql
+    assert "grant execute on function public.mark_communication_failed" in sql
+    assert "to authenticated" not in sql
