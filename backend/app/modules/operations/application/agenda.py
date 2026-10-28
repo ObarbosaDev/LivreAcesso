@@ -46,3 +46,17 @@ class AgendaRepository:
 
     async def create(self, payload: AgendaEventInput, context: RequestContext) -> AgendaEventOutput:
         raise NotImplementedError
+
+    async def update(
+        self,
+        event_id: UUID,
+        expected_updated_at: datetime,
+        payload: AgendaEventInput,
+        context: RequestContext,
+    ) -> AgendaEventOutput:
+        raise NotImplementedError
+
+    async def cancel(
+        self, event_id: UUID, expected_updated_at: datetime, reason: str, context: RequestContext
+    ) -> AgendaEventOutput:
+        raise NotImplementedError

@@ -39,4 +39,26 @@ def build_agenda_router(container: ApplicationContainer) -> APIRouter:
     ) -> AgendaEventOutput:
         return await container.agenda_for(context).create(payload, context)
 
+    @router.put("/{event_id}", response_model=AgendaEventOutput)
+    async def update_agenda(
+        event_id: UUID,
+        expected_updated_at: datetime,
+        payload: AgendaEventInput,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> AgendaEventOutput:
+        return await container.agenda_for(context).update(
+            event_id, expected_updated_at, payload, context
+        )
+
+    @router.post("/{event_id}/cancel", response_model=AgendaEventOutput)
+    async def cancel_agenda(
+        event_id: UUID,
+        expected_updated_at: datetime,
+        reason: str,
+        context: Annotated[RequestContext, Depends(require_request_context)],
+    ) -> AgendaEventOutput:
+        return await container.agenda_for(context).cancel(
+            event_id, expected_updated_at, reason, context
+        )
+
     return router

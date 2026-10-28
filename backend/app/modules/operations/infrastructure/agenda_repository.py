@@ -59,6 +59,45 @@ class SupabaseAgendaRepository(AgendaRepository):
         except ValidationError as error:
             raise PersistenceUnavailableError from error
 
+    async def update(
+        self,
+        event_id: UUID,
+        expected_updated_at: datetime,
+        payload: AgendaEventInput,
+        context: RequestContext,
+    ) -> AgendaEventOutput:
+        body = payload.model_dump(mode="json")
+        body.update(
+            {
+                "p_event_id": str(event_id),
+                "p_expected_updated_at": expected_updated_at.isoformat(),
+                "p_request_id": str(context.request_id),
+            }
+        )
+        result = await self._call("update_agenda_event", body, context)
+        try:
+            return AgendaEventOutput.model_validate(result)
+        except ValidationError as error:
+            raise PersistenceUnavailableError from error
+
+    async def cancel(
+        self, event_id: UUID, expected_updated_at: datetime, reason: str, context: RequestContext
+    ) -> AgendaEventOutput:
+        result = await self._call(
+            "cancel_agenda_event",
+            {
+                "p_event_id": str(event_id),
+                "p_expected_updated_at": expected_updated_at.isoformat(),
+                "p_reason": reason,
+                "p_request_id": str(context.request_id),
+            },
+            context,
+        )
+        try:
+            return AgendaEventOutput.model_validate(result)
+        except ValidationError as error:
+            raise PersistenceUnavailableError from error
+
     async def _call(self, name: str, payload: dict[str, object], context: RequestContext) -> object:
         try:
             return await self.gateway.call(name, payload, context)

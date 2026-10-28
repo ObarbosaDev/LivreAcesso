@@ -174,6 +174,20 @@ class AgendaServices:
     async def create(self, payload: AgendaEventInput, context: RequestContext) -> AgendaEventOutput:
         return await self.repository.create(payload, context)
 
+    async def update(
+        self,
+        event_id: UUID,
+        expected_updated_at: datetime,
+        payload: AgendaEventInput,
+        context: RequestContext,
+    ) -> AgendaEventOutput:
+        return await self.repository.update(event_id, expected_updated_at, payload, context)
+
+    async def cancel(
+        self, event_id: UUID, expected_updated_at: datetime, reason: str, context: RequestContext
+    ) -> AgendaEventOutput:
+        return await self.repository.cancel(event_id, expected_updated_at, reason, context)
+
 
 @dataclass(frozen=True, slots=True)
 class ApplicationContainer:
