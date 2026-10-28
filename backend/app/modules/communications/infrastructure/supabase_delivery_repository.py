@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from backend.app.modules.communications.application.delivery import PendingDelivery
+from backend.app.modules.communications.application.status import CommunicationQueueStatus
 from backend.app.modules.communications.domain.entities import CommunicationChannel, OutboundMessage
 from backend.app.shared.infrastructure.supabase_rpc import SupabaseRPCGateway
 
@@ -42,6 +43,26 @@ class SupabaseDeliveryRepository:
                 "p_available_at": available_at.isoformat(),
             },
         )
+
+    async def get_status(self) -> CommunicationQueueStatus:
+        result = await self._gateway.call_service("get_communication_queue_status", {})
+        if not isinstance(result, dict):
+            raise ValueError("A saúde da fila retornou um contrato inválido.")
+        try:
+            oldest = result.get("oldest_pending_at")
+            return CommunicationQueueStatus(
+                pending=int(result["pending"]),
+                processing=int(result["processing"]),
+                failed=int(result["failed"]),
+                sent=int(result["sent"]),
+                oldest_pending_at=(
+                    datetime.fromisoformat(str(oldest).replace("Z", "+00:00"))
+                    if oldest
+                    else None
+                ),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("A saúde da fila retornou uma linha inválida.") from error
 
     @staticmethod
     def _to_pending(row: object) -> PendingDelivery:
