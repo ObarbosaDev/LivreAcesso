@@ -220,9 +220,7 @@ def test_catalog_queries_and_activation_cover_missing_and_invalid_paths() -> Non
         coordinator = seed_profile(
             profiles, role=UserRole.COORDINATOR, name="Coordenação Principal"
         )
-        instructor = seed_profile(
-            profiles, role=UserRole.INSTRUCTOR, name="Instrutora Ana Silva"
-        )
+        instructor = seed_profile(profiles, role=UserRole.INSTRUCTOR, name="Instrutora Ana Silva")
         publisher = EventBus()
         create_modality = CreateModality(store, profiles, publisher, coordinator.id)
         current = await create_modality.execute(
@@ -238,13 +236,13 @@ def test_catalog_queries_and_activation_cover_missing_and_invalid_paths() -> Non
             await GetModality(store, profiles, coordinator.id).execute(uuid4())
 
         with pytest.raises(InvalidInstructorAssignmentError):
-            await CreateClass(
-                store, store, profiles, publisher, coordinator.id
-            ).execute(class_input(current.id, uuid4(), name="Turma inválida"))
+            await CreateClass(store, store, profiles, publisher, coordinator.id).execute(
+                class_input(current.id, uuid4(), name="Turma inválida")
+            )
 
-        created = await CreateClass(
-            store, store, profiles, publisher, coordinator.id
-        ).execute(class_input(current.id, instructor.id, name="Turma Regular"))
+        created = await CreateClass(store, store, profiles, publisher, coordinator.id).execute(
+            class_input(current.id, instructor.id, name="Turma Regular")
+        )
         changed = await ChangeClassActivation(
             store, store, profiles, publisher, coordinator.id, False
         ).execute(

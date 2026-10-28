@@ -66,9 +66,7 @@ def test_private_schema_is_revoked_from_client_roles() -> None:
 
 def test_occupancy_scope_requires_instructor_assignment() -> None:
     migration = next(
-        path
-        for path in MIGRATIONS
-        if path.name == "20261027001400_scope_enrollment_occupancy.sql"
+        path for path in MIGRATIONS if path.name == "20261027001400_scope_enrollment_occupancy.sql"
     )
     normalized_sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
     assert "ci.instructor_id = auth.uid()" in normalized_sql

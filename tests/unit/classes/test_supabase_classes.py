@@ -211,9 +211,7 @@ def test_class_payload_maps_schedule_and_never_sends_viewer_identity() -> None:
         ("forbidden", PermissionDeniedError),
     ],
 )
-def test_catalog_repository_maps_rpc_errors(
-    message: str, expected: type[Exception]
-) -> None:
+def test_catalog_repository_maps_rpc_errors(message: str, expected: type[Exception]) -> None:
     def respond(_request: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(400, json={"message": message, "code": message})
 
@@ -270,6 +268,8 @@ def test_catalog_repository_rejects_malformed_remote_projection() -> None:
                 await repository.get_modality(_MODALITY_ID)
 
     asyncio.run(scenario())
+
+
 def test_class_mutations_return_authoritative_version() -> None:
     database_version = _VERSION + timedelta(minutes=1)
     rpc_names: list[str] = []
