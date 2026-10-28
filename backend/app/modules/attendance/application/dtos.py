@@ -26,5 +26,5 @@ class AttendanceSessionOutput(BaseModel):
     class_id: UUID
     session_date: date
     status: str
-    marks: tuple[AttendanceMarkInput, ...]
+    marks: tuple[AttendanceMarkInput, ...] = ()
     closed_at: datetime | None
