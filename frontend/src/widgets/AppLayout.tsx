@@ -70,7 +70,7 @@ export function AppLayout() {
   )
 
   return (
-    <div className="min-h-screen bg-ink">
+    <div className="min-h-screen overflow-x-hidden bg-ink">
       <a
         href="#conteudo-principal"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand-green focus:px-4 focus:py-2 focus:text-ink"
@@ -80,7 +80,7 @@ export function AppLayout() {
 
       <aside className="fixed inset-y-0 left-0 hidden w-[272px] flex-col border-r border-white/8 bg-surface py-6 lg:flex">
         <div className="mb-10 px-6">
-          <LogoMark />
+          <Link to="/" aria-label="Ir para o início" className="inline-flex rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green"><LogoMark /></Link>
         </div>
         <div className="mb-4 px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">Operação</div>
         {navLinks}
@@ -100,13 +100,13 @@ export function AppLayout() {
             onClick={() => setDrawerOpen(false)}
           />
           <aside className="liquid-glass absolute inset-y-0 left-0 flex w-72 flex-col py-6">
-            <div className="mb-8 flex items-center justify-between px-4">
-              <LogoMark />
+            <div className="relative mb-8 flex items-center justify-center px-4">
+              <Link to="/" aria-label="Ir para o início" onClick={() => setDrawerOpen(false)} className="inline-flex rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green"><LogoMark /></Link>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Fechar menu"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-white/60 hover:text-white"
+                className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-md text-white/60 hover:text-white"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
