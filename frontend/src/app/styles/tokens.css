@@ -144,6 +144,14 @@ body { font-variant-numeric: tabular-nums; }
   }
 }
 
+@media (max-width: 640px) {
+  .page-enter { width: 100%; }
+  .page-enter h1 { font-size: 2.25rem; line-height: 1.08; }
+  .page-enter h2 { line-height: 1.2; }
+  .page-enter .liquid-glass { padding: 1rem; }
+  .page-enter header { gap: 1rem; }
+}
+
 @media print {
   body { background: #fff !important; color: #111 !important; }
   aside, header, nav, button, .report-page > :not(main) { display: none !important; }
