@@ -52,7 +52,7 @@ export function LandingPage() {
               </div>
             </div>
             <div className="flex min-h-[360px] flex-col justify-between bg-[#dfe9d9] px-6 py-8 lg:min-h-0 lg:px-10 lg:py-12">
-              <div className="flex items-start justify-between font-mono text-xs text-[#587052]"><span>01 / 03</span><span>São Paulo, SP</span></div>
+              <div className="flex items-start justify-between font-mono text-xs text-[#587052]"><span>01 / 03</span><span>Portal institucional</span></div>
               <div>
                 <div className="mb-6 h-px w-full bg-[#9db593]" />
                 <p className="max-w-sm text-2xl font-bold leading-tight tracking-[-.03em] text-[#21461b]">Acompanhar cada pessoa de perto muda o jeito de cuidar.</p>
