@@ -3,7 +3,7 @@
 /* Base previsível em qualquer viewport: evita largura fantasma, zoom de input
    no iOS e deslocamentos causados por conteúdo que não consegue encolher. */
 *, *::before, *::after { box-sizing: border-box; }
-html { min-width: 320px; overflow-x: hidden; scrollbar-gutter: stable; }
+html { min-width: 320px; overflow-x: hidden; scrollbar-gutter: stable; scroll-behavior: smooth; }
 body, #root { min-width: 0; min-height: 100%; overflow-x: clip; }
 img, svg, video, canvas { max-width: 100%; }
 button, input, select, textarea { max-width: 100%; font: inherit; }
@@ -75,8 +75,8 @@ body {
 
 .logo-wordmark { color: #f4f7f3; }
 .logo-wordmark-muted { color: rgba(244, 247, 243, .7); }
-:root[data-theme='light'] .logo-wordmark { color: #172015; }
-:root[data-theme='light'] .logo-wordmark-muted { color: #5d685a; }
+:root[data-theme='light'] .logo-wordmark { color: #172015 !important; }
+:root[data-theme='light'] .logo-wordmark-muted { color: #5d685a !important; }
 
 ::selection {
   background: var(--color-brand-green);
