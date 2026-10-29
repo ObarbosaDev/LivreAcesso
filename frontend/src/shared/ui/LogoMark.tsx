@@ -53,8 +53,8 @@ export function LogoMark({ className, markOnly = false }: LogoMarkProps) {
           fill="none"
         />
       </svg>
-      <span className="font-display leading-tight text-white" aria-hidden="true">
-        <span className="block text-[0.6rem] font-semibold tracking-[0.14em] text-white/70">
+      <span className="logo-wordmark font-display leading-tight" aria-hidden="true">
+        <span className="logo-wordmark-muted block text-[0.6rem] font-semibold tracking-[0.14em]">
           INSTITUTO
         </span>
         <span className="block text-base font-bold tracking-tight">LIVRE ACESSO</span>

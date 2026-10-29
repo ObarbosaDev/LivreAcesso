@@ -73,6 +73,11 @@ body {
   background-image: none;
 }
 
+.logo-wordmark { color: #f4f7f3; }
+.logo-wordmark-muted { color: rgba(244, 247, 243, .7); }
+:root[data-theme='light'] .logo-wordmark { color: #172015; }
+:root[data-theme='light'] .logo-wordmark-muted { color: #5d685a; }
+
 ::selection {
   background: var(--color-brand-green);
   color: var(--color-ink);

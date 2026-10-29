@@ -31,7 +31,7 @@ export function LandingPage() {
       <header className="landing-header border-b border-[#b8c9b2]">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 lg:px-12">
           <Link to="/" className="flex items-center gap-3" aria-label="Instituto Livre Acesso — início">
-            <LogoMark className="h-10 w-10" />
+            <LogoMark className="h-10 w-10" markOnly />
             <span className="font-mono text-sm font-bold uppercase tracking-[0.18em]">Livre Acesso</span>
           </Link>
           <nav className={`${menuOpen ? 'flex' : 'hidden'} absolute left-0 right-0 top-[81px] z-20 flex-col border-b border-[#b8c9b2] bg-[#f3f6ef] px-6 py-5 lg:static lg:flex lg:flex-row lg:items-center lg:gap-8 lg:border-0 lg:bg-transparent lg:p-0`}>
