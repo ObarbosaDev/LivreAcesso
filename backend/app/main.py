@@ -32,6 +32,7 @@ from backend.app.shared.presentation.problem_details import (
     RequestMetricsMiddleware,
     install_problem_handlers,
 )
+from backend.app.shared.presentation.rate_limit import FixedWindowRateLimitMiddleware
 
 
 def create_app(
@@ -85,6 +86,10 @@ def create_app(
     # O middleware é adicionado por último para envolver também respostas CORS
     # e garantir um identificador rastreável em qualquer resultado HTTP.
     application.add_middleware(RequestIdMiddleware)
+    application.add_middleware(
+        FixedWindowRateLimitMiddleware,
+        limit=current_settings.rate_limit_per_minute,
+    )
     application.add_middleware(RequestMetricsMiddleware)
     install_problem_handlers(application)
 

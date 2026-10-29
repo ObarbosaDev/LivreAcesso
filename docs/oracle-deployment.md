@@ -14,6 +14,11 @@ Este projeto pode ser hospedado na Oracle mantendo o Supabase como banco e auten
 
 `APP_ENV=production`, `APP_HOST=0.0.0.0`, `APP_PORT=8000`, `APP_DEBUG=false`, `APP_CORS_ORIGINS`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e, para o worker, `SUPABASE_SERVICE_ROLE_KEY`, `COMMUNICATION_WEBHOOK_URL`, `COMMUNICATION_WEBHOOK_TOKEN` e `COMMUNICATION_BATCH_SIZE`.
 
+`APP_RATE_LIMIT_PER_MINUTE` controla o limite por IP da API e assume `120` quando
+não informado. Healthchecks e requisições `OPTIONS` não consomem limite. Em uma
+implantação com várias réplicas, o Oracle Load Balancer também deve ter proteção
+de borda habilitada; o limite da aplicação protege cada instância individual.
+
 Nunca versionar `.env.oracle.local`, service role, senha, token JWT ou credencial do provedor.
 
 As três variáveis `VITE_*` são públicas, mas precisam ser passadas como `--build-arg` na construção da imagem do frontend: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` e `VITE_API_BASE_URL`.

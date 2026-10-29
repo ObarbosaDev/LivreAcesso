@@ -26,6 +26,7 @@ class Settings:
     debug: bool
     api_prefix: str
     cors_origins: tuple[str, ...]
+    rate_limit_per_minute: int = 120
     supabase_url: str | None = None
     supabase_publishable_key: str | None = field(default=None, repr=False)
     supabase_service_role_key: str | None = field(default=None, repr=False)
@@ -36,6 +37,8 @@ class Settings:
             raise ValueError("APP_ENV possui um valor não reconhecido.")
         if not 1 <= self.port <= 65_535:
             raise ValueError("APP_PORT deve estar entre 1 e 65535.")
+        if not 1 <= self.rate_limit_per_minute <= 100_000:
+            raise ValueError("APP_RATE_LIMIT_PER_MINUTE deve estar entre 1 e 100000.")
         if self.debug and environment in {"preview", "staging", "production"}:
             raise ValueError("APP_DEBUG não pode ser habilitado fora de development ou test.")
 
@@ -78,6 +81,7 @@ class Settings:
             debug=_as_bool(os.getenv("APP_DEBUG")),
             api_prefix="/api/v1",
             cors_origins=tuple(origin.strip() for origin in origins.split(",") if origin.strip()),
+            rate_limit_per_minute=int(os.getenv("APP_RATE_LIMIT_PER_MINUTE", "120")),
             supabase_url=os.getenv("SUPABASE_URL") or None,
             supabase_publishable_key=os.getenv("SUPABASE_PUBLISHABLE_KEY") or None,
             supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY") or None,
