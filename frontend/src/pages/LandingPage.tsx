@@ -1,5 +1,5 @@
-import { ArrowUpRight, CalendarDays, Check, ChevronRight, FileText, HeartHandshake, LogIn, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowUp, ArrowUpRight, CalendarDays, Check, ChevronRight, FileText, HeartHandshake, LogIn, Menu, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/AuthProvider'
@@ -22,11 +22,18 @@ export function LandingPage() {
   usePageTitle('Instituto Livre Acesso')
   const { status } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 520)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   if (status === 'signed-in') return <Navigate to="/painel" replace />
 
   return (
-    <div className="landing-page min-h-screen bg-[#f3f6ef] text-[#102012]">
+    <div id="topo" className="landing-page min-h-screen bg-[#f3f6ef] text-[#102012]">
       <a href="#conteudo-principal" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-[#31811f] focus:px-4 focus:py-3 focus:font-mono focus:text-xs focus:font-bold focus:text-white">Pular para o conteúdo</a>
       <header className="landing-header border-b border-[#b8c9b2]">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 lg:px-12">
@@ -98,6 +105,7 @@ export function LandingPage() {
         <section className="mx-auto flex max-w-[1440px] flex-col items-start justify-between gap-8 px-6 py-16 sm:flex-row sm:items-end lg:px-12 lg:py-24"><div><p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#31811f]">Para a equipe</p><h2 className="mt-4 max-w-2xl text-4xl font-black tracking-[-.05em] sm:text-6xl">Mais tempo para o que importa.</h2></div><Link to="/entrar" className="inline-flex items-center gap-2 border border-[#31811f] px-5 py-4 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[#246517]">Entrar no sistema <LogIn size={16} /></Link></section>
       </main>
       <footer className="border-t border-[#a5bca0] px-6 py-6 lg:px-12"><div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-3 font-mono text-xs text-[#405a3d] sm:flex-row"><span>Instituto Livre Acesso</span><span>Gestão com cuidado, dados e presença.</span></div></footer>
+      {showBackToTop && <a href="#topo" aria-label="Voltar ao topo" className="fixed bottom-6 right-6 z-30 inline-flex h-12 w-12 items-center justify-center border border-[#31811f] bg-[#102012] text-[#8dd36f] shadow-[4px_4px_0_#8dd36f] transition hover:-translate-y-1 hover:bg-[#31811f] hover:text-white"><ArrowUp size={20} /></a>}
     </div>
   )
 }
