@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock, Mail, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Lock, Mail, TriangleAlert } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
@@ -91,6 +91,13 @@ export function LoginPage() {
       />
 
       <AuthPanel>
+        <Link
+          to="/"
+          className="mb-8 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-white/45 transition hover:text-brand-green"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Voltar para o instituto
+        </Link>
         <h2 className="font-display text-[1.75rem] font-semibold tracking-tight text-white">Entrar</h2>
         <p className="mt-2 text-sm text-white/50">
           Use a conta cadastrada pela coordenação do instituto.
