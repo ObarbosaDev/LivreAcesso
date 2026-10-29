@@ -21,6 +21,7 @@ export function LandingPage() {
 
   return (
     <div className="landing-page min-h-screen bg-[#f3f6ef] text-[#102012]">
+      <a href="#conteudo-principal" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-[#31811f] focus:px-4 focus:py-3 focus:font-mono focus:text-xs focus:font-bold focus:text-white">Pular para o conteúdo</a>
       <header className="landing-header border-b border-[#b8c9b2]">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 lg:px-12">
           <Link to="/" className="flex items-center gap-3" aria-label="Instituto Livre Acesso — início">
@@ -39,7 +40,7 @@ export function LandingPage() {
         </div>
       </header>
 
-      <main>
+      <main id="conteudo-principal">
         <section className="landing-grid border-b border-[#b8c9b2]">
           <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.25fr_.75fr]">
             <div className="border-b border-[#b8c9b2] px-6 py-20 sm:py-28 lg:border-b-0 lg:border-r lg:px-12 lg:py-36">

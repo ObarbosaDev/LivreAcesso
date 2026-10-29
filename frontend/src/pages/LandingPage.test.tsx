@@ -22,5 +22,6 @@ describe('LandingPage', () => {
     expect(screen.getByText('Música')).toBeInTheDocument()
     expect(screen.getByText('Balé')).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /Entrar/ }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: 'Pular para o conteúdo' })).toHaveAttribute('href', '#conteudo-principal')
   })
 })
