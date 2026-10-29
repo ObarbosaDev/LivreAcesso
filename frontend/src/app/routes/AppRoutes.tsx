@@ -11,6 +11,7 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((module) =
 const EnrollmentsPage = lazy(() => import('@/pages/EnrollmentsPage').then((module) => ({ default: module.EnrollmentsPage })))
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage').then((module) => ({ default: module.ForgotPasswordPage })))
 const LoginPage = lazy(() => import('@/pages/LoginPage').then((module) => ({ default: module.LoginPage })))
+const LandingPage = lazy(() => import('@/pages/LandingPage').then((module) => ({ default: module.LandingPage })))
 const NewClassPage = lazy(() => import('@/pages/NewClassPage').then((module) => ({ default: module.NewClassPage })))
 const NewStudentPage = lazy(() => import('@/pages/NewStudentPage').then((module) => ({ default: module.NewStudentPage })))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((module) => ({ default: module.ProfilePage })))
@@ -25,6 +26,7 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<FullScreenState title="Abrindo o sistema" description="Preparando esta área do Instituto Livre Acesso." loading />}>
       <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/entrar" element={<LoginPage />} />
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
@@ -32,7 +34,7 @@ export function AppRoutes() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/painel" element={<DashboardPage />} />
           <Route path="/estudantes" element={<StudentsPage />} />
           <Route path="/estudantes/novo" element={<NewStudentPage />} />
           <Route path="/estudantes/:studentId" element={<StudentDetailPage />} />

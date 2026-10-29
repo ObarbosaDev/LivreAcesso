@@ -43,7 +43,7 @@ export function LoginPage() {
 
   if (status === 'signed-in') {
     const from = (location.state as { from?: Location })?.from
-    return <Navigate to={from?.pathname ?? '/'} replace />
+    return <Navigate to={from?.pathname ?? '/painel'} replace />
   }
 
   function handlePasswordKeyEvent(event: KeyboardEvent<HTMLInputElement>) {
