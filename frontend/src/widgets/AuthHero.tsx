@@ -1,6 +1,7 @@
 import { CalendarRange, ClipboardList, ShieldCheck, Users } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 import { LogoMark } from '@/shared/ui/LogoMark'
 
@@ -81,7 +82,9 @@ export function AuthHero({ title, description, showModules = true }: AuthHeroPro
 
       <motion.div {...motionProps} variants={container}>
         <motion.div variants={item}>
-          <LogoMark className="relative" />
+          <Link to="/" aria-label="Voltar para o Instituto Livre Acesso" className="inline-flex rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green">
+            <LogoMark className="relative" />
+          </Link>
         </motion.div>
       </motion.div>
 
@@ -125,7 +128,9 @@ export function AuthPanel({ children }: { children: ReactNode }) {
         className="liquid-glass w-full max-w-sm rounded-2xl p-8 sm:p-10"
       >
         <div className="mb-8 lg:hidden">
-          <LogoMark />
+          <Link to="/" aria-label="Voltar para o Instituto Livre Acesso" className="inline-flex rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green">
+            <LogoMark />
+          </Link>
         </div>
         {children}
       </motion.div>
