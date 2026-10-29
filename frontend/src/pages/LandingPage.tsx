@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarDays, Check, ChevronRight, LogIn, Menu, X } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Check, ChevronRight, FileText, HeartHandshake, LogIn, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
@@ -10,6 +10,12 @@ const programs = [
   { number: '01', name: 'Jiu-Jitsu', detail: 'Disciplina, confiança e presença corporal.' },
   { number: '02', name: 'Música', detail: 'Escuta, expressão e criação em conjunto.' },
   { number: '03', name: 'Balé', detail: 'Movimento, ritmo e descoberta de possibilidades.' },
+]
+
+const systemCards = [
+  { icon: HeartHandshake, eyebrow: 'Cuidado', title: 'Uma visão inteira de cada aluno', detail: 'Presença, interação, evolução e contexto reunidos para orientar o próximo passo.' },
+  { icon: CalendarDays, eyebrow: 'Rotina', title: 'A equipe no mesmo ritmo', detail: 'Agenda, turmas, modalidades e compromissos organizados em um fluxo simples.' },
+  { icon: FileText, eyebrow: 'Registro', title: 'Relatórios que ajudam a decidir', detail: 'Históricos individuais para conversar com famílias e acompanhar mudanças ao longo do tempo.' },
 ]
 
 export function LandingPage() {
@@ -65,6 +71,24 @@ export function LandingPage() {
         <section id="instituto" className="mx-auto grid max-w-[1440px] scroll-mt-8 border-b border-[#b8c9b2] lg:grid-cols-[.75fr_1.25fr]">
           <div className="border-b border-[#b8c9b2] px-6 py-12 lg:border-b-0 lg:border-r lg:px-12"><p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#31811f]">O instituto</p><p className="mt-6 max-w-xs font-mono text-sm leading-6 text-[#4b5e4a]">Gestão com cuidado, dados e presença. A tecnologia organiza o trabalho para que a equipe possa estar mais perto dos alunos.</p></div>
           <div className="grid sm:grid-cols-3"><div className="border-b border-[#b8c9b2] px-6 py-12 sm:border-b-0 sm:border-r lg:px-10"><span className="font-mono text-4xl font-bold text-[#31811f]">01</span><p className="mt-8 font-mono text-sm leading-6">Cada trajetória é acompanhada de forma individual.</p></div><div className="border-b border-[#b8c9b2] px-6 py-12 sm:border-b-0 sm:border-r lg:px-10"><span className="font-mono text-4xl font-bold text-[#31811f]">02</span><p className="mt-8 font-mono text-sm leading-6">Família, equipe e aluno compartilham o mesmo cuidado.</p></div><div className="px-6 py-12 lg:px-10"><span className="font-mono text-4xl font-bold text-[#31811f]">03</span><p className="mt-8 font-mono text-sm leading-6">Evolução é observada além de uma simples presença.</p></div></div>
+        </section>
+
+        <section className="mx-auto max-w-[1440px] border-b border-[#b8c9b2] px-6 py-16 lg:px-12 lg:py-24">
+          <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#31811f]">O sistema acompanha</p>
+              <h2 className="mt-4 max-w-2xl text-4xl font-black tracking-[-.05em] sm:text-6xl">O trabalho invisível também merece organização.</h2>
+            </div>
+            <p className="max-w-xs font-mono text-sm leading-6 text-[#4b5e4a]">Menos informação perdida. Mais clareza para quem cuida todos os dias.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {systemCards.map(({ icon: Icon, eyebrow, title, detail }, index) => (
+              <article key={eyebrow} className="group relative min-h-[280px] border border-[#b8c9b2] bg-[#edf3e9] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#31811f] hover:bg-[#dfe9d9] lg:p-8">
+                <div className="flex items-start justify-between"><Icon className="text-[#31811f]" size={24} strokeWidth={1.5} /><span className="font-mono text-xs text-[#789174]">0{index + 1}</span></div>
+                <div className="absolute inset-x-6 bottom-6 lg:inset-x-8 lg:bottom-8"><p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#31811f]">{eyebrow}</p><h3 className="mt-3 max-w-xs text-2xl font-bold leading-tight tracking-[-.04em]">{title}</h3><p className="mt-4 max-w-sm font-mono text-sm leading-6 text-[#4b5e4a]">{detail}</p></div>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section id="modalidades" className="mx-auto max-w-[1440px] scroll-mt-8 border-b border-[#b8c9b2] px-6 py-16 lg:px-12 lg:py-24"><div className="mb-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><div><p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#31811f]">Modalidades</p><h2 className="mt-4 max-w-xl text-4xl font-black tracking-[-.05em] sm:text-6xl">Movimento para descobrir possibilidades.</h2></div><p className="max-w-xs font-mono text-sm leading-6 text-[#4b5e4a]">Três caminhos diferentes. O mesmo compromisso com desenvolvimento, convivência e pertencimento.</p></div><div className="grid border-l border-t border-[#b8c9b2] md:grid-cols-3">{programs.map((program) => <article key={program.number} className="border-b border-r border-[#b8c9b2] p-6 transition-colors hover:bg-[#dfe9d9] lg:p-8"><span className="font-mono text-xs text-[#31811f]">{program.number}</span><h3 className="mt-20 text-2xl font-bold tracking-[-.03em]">{program.name}</h3><p className="mt-4 max-w-xs font-mono text-sm leading-6 text-[#4b5e4a]">{program.detail}</p><span className="mt-12 block border-t border-[#b8c9b2] pt-4 font-mono text-xs uppercase tracking-[0.14em] text-[#31811f]">Ver no sistema <ArrowUpRight className="ml-1 inline" size={14} /></span></article>)}</div></section>
