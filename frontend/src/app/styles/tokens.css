@@ -139,6 +139,24 @@ body { font-variant-numeric: tabular-nums; }
   animation-play-state: paused;
 }
 
+.landing-reveal {
+  animation: landing-reveal 700ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.landing-reveal-delay { animation-delay: 140ms; }
+
+.landing-page a,
+.landing-page button {
+  transition-property: color, background-color, border-color, transform, box-shadow;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(.22, 1, .36, 1);
+}
+
+@keyframes landing-reveal {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes marquee-scroll {
   from {
     transform: translateX(0);
@@ -157,6 +175,8 @@ body { font-variant-numeric: tabular-nums; }
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  .landing-reveal { animation: none !important; }
 }
 
 @media (max-width: 640px) {

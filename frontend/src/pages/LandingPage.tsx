@@ -56,7 +56,7 @@ export function LandingPage() {
       <main id="conteudo-principal">
         <section className="landing-grid border-b border-[#b8c9b2]">
           <div className="mx-auto grid max-w-[1440px] lg:grid-cols-[1.25fr_.75fr]">
-            <div className="border-b border-[#b8c9b2] px-6 py-20 sm:py-28 lg:border-b-0 lg:border-r lg:px-12 lg:py-36">
+            <div className="landing-reveal border-b border-[#b8c9b2] px-6 py-20 sm:py-28 lg:border-b-0 lg:border-r lg:px-12 lg:py-36">
               <p className="mb-8 font-mono text-xs font-bold uppercase tracking-[0.24em] text-[#31811f]">Instituto Livre Acesso</p>
               <h1 className="max-w-4xl text-[clamp(3.2rem,8vw,8.5rem)] font-black leading-[.88] tracking-[-.08em]">Cuidado que abre caminhos.</h1>
               <div className="mt-10 flex max-w-2xl flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -64,7 +64,7 @@ export function LandingPage() {
                 <a href="#modalidades" className="inline-flex shrink-0 items-center gap-2 font-mono text-xs font-bold uppercase tracking-[0.12em] text-[#246517]">Conheça as modalidades <ArrowUpRight size={16} /></a>
               </div>
             </div>
-            <div className="flex min-h-[360px] flex-col justify-between bg-[#dfe9d9] px-6 py-8 lg:min-h-0 lg:px-10 lg:py-12">
+            <div className="landing-reveal landing-reveal-delay flex min-h-[360px] flex-col justify-between bg-[#dfe9d9] px-6 py-8 lg:min-h-0 lg:px-10 lg:py-12">
               <div className="flex items-start justify-between font-mono text-xs text-[#405a3d]"><span>01 / 03</span><span>Portal institucional</span></div>
               <div>
                 <div className="mb-6 h-px w-full bg-[#9db593]" />
@@ -90,7 +90,7 @@ export function LandingPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {systemCards.map(({ icon: Icon, eyebrow, title, detail }, index) => (
-              <article key={eyebrow} className="group relative min-h-[280px] border border-[#b8c9b2] bg-[#edf3e9] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#31811f] hover:bg-[#dfe9d9] lg:p-8">
+              <article key={eyebrow} className="landing-reveal group relative min-h-[280px] border border-[#b8c9b2] bg-[#edf3e9] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#31811f] hover:bg-[#dfe9d9] lg:p-8">
                 <div className="flex items-start justify-between"><Icon className="text-[#31811f]" size={24} strokeWidth={1.5} /><span className="font-mono text-xs text-[#4b6648]">0{index + 1}</span></div>
                 <div className="absolute inset-x-6 bottom-6 lg:inset-x-8 lg:bottom-8"><p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#31811f]">{eyebrow}</p><h3 className="mt-3 max-w-xs text-2xl font-bold leading-tight tracking-[-.04em]">{title}</h3><p className="mt-4 max-w-sm font-mono text-sm leading-6 text-[#385236]">{detail}</p></div>
               </article>
