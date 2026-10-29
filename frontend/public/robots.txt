@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /painel
+Disallow: /estudantes
+Disallow: /turmas
+Disallow: /agenda
+Disallow: /matriculas
+Disallow: /relatorios
+Disallow: /equipe
+Disallow: /perfil

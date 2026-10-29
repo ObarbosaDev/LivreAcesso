@@ -1,0 +1,17 @@
+{
+  "name": "Instituto Livre Acesso",
+  "short_name": "Livre Acesso",
+  "description": "Esporte, arte e acompanhamento para crianças e adolescentes.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#102012",
+  "theme_color": "#102012",
+  "icons": [
+    {
+      "src": "/brand/logo-instituto-livre-acesso.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
