@@ -141,7 +141,7 @@ Legenda: **Disponível** = implementado no repositório; **Parcial** = fundaçã
 | Front-end React | **Planejado** | Experiência e telas já concebidas; implementação ainda não iniciada. |
 
 > [!IMPORTANT]
-> Produção persiste no Supabase por RPCs protegidas com o JWT da requisição. O repositório em memória existe somente para `development` e `test`; configuração incompleta em produção falha fechada e não deve receber dados reais.
+> Produção persiste via RPCs protegidas com o JWT da requisição, contra um stack Supabase (Postgres + Auth + PostgREST) **auto-hospedado na VM gratuita da Oracle** — não mais o Supabase Cloud. Veja [`docs/oracle-deployment.md`](docs/oracle-deployment.md). O repositório em memória existe somente para `development` e `test`; configuração incompleta em produção falha fechada e não deve receber dados reais.
 
 ## Comece em 5 minutos
 
@@ -813,6 +813,7 @@ O projeto está alinhado principalmente a:
 | [`docs/backend-blueprint.md`](docs/backend-blueprint.md) | Fluxos do backend, Supabase, sensibilidade, eventos e critérios de pronto. |
 | [`docs/backend-task-plan.md`](docs/backend-task-plan.md) | Fonte atualizável dos 10 blocos de trabalho do backend. |
 | [`docs/deployment.md`](docs/deployment.md) | Deploy do FastAPI na Vercel, variáveis, smoke e rollback. |
+| [`docs/oracle-deployment.md`](docs/oracle-deployment.md) | Stack 100% na Oracle: Supabase self-hosted, Kong, Caddy e bootstrap da VM gratuita. |
 | [`docs/profile-management.md`](docs/profile-management.md) | Ciclo de acesso, papéis, capacidades e proteção administrativa. |
 | [`docs/guardian-management.md`](docs/guardian-management.md) | Responsáveis múltiplos, parentesco, privacidade, versões e endpoints. |
 | [`docs/LivreAcesso-Plano-Tarefas-Backend.pdf`](docs/LivreAcesso-Plano-Tarefas-Backend.pdf) | PDF de cinco páginas para distribuição à equipe. |
