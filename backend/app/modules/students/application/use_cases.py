@@ -25,12 +25,6 @@ from backend.app.modules.students.application.queries import (
     StudentSearchCriteria,
 )
 from backend.app.modules.students.domain.entities import Guardian, Student, StudentStatus
-from backend.app.modules.students.domain.events import (
-    StudentGuardianLinked,
-    StudentGuardianUnlinked,
-    StudentGuardianUpdated,
-    StudentPrimaryGuardianChanged,
-)
 from backend.app.modules.students.domain.exceptions import (
     StudentNotFoundError,
     StudentVersionConflictError,
@@ -236,13 +230,6 @@ class AddStudentGuardian:
             receives_communications=dto.receives_communications,
             expected_student_updated_at=dto.expected_student_updated_at,
         )
-        if result.changed:
-            self.event_publisher.publish(
-                StudentGuardianLinked(
-                    student_id=student_id,
-                    guardian_id=result.snapshot.link.guardian.id,
-                )
-            )
         return StudentMapper.guardian_snapshot_to_output(result.snapshot)
 
 
@@ -273,10 +260,6 @@ class UpdateStudentGuardian:
             expected_student_updated_at=dto.expected_student_updated_at,
             expected_guardian_updated_at=dto.expected_guardian_updated_at,
         )
-        if result.changed:
-            self.event_publisher.publish(
-                StudentGuardianUpdated(student_id=student_id, guardian_id=guardian_id)
-            )
         return StudentMapper.guardian_snapshot_to_output(result.snapshot)
 
 
@@ -298,10 +281,6 @@ class SetPrimaryGuardian:
             guardian_id,
             expected_student_updated_at=dto.expected_student_updated_at,
         )
-        if result.changed:
-            self.event_publisher.publish(
-                StudentPrimaryGuardianChanged(student_id=student_id, guardian_id=guardian_id)
-            )
         return StudentMapper.guardian_snapshot_to_output(result.snapshot)
 
 
@@ -324,10 +303,6 @@ class UnlinkStudentGuardian:
             reason=GuardianUnlinkReason(dto.reason),
             expected_student_updated_at=dto.expected_student_updated_at,
         )
-        if result.changed:
-            self.event_publisher.publish(
-                StudentGuardianUnlinked(student_id=student_id, guardian_id=guardian_id)
-            )
         return StudentGuardianUnlinkOutput(
             student_id=result.student_id,
             guardian_id=result.guardian_id,

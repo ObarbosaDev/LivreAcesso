@@ -5,11 +5,7 @@ from datetime import UTC, date, datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from backend.app.modules.students.domain.events import (
-    StudentRegistered,
-    StudentStatusChanged,
-    StudentUpdated,
-)
+from backend.app.modules.students.domain.events import StudentRegistered
 from backend.app.modules.students.domain.exceptions import InvalidStudentDataError
 from backend.app.modules.students.domain.value_objects import CPF, Phone, StatusChangeReason
 from backend.app.shared.domain.events import DomainEvent
@@ -158,10 +154,7 @@ class Student:
             self.birth_date = birth_date
             changed_fields.append("birth_date")
 
-        result = tuple(changed_fields)
-        if result:
-            self._events.append(StudentUpdated(student_id=self.id, changed_fields=result))
-        return result
+        return tuple(changed_fields)
 
     def change_status(
         self,
@@ -173,18 +166,10 @@ class Student:
         if self.status is target_status:
             return False
 
-        previous_status = self.status
         self.status = target_status
-        # O motivo pode descrever situação familiar ou pessoal. Ele segue para a
-        # tabela de histórico protegida, não para o evento distribuído/outbox.
+        # O motivo pode descrever situação familiar ou pessoal; fica só na
+        # tabela de histórico protegida.
         del reason
-        self._events.append(
-            StudentStatusChanged(
-                student_id=self.id,
-                previous_status=previous_status.value,
-                current_status=target_status.value,
-            )
-        )
         return True
 
     def mark_created(self, created_at: datetime, updated_at: datetime) -> None:

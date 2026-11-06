@@ -20,7 +20,6 @@ from backend.app.modules.students.application.use_cases import (
     UpdateStudent,
 )
 from backend.app.modules.students.domain.entities import StudentStatus
-from backend.app.modules.students.domain.events import StudentStatusChanged, StudentUpdated
 from backend.app.modules.students.domain.exceptions import (
     StudentNotFoundError,
     StudentVersionConflictError,
@@ -62,12 +61,10 @@ def test_detail_keeps_cpf_masked_and_reveals_authorized_contact() -> None:
     asyncio.run(scenario())
 
 
-def test_update_changes_version_and_publishes_safe_event() -> None:
+def test_update_changes_version() -> None:
     async def scenario() -> None:
         repository = InMemoryStudentRepository()
         created, event_bus = await registered_student(repository)
-        recorded: list[StudentUpdated] = []
-        event_bus.subscribe(StudentUpdated, recorded.append)
 
         detail = await UpdateStudent(repository, event_bus).execute(
             created.id,
@@ -81,7 +78,6 @@ def test_update_changes_version_and_publishes_safe_event() -> None:
         assert detail.full_name == "Sophia Almeida Ramos da Silva"
         assert detail.guardian.phone == "61999991234"
         assert detail.updated_at > created.updated_at
-        assert recorded[0].changed_fields == ("full_name",)
 
     asyncio.run(scenario())
 
@@ -109,8 +105,6 @@ def test_deactivate_and_reactivate_preserve_same_record() -> None:
     async def scenario() -> None:
         repository = InMemoryStudentRepository()
         created, event_bus = await registered_student(repository)
-        events: list[StudentStatusChanged] = []
-        event_bus.subscribe(StudentStatusChanged, events.append)
 
         deactivate = ChangeStudentStatus(repository, event_bus, StudentStatus.INACTIVE)
         inactive = await deactivate.execute(
@@ -132,7 +126,6 @@ def test_deactivate_and_reactivate_preserve_same_record() -> None:
         assert inactive.status is StudentStatus.INACTIVE
         assert active.status is StudentStatus.ACTIVE
         assert active.id == created.id
-        assert len(events) == 2
 
     asyncio.run(scenario())
 

@@ -20,17 +20,11 @@ from backend.app.modules.students.application.use_cases import (
     UpdateStudentGuardian,
 )
 from backend.app.modules.students.domain.entities import GuardianRelationship
-from backend.app.modules.students.domain.events import (
-    StudentGuardianLinked,
-    StudentGuardianUnlinked,
-    StudentGuardianUpdated,
-    StudentPrimaryGuardianChanged,
-)
 from backend.app.modules.students.infrastructure.repositories import InMemoryStudentRepository
 from backend.app.shared.application.event_bus import EventBus
 
 
-def test_use_cases_mask_list_and_publish_events_without_personal_data() -> None:
+def test_use_cases_mask_list_without_personal_data() -> None:
     async def scenario() -> None:
         repository = InMemoryStudentRepository()
         event_bus = EventBus()
@@ -46,8 +40,6 @@ def test_use_cases_mask_list_and_publish_events_without_personal_data() -> None:
                 ),
             )
         )
-        recorded: list[object] = []
-        event_bus.subscribe(StudentGuardianLinked, recorded.append)
 
         added = await AddStudentGuardian(repository, event_bus).execute(
             created.id,
@@ -67,9 +59,6 @@ def test_use_cases_mask_list_and_publish_events_without_personal_data() -> None:
         assert len(listed.items) == 2
         assert listed.items[1].phone_masked == "(61) *****-1234"
         assert listed.items[1].email_masked == "r***@example.com"
-        assert len(recorded) == 1
-        assert "Roberto" not in repr(recorded[0])
-        assert "61988881234" not in repr(recorded[0])
 
     asyncio.run(scenario())
 
@@ -95,11 +84,6 @@ def test_primary_change_precedes_safe_unlink() -> None:
                 guardian=GuardianInput(full_name="Roberto Almeida", phone="61988881234"),
             ),
         )
-        promoted_events: list[StudentPrimaryGuardianChanged] = []
-        unlinked_events: list[StudentGuardianUnlinked] = []
-        event_bus.subscribe(StudentPrimaryGuardianChanged, promoted_events.append)
-        event_bus.subscribe(StudentGuardianUnlinked, unlinked_events.append)
-
         promoted = await SetPrimaryGuardian(repository, event_bus).execute(
             created.id,
             added.id,
@@ -117,13 +101,13 @@ def test_primary_change_precedes_safe_unlink() -> None:
         )
 
         assert unlinked.guardian_id == initial_id
-        assert len(promoted_events) == 1
-        assert len(unlinked_events) == 1
+        assert promoted.id == added.id
+        assert promoted.is_primary is True
 
     asyncio.run(scenario())
 
 
-def test_update_guardian_publishes_only_when_the_link_changes() -> None:
+def test_update_guardian_changes_full_name() -> None:
     async def scenario() -> None:
         repository = InMemoryStudentRepository()
         event_bus = EventBus()
@@ -137,8 +121,6 @@ def test_update_guardian_publishes_only_when_the_link_changes() -> None:
         )
         listed = await ListStudentGuardians(repository).execute(created.id)
         current = listed.items[0]
-        updated_events: list[object] = []
-        event_bus.subscribe(StudentGuardianUpdated, updated_events.append)
         output = await UpdateStudentGuardian(repository, event_bus).execute(
             created.id,
             current.id,
@@ -152,6 +134,5 @@ def test_update_guardian_publishes_only_when_the_link_changes() -> None:
             ),
         )
         assert output.full_name == "Camila Almeida Ramos"
-        assert len(updated_events) == 1
 
     asyncio.run(scenario())
