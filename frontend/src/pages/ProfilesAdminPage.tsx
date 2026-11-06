@@ -9,6 +9,7 @@ import { friendlyMessage } from '@/shared/api/problemDetails'
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
 import { Button } from '@/shared/ui/Button'
+import { EmptyState } from '@/shared/ui/EmptyState'
 import { Input } from '@/shared/ui/Input'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { PageFrame } from '@/shared/ui/PageFrame'
@@ -85,10 +86,11 @@ export function ProfilesAdminPage() {
         )}
         {error && <p className="text-sm text-danger">{error}</p>}
         {!loading && !error && profiles?.length === 0 && (
-          <div className="liquid-glass flex flex-col items-center gap-3 rounded-2xl p-12 text-center">
-            <ShieldCheck className="h-6 w-6 text-white/40" aria-hidden="true" />
-            <p className="text-sm text-white/55">Nenhuma conta encontrada para esta busca.</p>
-          </div>
+          <EmptyState
+            icon={ShieldCheck}
+            title="Nenhuma conta encontrada"
+            description="Tente outro termo de busca ou convide um novo membro da equipe."
+          />
         )}
         {!loading &&
           profiles?.map((profile) => (
