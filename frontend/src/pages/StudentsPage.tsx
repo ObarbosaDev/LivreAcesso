@@ -8,7 +8,10 @@ import { STUDENT_STATUS_LABELS } from '@/entities/student/types'
 import { ApiError, friendlyMessage } from '@/shared/api/problemDetails'
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
+import { EmptyState } from '@/shared/ui/EmptyState'
 import { Input } from '@/shared/ui/Input'
+import { MetricCard } from '@/shared/ui/MetricCard'
+import { PageFrame } from '@/shared/ui/PageFrame'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 
 const PAGE_SIZE = 25
@@ -72,25 +75,33 @@ export function StudentsPage() {
   }, [debouncedQuery, status, page])
 
   return (
-    <div className="page-enter mx-auto max-w-[1400px] pb-12">
-      <div className="flex flex-wrap items-end justify-between gap-5">
-        <div className="flex flex-col gap-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-green">Cadastro e acompanhamento</p>
-          <h1 className="mt-2 font-display text-4xl font-semibold tracking-[-0.04em] text-white">Estudantes</h1>
-          <p className="mt-2 text-sm text-white/50">Pessoas atendidas pelo instituto e seus responsáveis.</p>
-        </div>
+    <PageFrame
+      eyebrow="Cadastro e acompanhamento"
+      title="Estudantes"
+      description="Pessoas atendidas pelo instituto e seus responsáveis."
+      actions={
         <Link
           to="/estudantes/novo"
           className="group inline-flex h-11 items-center justify-center gap-2 border border-brand-green bg-brand-green px-5 text-sm font-semibold text-ink transition hover:bg-brand-green-soft"
         >
           Novo estudante <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
         </Link>
-      </div>
-
-      <div className="mt-8 grid gap-3 sm:grid-cols-3">
-        <div className="liquid-glass border-l-2 border-l-brand-green px-4 py-3"><p className="text-xs text-white/40">Total cadastrado</p><p className="mt-1 font-display text-2xl font-semibold text-white">{data?.total ?? '—'}</p></div>
-        <div className="liquid-glass border-l-2 border-l-white/20 px-4 py-3"><p className="text-xs text-white/40">Filtro atual</p><p className="mt-1 text-sm font-semibold text-white">{status ? STUDENT_STATUS_LABELS[status] : 'Todos os status'}</p></div>
-        <div className="liquid-glass border-l-2 border-l-white/20 px-4 py-3"><p className="text-xs text-white/40">Exibidos nesta página</p><p className="mt-1 text-sm font-semibold text-white">{data?.items.length ?? '—'} de {data?.total ?? '—'}</p></div>
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <MetricCard label="Total cadastrado" value={data?.total ?? '—'} icon={Users} />
+        <MetricCard
+          label="Filtro atual"
+          value={status ? STUDENT_STATUS_LABELS[status] : 'Todos os status'}
+          icon={SlidersHorizontal}
+          tone="blue"
+        />
+        <MetricCard
+          label="Exibidos nesta página"
+          value={data ? `${data.items.length} de ${data.total}` : '—'}
+          icon={Search}
+          tone="amber"
+        />
       </div>
 
       <div className="liquid-glass mt-6 flex flex-col gap-4 border-t-2 border-t-brand-green/50 p-4 sm:flex-row sm:items-end">
@@ -141,14 +152,25 @@ export function StudentsPage() {
         )}
 
         {!loading && !error && data && data.items.length === 0 && (
-          <div className="liquid-glass flex flex-col items-center gap-3 border border-dashed border-white/15 p-12 text-center">
-            <Users className="h-6 w-6 text-white/40" aria-hidden="true" />
-            <p className="text-sm text-white/55">
-              {debouncedQuery || status
-                ? 'Nenhum estudante encontrado para este filtro.'
-                : 'Ainda não existem estudantes cadastrados.'}
-            </p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title={debouncedQuery || status ? 'Nenhum estudante encontrado' : 'Ainda não há estudantes cadastrados'}
+            description={
+              debouncedQuery || status
+                ? 'Tente outro termo ou limpe o filtro para ver todos os estudantes.'
+                : 'Cadastre o primeiro estudante para começar a organizar turmas e presença.'
+            }
+            action={
+              !debouncedQuery && !status && (
+                <Link
+                  to="/estudantes/novo"
+                  className="inline-flex items-center gap-2 border border-brand-green bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink"
+                >
+                  Cadastrar primeiro estudante <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              )
+            }
+          />
         )}
 
         {!error && data && data.items.length > 0 && (
@@ -169,7 +191,16 @@ export function StudentsPage() {
                   <tr
                     key={student.id}
                     onClick={() => navigate(`/estudantes/${student.id}`)}
-                    className="group cursor-pointer border-b border-white/5 transition hover:bg-white/[.045]"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        navigate(`/estudantes/${student.id}`)
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Ver detalhes de ${student.full_name}`}
+                    className="group cursor-pointer border-b border-white/5 transition hover:bg-white/[.045] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green"
                   >
                     <td className="px-4 py-4"><span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/15 text-sm font-bold text-brand-green">{student.full_name.slice(0, 1).toUpperCase()}</span><span><span className="block font-semibold text-white">{student.full_name}</span><span className="block text-xs text-white/35">{student.cpf_masked}</span></span></span></td>
                     <td className="py-4"><StatusBadge
@@ -239,6 +270,6 @@ export function StudentsPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageFrame>
   )
 }
