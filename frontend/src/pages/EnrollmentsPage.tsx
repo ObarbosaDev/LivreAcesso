@@ -1,5 +1,6 @@
 import { ArrowUpRight, ClipboardList, Loader2, Search, UserPlus, UsersRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 
 import { getClassOccupancy, listClasses } from '@/features/classes/api'
 import { changeEnrollmentStatus, createEnrollment, listEnrollments } from '@/features/enrollments/api'
@@ -137,19 +138,16 @@ export function EnrollmentsPage() {
     }
   }
 
-  async function handleStatusChange(enrollment: Enrollment) {
+  const [changingEnrollmentId, setChangingEnrollmentId] = useState<string | null>(null)
+
+  async function handleStatusChange(enrollment: Enrollment, reason: string) {
     const action = enrollment.status === 'ativa' ? 'cancel' : 'reactivate'
-    const reason = window.prompt(
-      action === 'cancel'
-        ? 'Motivo do cancelamento (mínimo 10 caracteres):'
-        : 'Motivo da reativação (mínimo 10 caracteres):',
-    )
-    if (!reason || reason.trim().length < 10) return
     try {
       await changeEnrollmentStatus(enrollment.id, action, {
         expected_updated_at: enrollment.updated_at,
         reason,
       })
+      setChangingEnrollmentId(null)
       await reloadEnrollments()
     } catch (caught) {
       setError(friendlyMessage(caught))
@@ -260,26 +258,35 @@ export function EnrollmentsPage() {
               {enrollments.map((enrollment, index) => (
                 <li
                   key={enrollment.id}
-                  className="liquid-glass flex flex-wrap items-center justify-between gap-3 border-l-2 border-l-white/10 px-4 py-3 transition hover:border-l-brand-green"
+                  className="liquid-glass flex flex-col gap-3 border-l-2 border-l-white/10 px-4 py-3 transition hover:border-l-brand-green"
                 >
-                  <span className="flex min-w-0 items-center gap-4"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><span className="break-words text-sm text-white">{studentNames[enrollment.student_id] ?? 'Carregando…'}</span></span>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge
-                      label={ENROLLMENT_STATUS_LABELS[enrollment.status]}
-                      tone={enrollment.status === 'ativa' ? 'success' : 'neutral'}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(enrollment)}
-                      className={
-                        enrollment.status === 'ativa'
-                          ? 'text-xs font-medium text-danger/80 hover:text-danger'
-                          : 'text-xs font-medium text-brand-green hover:text-brand-green-soft'
-                      }
-                    >
-                      {enrollment.status === 'ativa' ? 'Cancelar' : 'Reativar'}
-                    </button>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-4"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><span className="break-words text-sm text-white">{studentNames[enrollment.student_id] ?? 'Carregando…'}</span></span>
+                    <div className="flex items-center gap-3">
+                      <StatusBadge
+                        label={ENROLLMENT_STATUS_LABELS[enrollment.status]}
+                        tone={enrollment.status === 'ativa' ? 'success' : 'neutral'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setChangingEnrollmentId(enrollment.id)}
+                        className={
+                          enrollment.status === 'ativa'
+                            ? 'text-xs font-medium text-danger/80 hover:text-danger'
+                            : 'text-xs font-medium text-brand-green hover:text-brand-green-soft'
+                        }
+                      >
+                        {enrollment.status === 'ativa' ? 'Cancelar' : 'Reativar'}
+                      </button>
+                    </div>
                   </div>
+                  {changingEnrollmentId === enrollment.id && (
+                    <EnrollmentStatusForm
+                      enrollment={enrollment}
+                      onCancel={() => setChangingEnrollmentId(null)}
+                      onConfirm={(reason) => handleStatusChange(enrollment, reason)}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -287,5 +294,56 @@ export function EnrollmentsPage() {
         </div>
       )}
     </PageFrame>
+  )
+}
+
+function EnrollmentStatusForm({
+  enrollment,
+  onCancel,
+  onConfirm,
+}: {
+  enrollment: Enrollment
+  onCancel: () => void
+  onConfirm: (reason: string) => Promise<void>
+}) {
+  const [reason, setReason] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const isCancel = enrollment.status === 'ativa'
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    if (reason.trim().length < 10) {
+      setError('Informe um motivo com pelo menos 10 caracteres.')
+      return
+    }
+    setSubmitting(true)
+    setError(null)
+    try {
+      await onConfirm(reason)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 border-t border-white/10 pt-3">
+      <Input
+        label={isCancel ? 'Motivo do cancelamento' : 'Motivo da reativação'}
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+        disabled={submitting}
+        hint="Pelo menos 10 caracteres."
+      />
+      {error && <p className="text-sm text-danger">{error}</p>}
+      <div className="flex gap-2">
+        <Button type="submit" variant={isCancel ? 'danger' : 'primary'} loading={submitting}>
+          {isCancel ? 'Confirmar cancelamento' : 'Confirmar reativação'}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={submitting}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
   )
 }
