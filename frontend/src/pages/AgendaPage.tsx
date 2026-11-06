@@ -1,6 +1,7 @@
 import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Plus, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
+import { useAuth } from '@/app/providers/AuthProvider'
 import { cancelAgendaEvent, createAgendaEvent, listAgenda } from '@/features/agenda/api'
 import type { AgendaEvent, AgendaEventType } from '@/entities/agenda/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
@@ -17,6 +18,8 @@ function monthLabel(cursor: Date) { return new Intl.DateTimeFormat('pt-BR', { mo
 
 export function AgendaPage() {
   usePageTitle('Agenda')
+  const { profile } = useAuth()
+  const canManageAgenda = profile?.capabilities.includes('agenda:manage') ?? false
   const [cursor, setCursor] = useState(() => { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1) })
   const range = useMemo(() => monthRange(cursor), [cursor]); const [events, setEvents] = useState<AgendaEvent[]>([]); const [loading, setLoading] = useState(true); const [open, setOpen] = useState(false); const [error, setError] = useState<string | null>(null)
   const [cancelingEventId, setCancelingEventId] = useState<string | null>(null)
@@ -25,8 +28,8 @@ export function AgendaPage() {
   }, [reload])
   async function cancelEvent(item: AgendaEvent, reason: string) { try { await cancelAgendaEvent(item.id, item.updated_at, reason); setCancelingEventId(null); await reload() } catch (caught) { setError(friendlyMessage(caught)) } }
   function shiftMonth(amount: number) { setCursor((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1)) }
-  return <PageFrame eyebrow="Rotina do instituto" title="Agenda" description="Horários de turma, reuniões, atendimentos e compromissos em um único lugar." actions={<Button onClick={() => setOpen((value) => !value)}><Plus className="h-4 w-4" />{open ? 'Fechar' : 'Novo compromisso'}</Button>}>
-    {open && <AgendaForm onSaved={() => { setOpen(false); void reload() }} />}
+  return <PageFrame eyebrow="Rotina do instituto" title="Agenda" description="Horários de turma, reuniões, atendimentos e compromissos em um único lugar." actions={canManageAgenda && <Button onClick={() => setOpen((value) => !value)}><Plus className="h-4 w-4" />{open ? 'Fechar' : 'Novo compromisso'}</Button>}>
+    {open && canManageAgenda && <AgendaForm onSaved={() => { setOpen(false); void reload() }} />}
     {error && <p className="border border-danger/40 p-4 text-sm text-danger">{error}</p>}
     <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-y border-white/10 py-4"><div><p className="text-xs uppercase tracking-[0.14em] text-white/40">Período</p><p className="mt-1 font-display text-sm capitalize text-white">{monthLabel(cursor)}</p></div><div className="flex items-center gap-2"><Button variant="secondary" aria-label="Mês anterior" onClick={() => shiftMonth(-1)}><ChevronLeft className="h-4 w-4" /></Button><Button variant="secondary" aria-label="Próximo mês" onClick={() => shiftMonth(1)}><ChevronRight className="h-4 w-4" /></Button><Button variant="secondary" onClick={() => void reload()}><RefreshCw className="h-4 w-4" /> Atualizar</Button></div></div>
     {loading ? (
@@ -60,7 +63,7 @@ export function AgendaPage() {
               </div>
               <div className="flex items-center gap-4">
                 <p className="font-display text-xs text-white/55">{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p>
-                <button type="button" onClick={() => setCancelingEventId(event.id)} className="text-xs text-danger/70 hover:text-danger">Cancelar</button>
+                {canManageAgenda && <button type="button" onClick={() => setCancelingEventId(event.id)} className="text-xs text-danger/70 hover:text-danger">Cancelar</button>}
               </div>
             </div>
             {cancelingEventId === event.id && (
@@ -124,4 +127,4 @@ function AgendaCancelForm({
   )
 }
 
-function AgendaForm({ onSaved }: { onSaved: () => void }) { const [saving, setSaving] = useState(false); const [error, setError] = useState<string | null>(null); const [form, setForm] = useState({ title: '', description: '', event_type: 'reuniao' as AgendaEventType, starts_at: '', ends_at: '', all_day: false, location: '' }); function field(key: string, value: string | boolean) { setForm((current) => ({ ...current, [key]: value })) } async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); try { await createAgendaEvent(form); onSaved() } catch (caught) { setError(friendlyMessage(caught)) } finally { setSaving(false) } } return <form onSubmit={submit} className="mt-6 border border-brand-green/40 bg-brand-green/[.03] p-5"><div className="grid gap-4 md:grid-cols-2"><Input label="Título" required value={form.title} onChange={(event) => field('title', event.target.value)} /><Input label="Local" value={form.location} onChange={(event) => field('location', event.target.value)} /><Input label="Início" type="datetime-local" required value={form.starts_at} onChange={(event) => field('starts_at', event.target.value)} /><Input label="Fim" type="datetime-local" required value={form.ends_at} onChange={(event) => field('ends_at', event.target.value)} /></div><div className="mt-4"><Select label="Tipo" value={form.event_type} onChange={(event) => field('event_type', event.target.value)} options={Object.entries(labels).map(([value, label]) => ({ value, label }))} /></div><label className="mt-4 block text-xs text-white/55">Descrição<textarea className="mt-2 min-h-24 w-full border border-white/15 bg-black p-3 text-sm text-white" value={form.description} onChange={(event) => field('description', event.target.value)} /></label>{error && <p className="mt-3 text-sm text-danger">{error}</p>}<Button type="submit" loading={saving} className="mt-4">Salvar compromisso</Button></form> }
+function AgendaForm({ onSaved }: { onSaved: () => void }) { const [saving, setSaving] = useState(false); const [error, setError] = useState<string | null>(null); const [form, setForm] = useState({ title: '', description: '', event_type: 'reuniao' as AgendaEventType, starts_at: '', ends_at: '', all_day: false, location: '' }); function field(key: string, value: string | boolean) { setForm((current) => ({ ...current, [key]: value })) } async function submit(event: FormEvent) { event.preventDefault(); setSaving(true); try { await createAgendaEvent({ ...form, starts_at: new Date(form.starts_at).toISOString(), ends_at: new Date(form.ends_at).toISOString(), location: form.location.trim() || undefined, description: form.description.trim() || undefined }); onSaved() } catch (caught) { setError(friendlyMessage(caught)) } finally { setSaving(false) } } return <form onSubmit={submit} className="mt-6 border border-brand-green/40 bg-brand-green/[.03] p-5"><div className="grid gap-4 md:grid-cols-2"><Input label="Título" required value={form.title} onChange={(event) => field('title', event.target.value)} /><Input label="Local" value={form.location} onChange={(event) => field('location', event.target.value)} /><Input label="Início" type="datetime-local" required value={form.starts_at} onChange={(event) => field('starts_at', event.target.value)} /><Input label="Fim" type="datetime-local" required value={form.ends_at} onChange={(event) => field('ends_at', event.target.value)} /></div><div className="mt-4"><Select label="Tipo" value={form.event_type} onChange={(event) => field('event_type', event.target.value)} options={Object.entries(labels).map(([value, label]) => ({ value, label }))} /></div><label className="mt-4 block text-xs text-white/55">Descrição<textarea className="mt-2 min-h-24 w-full border border-white/15 bg-black p-3 text-sm text-white" value={form.description} onChange={(event) => field('description', event.target.value)} /></label>{error && <p className="mt-3 text-sm text-danger">{error}</p>}<Button type="submit" loading={saving} className="mt-4">Salvar compromisso</Button></form> }
