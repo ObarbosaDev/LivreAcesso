@@ -17,6 +17,8 @@ const CAPABILITY_LABELS: Record<Capability, string> = {
   'students:create': 'Cadastrar estudante', 'students:update': 'Atualizar estudante',
   'students:change-status': 'Alterar status do estudante', 'classes:list': 'Listar turmas',
   'classes:read': 'Ver detalhes de turma', 'classes:manage': 'Gerenciar turmas',
+  'enrollments:create': 'Matricular estudante', 'enrollments:manage': 'Cancelar/reativar matrícula',
+  'agenda:manage': 'Gerenciar agenda',
 }
 
 export function ProfilePage() {
