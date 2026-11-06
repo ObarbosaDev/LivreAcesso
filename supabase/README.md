@@ -41,21 +41,6 @@ Este diretório contém somente artefatos versionáveis do banco. Credenciais, t
 
 ## Aplicação da migration
 
-### Stack self-hosted (Oracle)
-
-`scripts/setup_oracle_vm.sh` aplica cada arquivo em `migrations/`, em ordem, via `psql` contra o container `db`. Para rodar manualmente contra uma VM já provisionada:
-
-```bash
-for migration in supabase/migrations/*.sql; do
-  docker compose -p livreacesso -f .supabase-stack/docker-compose.yml \
-    exec -T db psql -v ON_ERROR_STOP=1 -U postgres -d postgres <"$migration"
-done
-```
-
-Veja [`docs/oracle-deployment.md`](../docs/oracle-deployment.md) para o bootstrap completo.
-
-### Projeto gerenciado (legado)
-
 Use a Supabase CLI autenticada de forma interativa ou o fluxo de CI da equipe. Nunca coloque senha ou chave em argumentos que possam ir para histórico compartilhado.
 
 ```powershell

@@ -106,4 +106,3 @@ skills-lock.json
 .supabase/
 supabase/.temp/
 supabase/.branches/
-.supabase-stack/
