@@ -2,6 +2,7 @@ import { ArrowUpRight, ClipboardList, Loader2, Search, UserPlus, UsersRound } fr
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
+import { useAuth } from '@/app/providers/AuthProvider'
 import { getClassOccupancy, listClasses } from '@/features/classes/api'
 import { changeEnrollmentStatus, createEnrollment, listEnrollments } from '@/features/enrollments/api'
 import { getStudentNames, listStudents } from '@/features/students/api'
@@ -28,6 +29,9 @@ import { Select } from '@/shared/ui/Select'
  */
 export function EnrollmentsPage() {
   usePageTitle('Matrículas')
+  const { profile } = useAuth()
+  const canCreateEnrollments = profile?.capabilities.includes('enrollments:create') ?? false
+  const canManageEnrollments = profile?.capabilities.includes('enrollments:manage') ?? false
 
   const [classes, setClasses] = useState<SchoolClass[] | null>(null)
   const [selectedClassId, setSelectedClassId] = useState('')
@@ -184,17 +188,19 @@ export function EnrollmentsPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/35">Lista da turma</p><h2 className="mt-1 font-display text-xl font-semibold text-white">Estudantes matriculados</h2></div>
-            <Button
-              variant="secondary"
-              onClick={() => setShowAddForm((value) => !value)}
-              className="gap-2"
-            >
-              <UserPlus className="h-4 w-4" aria-hidden="true" />
-              Nova matrícula
-            </Button>
+            {canCreateEnrollments && (
+              <Button
+                variant="secondary"
+                onClick={() => setShowAddForm((value) => !value)}
+                className="gap-2"
+              >
+                <UserPlus className="h-4 w-4" aria-hidden="true" />
+                Nova matrícula
+              </Button>
+            )}
           </div>
 
-          {showAddForm && (
+          {showAddForm && canCreateEnrollments && (
             <div className="liquid-glass rounded-2xl p-5">
               <Input
                 label="Buscar estudante"
@@ -254,17 +260,19 @@ export function EnrollmentsPage() {
                         label={ENROLLMENT_STATUS_LABELS[enrollment.status]}
                         tone={enrollment.status === 'ativa' ? 'success' : 'neutral'}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setChangingEnrollmentId(enrollment.id)}
-                        className={
-                          enrollment.status === 'ativa'
-                            ? 'text-xs font-medium text-danger/80 hover:text-danger'
-                            : 'text-xs font-medium text-brand-green hover:text-brand-green-soft'
-                        }
-                      >
-                        {enrollment.status === 'ativa' ? 'Cancelar' : 'Reativar'}
-                      </button>
+                      {canManageEnrollments && (
+                        <button
+                          type="button"
+                          onClick={() => setChangingEnrollmentId(enrollment.id)}
+                          className={
+                            enrollment.status === 'ativa'
+                              ? 'text-xs font-medium text-danger/80 hover:text-danger'
+                              : 'text-xs font-medium text-brand-green hover:text-brand-green-soft'
+                          }
+                        >
+                          {enrollment.status === 'ativa' ? 'Cancelar' : 'Reativar'}
+                        </button>
+                      )}
                     </div>
                   </div>
                   {changingEnrollmentId === enrollment.id && (

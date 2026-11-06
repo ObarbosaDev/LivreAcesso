@@ -12,6 +12,9 @@ export type Capability =
   | 'classes:list'
   | 'classes:read'
   | 'classes:manage'
+  | 'enrollments:create'
+  | 'enrollments:manage'
+  | 'agenda:manage'
 
 export interface Profile {
   id: string

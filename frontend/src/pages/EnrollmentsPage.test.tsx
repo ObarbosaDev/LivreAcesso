@@ -4,6 +4,12 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { EnrollmentsPage } from '@/pages/EnrollmentsPage'
 
+vi.mock('@/app/providers/AuthProvider', () => ({
+  useAuth: () => ({
+    profile: { capabilities: ['enrollments:create', 'enrollments:manage'] },
+  }),
+}))
+
 const listClassesMock = vi.fn()
 const getClassOccupancyMock = vi.fn()
 vi.mock('@/features/classes/api', () => ({

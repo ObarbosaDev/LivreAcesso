@@ -3,30 +3,36 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/AuthProvider'
+import type { Capability } from '@/entities/profile/types'
 import { ROLE_LABELS } from '@/entities/profile/types'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/Button'
 import { LogoMark } from '@/shared/ui/LogoMark'
 import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean; capability?: Capability }[] = [
   { to: '/', label: 'Início', icon: LayoutDashboard, end: true },
-  { to: '/estudantes', label: 'Estudantes', icon: Users },
+  { to: '/estudantes', label: 'Estudantes', icon: Users, capability: 'students:list' },
   { to: '/turmas', label: 'Turmas', icon: CalendarRange },
   { to: '/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/matriculas', label: 'Matrículas', icon: ClipboardList },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ]
-const QUICK_ACTIONS = [
-  { to: '/estudantes/novo', label: 'Cadastrar estudante', icon: Users, end: false },
-  { to: '/turmas/nova', label: 'Criar turma', icon: CalendarRange, end: false },
+const QUICK_ACTIONS: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean; capability?: Capability }[] = [
+  { to: '/estudantes/novo', label: 'Cadastrar estudante', icon: Users, end: false, capability: 'students:create' },
+  { to: '/turmas/nova', label: 'Criar turma', icon: CalendarRange, end: false, capability: 'classes:manage' },
   { to: '/agenda', label: 'Abrir agenda', icon: CalendarDays, end: false },
 ]
 
 /** Casca fixa do sistema: menu lateral (drawer no celular), cabeçalho e área de conteúdo. */
-function SidebarStatus() {
+function SidebarStatus({ capabilities }: { capabilities: Capability[] | undefined }) {
   const today = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date())
-  const shortcuts = [{ to: '/estudantes/novo', label: 'Novo estudante', code: '01' }, { to: '/turmas/nova', label: 'Nova turma', code: '02' }, { to: '/relatorios', label: 'Abrir relatórios', code: '03' }]
+  const allShortcuts = [
+    { to: '/estudantes/novo', label: 'Novo estudante', code: '01', capability: 'students:create' as Capability },
+    { to: '/turmas/nova', label: 'Nova turma', code: '02', capability: 'classes:manage' as Capability },
+    { to: '/relatorios', label: 'Abrir relatórios', code: '03' },
+  ]
+  const shortcuts = allShortcuts.filter((item) => !item.capability || capabilities?.includes(item.capability))
   return <div className="mt-auto mx-4 mb-3 border border-brand-green/20 bg-brand-green/[.06] p-4"><div className="flex items-center justify-between"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-green">Atalhos de operação</p><span className="text-[10px] text-white/35">{today}</span></div><div className="mt-4 border-t border-brand-green/15 pt-2">{shortcuts.map(({ to, label, code }) => <Link key={to} to={to} className="group flex items-center gap-3 border-b border-brand-green/10 py-3 text-xs text-white/55 transition last:border-0 hover:text-brand-green"><span className="font-display text-[10px] text-brand-green/70">{code}</span><span className="flex-1">{label}</span><span className="text-white/25 transition group-hover:text-brand-green">→</span></Link>)}</div><p className="mt-3 text-[10px] uppercase tracking-[0.12em] text-white/30">Ctrl K · busca rápida</p></div>
 }
 
@@ -40,9 +46,21 @@ export function AppLayout() {
   const [keySequence, setKeySequence] = useState('')
   const commandInputRef = useRef<HTMLInputElement>(null)
 
-  const navItems = useMemo(() => profile?.capabilities.includes('profiles:manage') ? [...NAV_ITEMS, { to: '/equipe', label: 'Equipe', icon: ShieldCheck }] : NAV_ITEMS, [profile?.capabilities])
+  const navItems = useMemo(() => {
+    const visible = NAV_ITEMS.filter(
+      (item) => !item.capability || profile?.capabilities.includes(item.capability),
+    )
+    return profile?.capabilities.includes('profiles:manage')
+      ? [...visible, { to: '/equipe', label: 'Equipe', icon: ShieldCheck }]
+      : visible
+  }, [profile?.capabilities])
 
-  const commandItems = useMemo(() => { const seen = new Set<string>(); return [...navItems, ...QUICK_ACTIONS].filter(({ to, label }) => { if (seen.has(to) || !label.toLowerCase().includes(commandQuery.toLowerCase())) return false; seen.add(to); return true }) }, [commandQuery, navItems])
+  const quickActions = useMemo(
+    () => QUICK_ACTIONS.filter((item) => !item.capability || profile?.capabilities.includes(item.capability)),
+    [profile?.capabilities],
+  )
+
+  const commandItems = useMemo(() => { const seen = new Set<string>(); return [...navItems, ...quickActions].filter(({ to, label }) => { if (seen.has(to) || !label.toLowerCase().includes(commandQuery.toLowerCase())) return false; seen.add(to); return true }) }, [commandQuery, navItems, quickActions])
 
   useEffect(() => {
     function handleShortcut(event: KeyboardEvent) {
@@ -132,7 +150,7 @@ export function AppLayout() {
         </div>
         <div className="mb-4 px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">Operação</div>
         {navLinks}
-        <SidebarStatus />
+        <SidebarStatus capabilities={profile?.capabilities} />
         <div className="hidden mx-4 rounded-2xl border border-brand-green/15 bg-brand-green/[.06] p-4">
           <p className="text-xs font-semibold text-brand-green">Livre Acesso</p>
           <p className="mt-1 text-xs leading-5 text-white/40">Gestão com cuidado, dados e presença.</p>
