@@ -19,6 +19,7 @@ from backend.app.modules.classes.application.dtos import (
 )
 from backend.app.modules.identity.presentation.dependencies import require_request_context
 from backend.app.shared.application.request_context import RequestContext
+from backend.app.shared.domain.institute import Unit
 from backend.app.shared.presentation.problem_details import ProblemDetail
 
 _PROBLEM_RESPONSE: dict[str, Any] = {"model": ProblemDetail}
@@ -148,6 +149,7 @@ def build_classes_router(container: ApplicationContainer) -> APIRouter:
         context: Annotated[RequestContext, Depends(require_request_context)],
         active: Annotated[bool | None, Query()] = None,
         modality_id: Annotated[UUID | None, Query()] = None,
+        unit: Annotated[Unit | None, Query()] = None,
         query: Annotated[str | None, Query(min_length=2, max_length=120)] = None,
         page: Annotated[int, Query(ge=1)] = 1,
         page_size: Annotated[int, Query(ge=1, le=100)] = 25,
@@ -155,6 +157,7 @@ def build_classes_router(container: ApplicationContainer) -> APIRouter:
         return await container.classes_for(context).list_classes.execute(
             active=active,
             modality_id=modality_id,
+            unit=unit,
             query=query,
             page=page,
             page_size=page_size,

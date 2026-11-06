@@ -19,6 +19,7 @@ from backend.app.modules.classes.domain.exceptions import (
 )
 from backend.app.modules.classes.domain.value_objects import ClassChangeReason
 from backend.app.modules.identity.domain.entities import Capability, UserRole, capabilities_for_role
+from backend.app.shared.domain.institute import Unit
 
 
 def instructor() -> ClassInstructor:
@@ -35,6 +36,7 @@ def schedules() -> tuple[ClassSchedule, ...]:
 def group() -> ClassGroup:
     return ClassGroup.create(
         modality_id=uuid4(),
+        unit=Unit.CEILANDIA,
         name="Turma Infantil A",
         capacity=20,
         location="Sala 1",
@@ -63,6 +65,7 @@ def test_class_orders_schedules_and_rejects_overlap() -> None:
     with pytest.raises(InvalidScheduleError, match="sobrepor"):
         ClassGroup.create(
             modality_id=current.modality_id,
+            unit=Unit.CEILANDIA,
             name="Turma com conflito",
             capacity=20,
             location="Sala 2",
@@ -82,6 +85,7 @@ def test_class_rejects_capacity_age_and_duplicate_instructor() -> None:
     with pytest.raises(InvalidCapacityError):
         ClassGroup.create(
             modality_id=uuid4(),
+            unit=Unit.CEILANDIA,
             name="Turma inválida",
             capacity=0,
             location="Sala 1",
@@ -93,6 +97,7 @@ def test_class_rejects_capacity_age_and_duplicate_instructor() -> None:
     with pytest.raises(InvalidClassDataError, match="mínima"):
         ClassGroup.create(
             modality_id=uuid4(),
+            unit=Unit.CEILANDIA,
             name="Turma inválida",
             capacity=10,
             location="Sala 1",
@@ -104,6 +109,7 @@ def test_class_rejects_capacity_age_and_duplicate_instructor() -> None:
     with pytest.raises(InvalidClassDataError, match="mais de uma vez"):
         ClassGroup.create(
             modality_id=uuid4(),
+            unit=Unit.CEILANDIA,
             name="Turma inválida",
             capacity=10,
             location="Sala 1",
@@ -119,6 +125,7 @@ def test_class_update_reports_fields_without_values() -> None:
 
     changed = current.update(
         modality_id=current.modality_id,
+        unit=Unit.CEILANDIA,
         name=current.name,
         capacity=25,
         location="Sala 3",
@@ -131,6 +138,26 @@ def test_class_update_reports_fields_without_values() -> None:
     assert changed == ("capacity", "location")
 
 
+def test_class_update_tracks_unit_change() -> None:
+    current = group()
+    assert current.unit is Unit.CEILANDIA
+
+    changed = current.update(
+        modality_id=current.modality_id,
+        unit=Unit.AGUA_QUENTE,
+        name=current.name,
+        capacity=current.capacity,
+        location=current.location,
+        minimum_age=current.minimum_age,
+        maximum_age=current.maximum_age,
+        schedules=current.schedules,
+        instructors=current.instructors,
+    )
+
+    assert changed == ("unit",)
+    assert current.unit is Unit.AGUA_QUENTE
+
+
 def test_catalog_timestamps_require_timezone() -> None:
     current = group()
 
@@ -138,6 +165,7 @@ def test_catalog_timestamps_require_timezone() -> None:
         ClassGroup(
             id=current.id,
             modality_id=current.modality_id,
+            unit=Unit.CEILANDIA,
             name=current.name,
             capacity=current.capacity,
             location=current.location,
@@ -174,6 +202,7 @@ def test_schedule_and_instructor_value_objects_reject_invalid_data() -> None:
     with pytest.raises(InvalidScheduleError):
         ClassGroup.create(
             modality_id=uuid4(),
+            unit=Unit.CEILANDIA,
             name="Turma sem horário",
             capacity=10,
             location="Sala 1",
@@ -187,6 +216,7 @@ def test_schedule_and_instructor_value_objects_reject_invalid_data() -> None:
     with pytest.raises(InvalidClassDataError):
         ClassGroup.create(
             modality_id=uuid4(),
+            unit=Unit.CEILANDIA,
             name="Turma sem instrutor",
             capacity=10,
             location="Sala 1",

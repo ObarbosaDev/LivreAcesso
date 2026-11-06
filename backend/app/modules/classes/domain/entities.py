@@ -14,6 +14,7 @@ from backend.app.modules.classes.domain.exceptions import (
 )
 from backend.app.modules.classes.domain.value_objects import ClassChangeReason
 from backend.app.shared.domain.events import DomainEvent
+from backend.app.shared.domain.institute import Unit
 
 
 class Weekday(StrEnum):
@@ -177,6 +178,7 @@ class ClassGroup:
 
     id: UUID
     modality_id: UUID
+    unit: Unit
     name: str
     capacity: int
     location: str
@@ -223,6 +225,7 @@ class ClassGroup:
         cls,
         *,
         modality_id: UUID,
+        unit: Unit,
         name: str,
         capacity: int,
         location: str,
@@ -235,6 +238,7 @@ class ClassGroup:
         group = cls(
             id=uuid4(),
             modality_id=modality_id,
+            unit=unit,
             name=name,
             capacity=capacity,
             location=location,
@@ -252,6 +256,7 @@ class ClassGroup:
         self,
         *,
         modality_id: UUID,
+        unit: Unit,
         name: str,
         capacity: int,
         location: str,
@@ -263,6 +268,7 @@ class ClassGroup:
         candidate = ClassGroup(
             id=self.id,
             modality_id=modality_id,
+            unit=unit,
             name=name,
             capacity=capacity,
             location=location,
@@ -277,6 +283,7 @@ class ClassGroup:
         changed: list[str] = []
         for field_name in (
             "modality_id",
+            "unit",
             "name",
             "capacity",
             "location",

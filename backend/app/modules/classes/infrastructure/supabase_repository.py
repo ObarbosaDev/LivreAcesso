@@ -40,6 +40,7 @@ from backend.app.shared.application.exceptions import (
     PersistenceUnavailableError,
 )
 from backend.app.shared.application.request_context import RequestContext
+from backend.app.shared.domain.institute import Unit
 from backend.app.shared.infrastructure.supabase_rpc import (
     SupabaseRPCError,
     SupabaseRPCGateway,
@@ -107,6 +108,7 @@ class _ClassRow(BaseModel):
 
     id: UUID
     modality_id: UUID
+    unit: Unit
     name: str = Field(min_length=3, max_length=120)
     capacity: int = Field(ge=1, le=500)
     location: str = Field(min_length=2, max_length=120)
@@ -294,6 +296,7 @@ class SupabaseClassRepository:
                 "p_modality_id": (
                     str(criteria.modality_id) if criteria.modality_id is not None else None
                 ),
+                "p_unit": criteria.unit.value if criteria.unit is not None else None,
                 "p_query": criteria.query,
                 "p_limit": criteria.limit,
                 "p_offset": criteria.offset,
@@ -311,6 +314,7 @@ class SupabaseClassRepository:
     def _class_payload(self, group: ClassGroup) -> dict[str, object]:
         return {
             "p_modality_id": str(group.modality_id),
+            "p_unit": group.unit.value,
             "p_name": group.name,
             "p_capacity": group.capacity,
             "p_location": group.location,
@@ -398,6 +402,7 @@ class SupabaseClassRepository:
         return ClassGroup(
             id=row.id,
             modality_id=row.modality_id,
+            unit=row.unit,
             name=row.name,
             capacity=row.capacity,
             location=row.location,

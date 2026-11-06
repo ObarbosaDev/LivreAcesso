@@ -571,6 +571,7 @@ def test_primary_guardian_and_ambiguous_source_return_accessible_errors() -> Non
 def class_payload(modality_id: str, instructor_id: str) -> dict[str, object]:
     return {
         "modality_id": modality_id,
+        "unit": "ceilandia",
         "name": "Turma Infantil A",
         "capacity": 20,
         "location": "Sala 1",

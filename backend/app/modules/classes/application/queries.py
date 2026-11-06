@@ -5,6 +5,7 @@ from typing import Protocol
 from uuid import UUID
 
 from backend.app.modules.classes.domain.entities import ClassGroup, Modality
+from backend.app.shared.domain.institute import Unit
 
 
 def _normalize_query(value: str | None) -> str | None:
@@ -35,6 +36,7 @@ class ModalitySearchResult:
 class ClassSearchCriteria:
     active: bool | None = None
     modality_id: UUID | None = None
+    unit: Unit | None = None
     query: str | None = None
     offset: int = 0
     limit: int = 25

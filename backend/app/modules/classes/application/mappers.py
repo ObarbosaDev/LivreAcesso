@@ -43,6 +43,7 @@ class CatalogMapper:
     ) -> ClassGroup:
         return ClassGroup.create(
             modality_id=dto.modality_id,
+            unit=dto.unit,
             name=dto.name,
             capacity=dto.capacity,
             location=dto.location,
@@ -57,6 +58,7 @@ class CatalogMapper:
         return ClassOutput(
             id=group.id,
             modality_id=group.modality_id,
+            unit=group.unit,
             name=group.name,
             capacity=group.capacity,
             location=group.location,

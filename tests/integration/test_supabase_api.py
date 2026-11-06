@@ -660,6 +660,7 @@ def test_class_catalog_crosses_fastapi_profiles_and_supabase_rpcs() -> None:
         return {
             "id": identifier,
             "modality_id": modality_id,
+            "unit": "ceilandia",
             "name": "Turma Infantil A",
             "capacity": 20,
             "location": "Sala 1",
@@ -731,6 +732,7 @@ def test_class_catalog_crosses_fastapi_profiles_and_supabase_rpcs() -> None:
             "/api/v1/classes",
             json={
                 "modality_id": modality.json()["id"],
+                "unit": "ceilandia",
                 "name": "Turma Infantil A",
                 "capacity": 20,
                 "location": "Sala 1",

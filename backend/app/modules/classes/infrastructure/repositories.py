@@ -190,6 +190,7 @@ class InMemoryClassRepository:
                 for group in self._classes.values()
                 if (criteria.active is None or group.active is criteria.active)
                 and (criteria.modality_id is None or group.modality_id == criteria.modality_id)
+                and (criteria.unit is None or group.unit == criteria.unit)
                 and (query_key is None or query_key in _search_key(group.name))
                 and (
                     criteria.viewer_instructor_id is None

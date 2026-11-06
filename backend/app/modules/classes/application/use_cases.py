@@ -35,6 +35,7 @@ from backend.app.modules.identity.domain.entities import Capability, UserProfile
 from backend.app.modules.identity.domain.repositories import ProfileRepository
 from backend.app.shared.application.event_bus import EventPublisher
 from backend.app.shared.application.exceptions import PermissionDeniedError
+from backend.app.shared.domain.institute import Unit
 
 
 async def _require_capability(
@@ -204,6 +205,7 @@ class ListClasses:
         *,
         active: bool | None,
         modality_id: UUID | None,
+        unit: Unit | None,
         query: str | None,
         page: int,
         page_size: int,
@@ -217,6 +219,7 @@ class ListClasses:
             ClassSearchCriteria(
                 active=active,
                 modality_id=modality_id,
+                unit=unit,
                 query=query,
                 offset=(page - 1) * page_size,
                 limit=page_size,
@@ -304,6 +307,7 @@ class UpdateClass:
         schedules = tuple(CatalogMapper.schedule_to_domain(item) for item in dto.schedules)
         changed = group.update(
             modality_id=dto.modality_id,
+            unit=dto.unit,
             name=dto.name,
             capacity=dto.capacity,
             location=dto.location,

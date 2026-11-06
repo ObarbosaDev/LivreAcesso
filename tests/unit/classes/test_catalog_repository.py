@@ -25,6 +25,7 @@ from backend.app.modules.classes.domain.exceptions import (
 )
 from backend.app.modules.classes.domain.value_objects import ClassChangeReason
 from backend.app.modules.classes.infrastructure.repositories import InMemoryClassRepository
+from backend.app.shared.domain.institute import Unit
 
 
 def modality(name: str = "Capoeira") -> Modality:
@@ -36,9 +37,11 @@ def group(
     *,
     name: str = "Turma Infantil",
     instructor_id: UUID | None = None,
+    unit: Unit = Unit.CEILANDIA,
 ) -> ClassGroup:
     return ClassGroup.create(
         modality_id=modality_id,
+        unit=unit,
         name=name,
         capacity=20,
         location="Sala 1",
@@ -122,6 +125,31 @@ def test_search_is_paginated_accent_insensitive_and_scoped_to_instructor() -> No
         assert modalities.total == 1
         assert classes.total == 1
         assert classes.items[0].name == "Turma Iniciação"
+
+    asyncio.run(scenario())
+
+
+def test_search_filters_by_unit() -> None:
+    async def scenario() -> None:
+        repository = InMemoryClassRepository()
+        current_modality = modality("Natação")
+        await repository.add_modality(current_modality)
+        await repository.add_class(
+            group(current_modality.id, name="Turma Ceilândia", unit=Unit.CEILANDIA)
+        )
+        await repository.add_class(
+            group(current_modality.id, name="Turma Água Quente", unit=Unit.AGUA_QUENTE)
+        )
+
+        ceilandia = await repository.search_classes(ClassSearchCriteria(unit=Unit.CEILANDIA))
+        agua_quente = await repository.search_classes(ClassSearchCriteria(unit=Unit.AGUA_QUENTE))
+        both = await repository.search_classes(ClassSearchCriteria())
+
+        assert ceilandia.total == 1
+        assert ceilandia.items[0].name == "Turma Ceilândia"
+        assert agua_quente.total == 1
+        assert agua_quente.items[0].name == "Turma Água Quente"
+        assert both.total == 2
 
     asyncio.run(scenario())
 

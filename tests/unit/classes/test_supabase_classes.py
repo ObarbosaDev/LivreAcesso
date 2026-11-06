@@ -45,6 +45,7 @@ from backend.app.shared.application.exceptions import (
     PersistenceUnavailableError,
 )
 from backend.app.shared.application.request_context import RequestContext
+from backend.app.shared.domain.institute import Unit
 from backend.app.shared.infrastructure.supabase_rpc import SupabaseRPCGateway
 
 _PROJECT_URL = "https://project-ref.supabase.co"
@@ -81,6 +82,7 @@ def class_row() -> dict[str, object]:
     return {
         "id": str(_CLASS_ID),
         "modality_id": str(_MODALITY_ID),
+        "unit": "ceilandia",
         "name": "Turma Infantil",
         "capacity": 20,
         "location": "Sala 1",
@@ -109,6 +111,7 @@ def group() -> ClassGroup:
     return ClassGroup(
         id=_CLASS_ID,
         modality_id=_MODALITY_ID,
+        unit=Unit.CEILANDIA,
         name="Turma Infantil",
         capacity=20,
         location="Sala 1",

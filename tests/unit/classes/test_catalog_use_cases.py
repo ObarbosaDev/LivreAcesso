@@ -34,6 +34,7 @@ from backend.app.modules.identity.domain.entities import UserProfile, UserRole
 from backend.app.modules.identity.infrastructure.repositories import InMemoryProfileRepository
 from backend.app.shared.application.event_bus import EventBus
 from backend.app.shared.application.exceptions import PermissionDeniedError
+from backend.app.shared.domain.institute import Unit
 
 
 def seed_profile(
@@ -59,6 +60,7 @@ def seed_profile(
 def class_input(modality_id: UUID, instructor_id: UUID, *, name: str) -> CreateClassInput:
     return CreateClassInput(
         modality_id=modality_id,
+        unit=Unit.CEILANDIA,
         name=name,
         capacity=20,
         location="Sala 1",
@@ -119,6 +121,7 @@ def test_coordinator_creates_catalog_and_instructor_sees_only_assignment() -> No
         listed = await ListClasses(store, profiles, assigned.id).execute(
             active=True,
             modality_id=None,
+            unit=None,
             query=None,
             page=1,
             page_size=25,
@@ -132,6 +135,7 @@ def test_coordinator_creates_catalog_and_instructor_sees_only_assignment() -> No
         other_classes = await ListClasses(store, profiles, other.id).execute(
             active=True,
             modality_id=None,
+            unit=None,
             query=None,
             page=1,
             page_size=25,
@@ -161,6 +165,7 @@ def test_reception_can_read_but_cannot_create_catalog() -> None:
         listed = await ListClasses(store, profiles, receptionist.id).execute(
             active=None,
             modality_id=None,
+            unit=None,
             query=None,
             page=1,
             page_size=25,

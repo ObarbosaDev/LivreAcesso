@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from backend.app.modules.classes.domain.entities import Weekday
+from backend.app.shared.domain.institute import Unit
 
 
 class DTO(BaseModel):
@@ -34,6 +35,7 @@ class ChangeCatalogActivationInput(DTO):
 
 class CreateClassInput(DTO):
     modality_id: UUID
+    unit: Unit
     name: str = Field(min_length=3, max_length=120)
     capacity: int = Field(ge=1, le=500)
     location: str = Field(min_length=2, max_length=120)
@@ -80,6 +82,7 @@ class InstructorOutput(DTO):
 class ClassOutput(DTO):
     id: UUID
     modality_id: UUID
+    unit: Unit
     name: str
     capacity: int
     location: str
