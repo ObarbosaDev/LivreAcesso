@@ -2,9 +2,10 @@ import { ArrowUpRight, CalendarDays, Loader2, MapPin, Search, Users as UsersIcon
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { useAuth } from '@/app/providers/AuthProvider'
 import { getClassOccupancy, listClasses, listModalities } from '@/features/classes/api'
-import type { Modality, SchoolClass } from '@/entities/class/types'
-import { WEEKDAY_LABELS } from '@/entities/class/types'
+import type { Modality, SchoolClass, Unit } from '@/entities/class/types'
+import { UNIT_LABELS, UNITS, WEEKDAY_LABELS } from '@/entities/class/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
@@ -20,9 +21,12 @@ const PAGE_SIZE = 25
 
 export function ClassesPage() {
   usePageTitle('Turmas')
+  const { profile } = useAuth()
+  const canManageClasses = profile?.capabilities.includes('classes:manage') ?? false
 
   const [query, setQuery] = useState('')
   const [modalityId, setModalityId] = useState('')
+  const [unit, setUnit] = useState<Unit | ''>('')
   const [modalities, setModalities] = useState<Modality[]>([])
   const debouncedQuery = useDebouncedValue(query)
   const [page, setPage] = useState(1)
@@ -55,6 +59,7 @@ export function ClassesPage() {
     listClasses({
       active: true,
       modalityId: modalityId || undefined,
+      unit: unit || undefined,
       query: debouncedQuery.trim().length >= 2 ? debouncedQuery.trim() : undefined,
       page,
       pageSize: PAGE_SIZE,
@@ -78,13 +83,13 @@ export function ClassesPage() {
       .finally(() => setLoading(false))
 
     return () => controller.abort()
-  }, [debouncedQuery, modalityId, page])
+  }, [debouncedQuery, modalityId, unit, page])
 
   return (
-    <PageFrame eyebrow="Programação e capacidade" title="Turmas" description="Organize horários, instrutores e ocupação sem perder a visão do todo." actions={<Link to="/turmas/nova" className="group inline-flex h-11 items-center gap-2 border border-brand-green bg-brand-green px-5 text-sm font-semibold text-ink transition hover:bg-brand-green-soft">Nova turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>}>
+    <PageFrame eyebrow="Programação e capacidade" title="Turmas" description="Organize horários, instrutores e ocupação sem perder a visão do todo." actions={canManageClasses && <Link to="/turmas/nova" className="group inline-flex h-11 items-center gap-2 border border-brand-green bg-brand-green px-5 text-sm font-semibold text-ink transition hover:bg-brand-green-soft">Nova turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>}>
       <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turmas ativas" value={data?.total ?? '—'} icon={CalendarDays} /><MetricCard label="Capacidade cadastrada" value={data ? Object.values(occupancy).reduce((sum, item) => sum + item.capacity, 0) : '—'} icon={UsersIcon} tone="amber" /><MetricCard label="Vagas ocupadas" value={data ? Object.values(occupancy).reduce((sum, item) => sum + item.enrolled, 0) : '—'} icon={UsersIcon} tone="blue" /></div>
       {modalities.length > 0 && <section className="mt-6 border-y border-white/10 py-5"><div className="flex items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-[0.14em] text-brand-green">Catálogo</p><h2 className="mt-1 font-display text-lg font-semibold text-white">Modalidades em operação</h2></div><span className="text-xs text-white/40">{modalities.length} cadastrada{modalities.length === 1 ? '' : 's'}</span></div><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{modalities.map((modality) => <button key={modality.id} type="button" onClick={() => { setModalityId(modality.id); setPage(1) }} className={`border-l-2 p-4 text-left transition ${modality.id === modalityId ? 'border-brand-green bg-brand-green/10' : 'border-white/15 bg-white/[.02] hover:border-brand-green/60'}`}><div className="flex items-center justify-between gap-3"><span className="font-display text-sm font-semibold text-white">{modality.name}</span><span className="text-[10px] uppercase tracking-[0.12em] text-brand-green">Ativa</span></div>{modality.description && <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/45">{modality.description}</p>}<span className="mt-3 block text-xs text-white/35">Ver turmas desta modalidade →</span></button>)}</div></section>}
-      <div className="liquid-glass mt-6 grid gap-4 border-t-2 border-t-brand-green/50 p-4 md:grid-cols-[minmax(0,1fr)_16rem]"><Input
+      <div className="liquid-glass mt-6 grid gap-4 border-t-2 border-t-brand-green/50 p-4 md:grid-cols-[minmax(0,1fr)_16rem_16rem]"><Input
         label="Pesquisar"
         placeholder="Buscar por nome da turma…"
         value={query}
@@ -98,6 +103,14 @@ export function ClassesPage() {
         options={[
           { value: '', label: 'Todas as modalidades' },
           ...modalities.map((modality) => ({ value: modality.id, label: modality.name })),
+        ]}
+      /><Select
+        label="Unidade"
+        value={unit}
+        onChange={(event) => { setUnit(event.target.value as Unit | ''); setPage(1) }}
+        options={[
+          { value: '', label: 'Todas as unidades' },
+          ...UNITS.map((value) => ({ value, label: UNIT_LABELS[value] })),
         ]}
       /></div>
 
@@ -116,7 +129,7 @@ export function ClassesPage() {
         )}
 
         {!loading && !error && data && data.items.length === 0 && (
-        <EmptyState icon={UsersIcon} title={debouncedQuery ? 'Nenhuma turma encontrada' : 'A programação ainda está vazia'} description={debouncedQuery ? 'Tente outro termo ou limpe a busca para ver todas as turmas.' : 'Crie a primeira turma para começar a organizar horários, instrutores e matrículas.'} action={!debouncedQuery && <Link to="/turmas/nova" className="inline-flex items-center gap-2 border border-brand-green bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink">Criar primeira turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>} />
+        <EmptyState icon={UsersIcon} title={debouncedQuery ? 'Nenhuma turma encontrada' : 'A programação ainda está vazia'} description={debouncedQuery ? 'Tente outro termo ou limpe a busca para ver todas as turmas.' : 'Crie a primeira turma para começar a organizar horários, instrutores e matrículas.'} action={!debouncedQuery && canManageClasses && <Link to="/turmas/nova" className="inline-flex items-center gap-2 border border-brand-green bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink">Criar primeira turma <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>} />
         )}
 
         {!error && data && data.items.length > 0 && (
@@ -127,7 +140,7 @@ export function ClassesPage() {
                   <div key={schoolClass.id} className="liquid-glass group flex flex-col gap-4 border-l-2 border-l-brand-green/60 p-5 transition hover:border-brand-green">
                   <div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><h2 className="font-display text-base font-semibold text-white">{schoolClass.name}</h2></div><StatusBadge label="Ativa" tone="success" /></div>
 
-                  <p className="text-xs uppercase tracking-[0.12em] text-brand-green">{modalities.find((modality) => modality.id === schoolClass.modality_id)?.name ?? 'Modalidade não identificada'}</p>
+                  <p className="flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-brand-green"><span>{modalities.find((modality) => modality.id === schoolClass.modality_id)?.name ?? 'Modalidade não identificada'}</span><span className="text-white/30">·</span><span className="text-white/45">{UNIT_LABELS[schoolClass.unit]}</span></p>
 
                   <p className="flex items-center gap-1.5 text-xs text-white/55">
                     <MapPin className="h-3.5 w-3.5" aria-hidden="true" />

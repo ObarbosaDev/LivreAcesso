@@ -2,9 +2,13 @@ import { ArrowUpRight, Loader2, Search, SlidersHorizontal, Users } from 'lucide-
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { useAuth } from '@/app/providers/AuthProvider'
 import { listStudents } from '@/features/students/api'
+import { listModalities } from '@/features/classes/api'
 import type { Student, StudentStatus } from '@/entities/student/types'
 import { STUDENT_STATUS_LABELS } from '@/entities/student/types'
+import type { Modality, Unit } from '@/entities/class/types'
+import { UNIT_LABELS, UNITS } from '@/entities/class/types'
 import { ApiError, friendlyMessage } from '@/shared/api/problemDetails'
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
@@ -24,10 +28,15 @@ function formatDate(iso: string): string {
 export function StudentsPage() {
   usePageTitle('Estudantes')
   const navigate = useNavigate()
+  const { profile } = useAuth()
+  const canRegisterStudents = profile?.capabilities.includes('students:create') ?? false
 
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebouncedValue(query)
   const [status, setStatus] = useState<StudentStatus | ''>('')
+  const [unit, setUnit] = useState<Unit | ''>('')
+  const [modalityId, setModalityId] = useState('')
+  const [modalities, setModalities] = useState<Modality[]>([])
   const [page, setPage] = useState(1)
 
   const [data, setData] = useState<{ items: Student[]; total: number; totalPages: number } | null>(
@@ -36,13 +45,22 @@ export function StudentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    listModalities(true).then((result) => setModalities(result.items)).catch(() => {})
+  }, [])
+
   // Volta para a página 1 quando o filtro muda. Comparado durante a própria
   // renderização (o padrão oficial do React para "ajustar estado quando uma
   // prop muda"), em vez de um efeito, para não gastar um ciclo extra de
   // renderização só para resetar um número de página.
-  const [appliedFilters, setAppliedFilters] = useState({ debouncedQuery, status })
-  if (appliedFilters.debouncedQuery !== debouncedQuery || appliedFilters.status !== status) {
-    setAppliedFilters({ debouncedQuery, status })
+  const [appliedFilters, setAppliedFilters] = useState({ debouncedQuery, status, unit, modalityId })
+  if (
+    appliedFilters.debouncedQuery !== debouncedQuery ||
+    appliedFilters.status !== status ||
+    appliedFilters.unit !== unit ||
+    appliedFilters.modalityId !== modalityId
+  ) {
+    setAppliedFilters({ debouncedQuery, status, unit, modalityId })
     if (page !== 1) setPage(1)
   }
 
@@ -57,6 +75,8 @@ export function StudentsPage() {
 
     listStudents({
       status: status || undefined,
+      unit: unit || undefined,
+      modalityId: modalityId || undefined,
       query: debouncedQuery.trim().length >= 2 ? debouncedQuery.trim() : undefined,
       page,
       pageSize: PAGE_SIZE,
@@ -73,7 +93,7 @@ export function StudentsPage() {
       .finally(() => setLoading(false))
 
     return () => controller.abort()
-  }, [debouncedQuery, status, page])
+  }, [debouncedQuery, status, unit, modalityId, page])
 
   return (
     <PageFrame
@@ -81,12 +101,14 @@ export function StudentsPage() {
       title="Estudantes"
       description="Pessoas atendidas pelo instituto e seus responsáveis."
       actions={
-        <Link
-          to="/estudantes/novo"
-          className="group inline-flex h-11 items-center justify-center gap-2 border border-brand-green bg-brand-green px-5 text-sm font-semibold text-ink transition hover:bg-brand-green-soft"
-        >
-          Novo estudante <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
-        </Link>
+        canRegisterStudents && (
+          <Link
+            to="/estudantes/novo"
+            className="group inline-flex h-11 items-center justify-center gap-2 border border-brand-green bg-brand-green px-5 text-sm font-semibold text-ink transition hover:bg-brand-green-soft"
+          >
+            Novo estudante <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+          </Link>
+        )
       }
     >
       <div className="grid gap-3 sm:grid-cols-3">
@@ -126,6 +148,28 @@ export function StudentsPage() {
             ]}
           />
         </div>
+        <div className="sm:w-44">
+          <Select
+            label="Unidade"
+            value={unit}
+            onChange={(event) => setUnit(event.target.value as Unit | '')}
+            options={[
+              { value: '', label: 'Todas as unidades' },
+              ...UNITS.map((value) => ({ value, label: UNIT_LABELS[value] })),
+            ]}
+          />
+        </div>
+        <div className="sm:w-48">
+          <Select
+            label="Modalidade"
+            value={modalityId}
+            onChange={(event) => setModalityId(event.target.value)}
+            options={[
+              { value: '', label: 'Todas as modalidades' },
+              ...modalities.map((modality) => ({ value: modality.id, label: modality.name })),
+            ]}
+          />
+        </div>
         <div className="hidden items-center gap-2 pb-3 text-xs text-white/35 sm:flex"><SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Filtros aplicados automaticamente</div>
       </div>
 
@@ -146,14 +190,14 @@ export function StudentsPage() {
         {!loading && !error && data && data.items.length === 0 && (
           <EmptyState
             icon={Users}
-            title={debouncedQuery || status ? 'Nenhum estudante encontrado' : 'Ainda não há estudantes cadastrados'}
+            title={debouncedQuery || status || unit || modalityId ? 'Nenhum estudante encontrado' : 'Ainda não há estudantes cadastrados'}
             description={
-              debouncedQuery || status
+              debouncedQuery || status || unit || modalityId
                 ? 'Tente outro termo ou limpe o filtro para ver todos os estudantes.'
                 : 'Cadastre o primeiro estudante para começar a organizar turmas e presença.'
             }
             action={
-              !debouncedQuery && !status && (
+              !debouncedQuery && !status && !unit && !modalityId && canRegisterStudents && (
                 <Link
                   to="/estudantes/novo"
                   className="inline-flex items-center gap-2 border border-brand-green bg-brand-green px-4 py-2.5 text-sm font-semibold text-ink"
