@@ -393,6 +393,48 @@ def test_communication_worker_has_a_retry_ceiling() -> None:
     )
 
 
+def test_every_security_definer_function_checks_the_caller() -> None:
+    """Pega o padrao que escapou em producao: RPC security definer sem
+    nenhuma verificacao de quem chama. list_attendance_marks, list_waiting_list
+    e list_open_attendance_alerts ficaram sem checagem ate a migration
+    20261106000100; este guarda evita que o proximo modulo repita o erro.
+
+    A regra aceita qualquer evidencia de autorizacao real (helper
+    centralizado, checagem inline de papel via auth.uid(), ou restricao a
+    service_role para workers) em vez de exigir um unico padrao.
+    """
+
+    function_start_pattern = re.compile(
+        r"create (?:or replace )?function (public\.[a-z_]+)\s*\(", re.IGNORECASE
+    )
+    authorization_markers = ("has_any_role(", "auth.role()", "auth.uid()")
+
+    last_definition: dict[str, tuple[bool, str]] = {}
+    for migration in MIGRATIONS:
+        text = migration.read_text(encoding="utf-8")
+        for match in function_start_pattern.finditer(text):
+            name = match.group(1)
+            as_index = text.find("as $$", match.start())
+            if as_index == -1:
+                continue
+            end_index = text.find("$$;", as_index)
+            body = text[match.start() : end_index if end_index != -1 else match.start() + 5_000]
+            if "security definer" not in body.lower():
+                continue
+            has_authorization_check = any(marker in body for marker in authorization_markers)
+            last_definition[name] = (has_authorization_check, migration.name)
+
+    unchecked = [
+        f"{name} ({migration_name})"
+        for name, (ok, migration_name) in last_definition.items()
+        if not ok
+    ]
+    assert not unchecked, (
+        "Funcao(oes) security definer sem nenhuma verificacao de quem chama: "
+        + ", ".join(sorted(unchecked))
+    )
+
+
 def test_communication_queue_status_is_aggregated_and_private() -> None:
     migration = MIGRATIONS_DIR / "20261028002700_communication_queue_status.sql"
     sql = " ".join(migration.read_text(encoding="utf-8").lower().split())
