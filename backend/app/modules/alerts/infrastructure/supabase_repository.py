@@ -5,9 +5,17 @@ from uuid import UUID
 from pydantic import TypeAdapter, ValidationError
 
 from backend.app.modules.alerts.application.dtos import AlertInput, AlertOutput
-from backend.app.shared.application.exceptions import PersistenceUnavailableError
+from backend.app.shared.application.exceptions import (
+    PermissionDeniedError,
+    PersistenceRejectedError,
+    PersistenceUnavailableError,
+)
 from backend.app.shared.application.request_context import RequestContext
-from backend.app.shared.infrastructure.supabase_rpc import SupabaseRPCGateway
+from backend.app.shared.infrastructure.supabase_rpc import (
+    SupabaseRPCError,
+    SupabaseRPCGateway,
+    SupabaseTransportError,
+)
 
 
 class SupabaseAlertRepository:
@@ -16,14 +24,14 @@ class SupabaseAlertRepository:
         self.context = context
 
     async def list_open(self) -> tuple[AlertOutput, ...]:
-        result = await self.gateway.call("list_open_attendance_alerts", {}, self.context)
+        result = await self._call("list_open_attendance_alerts", {})
         try:
             return tuple(TypeAdapter(list[AlertOutput]).validate_python(result))
         except ValidationError as error:
             raise PersistenceUnavailableError from error
 
     async def upsert(self, payload: AlertInput) -> AlertOutput:
-        result = await self.gateway.call(
+        result = await self._call(
             "upsert_attendance_alert",
             {
                 "p_student_id": str(payload.student_id),
@@ -33,19 +41,30 @@ class SupabaseAlertRepository:
                 "p_detail": payload.detail,
                 "p_threshold": payload.threshold,
             },
-            self.context,
         )
-        try:
-            return AlertOutput.model_validate(result)
-        except ValidationError as error:
-            raise PersistenceUnavailableError from error
+        return self._parse(result)
 
     async def resolve(self, alert_id: UUID) -> AlertOutput:
-        result = await self.gateway.call(
+        result = await self._call(
             "resolve_attendance_alert",
             {"p_alert_id": str(alert_id)},
-            self.context,
         )
+        return self._parse(result)
+
+    async def _call(self, name: str, payload: dict[str, object]) -> object:
+        try:
+            return await self.gateway.call(name, payload, self.context)
+        except SupabaseTransportError as error:
+            raise PersistenceUnavailableError from error
+        except SupabaseRPCError as error:
+            if error.status_code == 403 or error.message_code == "alert_forbidden":
+                raise PermissionDeniedError from error
+            if error.status_code >= 500:
+                raise PersistenceUnavailableError from error
+            raise PersistenceRejectedError from error
+
+    @staticmethod
+    def _parse(result: object) -> AlertOutput:
         try:
             return AlertOutput.model_validate(result)
         except ValidationError as error:
