@@ -6,11 +6,6 @@ from uuid import uuid4
 import pytest
 
 from backend.app.modules.identity.domain.entities import Capability, UserProfile, UserRole
-from backend.app.modules.identity.domain.events import (
-    ProfileActivationChanged,
-    ProfileNameUpdated,
-    ProfileRoleChanged,
-)
 from backend.app.modules.identity.domain.exceptions import (
     InvalidAccessChangeReasonError,
     InvalidProfileDataError,
@@ -52,39 +47,30 @@ def test_inactive_profile_receives_no_capability() -> None:
     assert current.capabilities == ()
 
 
-def test_rename_emits_event_without_personal_name() -> None:
+def test_rename_changes_full_name() -> None:
     current = profile()
 
     assert current.rename("Novo Nome Operacional") is True
-    event = current.pull_events()[0]
-
-    assert isinstance(event, ProfileNameUpdated)
-    assert "Novo Nome Operacional" not in repr(event)
+    assert current.full_name == "Novo Nome Operacional"
+    assert current.rename("Novo Nome Operacional") is False
 
 
-def test_role_change_emits_only_role_transition() -> None:
+def test_role_change_updates_role() -> None:
     current = profile()
     protected_reason = reason()
 
     assert current.change_role(UserRole.RECEPTIONIST, protected_reason) is True
-    event = current.pull_events()[0]
-
-    assert isinstance(event, ProfileRoleChanged)
-    assert event.previous_role == "coordenador"
-    assert event.current_role == "recepcao"
-    assert protected_reason.value not in repr(event)
+    assert current.role is UserRole.RECEPTIONIST
+    assert current.change_role(UserRole.RECEPTIONIST, protected_reason) is False
 
 
-def test_activation_change_omits_reason_from_event() -> None:
+def test_activation_change_updates_active_flag() -> None:
     current = profile()
     protected_reason = reason()
 
     assert current.change_activation(False, protected_reason) is True
-    event = current.pull_events()[0]
-
-    assert isinstance(event, ProfileActivationChanged)
-    assert event.active is False
-    assert protected_reason.value not in repr(event)
+    assert current.active is False
+    assert current.change_activation(False, protected_reason) is False
 
 
 def test_pending_role_cannot_be_assigned_as_operational_role() -> None:

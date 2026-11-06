@@ -20,7 +20,6 @@ from backend.app.modules.identity.application.use_cases import (
     UpdateMyProfile,
 )
 from backend.app.modules.identity.domain.entities import Capability, UserProfile, UserRole
-from backend.app.modules.identity.domain.events import ProfileActivationChanged, ProfileRoleChanged
 from backend.app.modules.identity.domain.exceptions import (
     LastActiveCoordinatorError,
     ProfileVersionConflictError,
@@ -84,10 +83,6 @@ def test_coordinator_assigns_role_then_activates_profile() -> None:
     pending = profile("Novo Perfil", UserRole.PENDING, False)
     repository.seed(coordinator)
     repository.seed(pending)
-    role_events: list[ProfileRoleChanged] = []
-    activation_events: list[ProfileActivationChanged] = []
-    event_bus.subscribe(ProfileRoleChanged, role_events.append)
-    event_bus.subscribe(ProfileActivationChanged, activation_events.append)
 
     assigned = asyncio.run(
         ChangeProfileRole(repository, event_bus, coordinator.id).execute(
@@ -115,8 +110,6 @@ def test_coordinator_assigns_role_then_activates_profile() -> None:
     assert assigned.active is False
     assert activated.active is True
     assert Capability.STUDENTS_CREATE in activated.capabilities
-    assert len(role_events) == 1
-    assert len(activation_events) == 1
 
 
 def test_last_coordinator_protection_reaches_use_case() -> None:

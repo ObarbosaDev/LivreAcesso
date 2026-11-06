@@ -5,11 +5,6 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from backend.app.modules.identity.domain.events import (
-    ProfileActivationChanged,
-    ProfileNameUpdated,
-    ProfileRoleChanged,
-)
 from backend.app.modules.identity.domain.exceptions import (
     InvalidProfileDataError,
     InvalidProfileRoleError,
@@ -115,7 +110,6 @@ class UserProfile:
         if normalized == self.full_name:
             return False
         self.full_name = normalized
-        self._events.append(ProfileNameUpdated(profile_id=self.id))
         return True
 
     def change_role(self, target_role: UserRole, reason: AccessChangeReason) -> bool:
@@ -124,18 +118,9 @@ class UserProfile:
         if target_role is self.role:
             return False
 
-        previous_role = self.role
         self.role = target_role
         # O motivo segue somente para o histórico privado no repositório.
-        # O evento carrega a transição mínima para projeções futuras.
         del reason
-        self._events.append(
-            ProfileRoleChanged(
-                profile_id=self.id,
-                previous_role=previous_role.value,
-                current_role=target_role.value,
-            )
-        )
         return True
 
     def change_activation(self, active: bool, reason: AccessChangeReason) -> bool:
@@ -146,7 +131,6 @@ class UserProfile:
 
         self.active = active
         del reason
-        self._events.append(ProfileActivationChanged(profile_id=self.id, active=active))
         return True
 
     def mark_persisted(self, updated_at: datetime) -> None:
