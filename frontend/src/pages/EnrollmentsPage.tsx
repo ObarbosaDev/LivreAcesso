@@ -4,7 +4,7 @@ import type { FormEvent } from 'react'
 
 import { getClassOccupancy, listClasses } from '@/features/classes/api'
 import { changeEnrollmentStatus, createEnrollment, listEnrollments } from '@/features/enrollments/api'
-import { getStudentSummary, listStudents } from '@/features/students/api'
+import { getStudentNames, listStudents } from '@/features/students/api'
 import type { SchoolClass } from '@/entities/class/types'
 import { ENROLLMENT_STATUS_LABELS } from '@/entities/enrollment/types'
 import type { Enrollment } from '@/entities/enrollment/types'
@@ -70,13 +70,12 @@ export function EnrollmentsPage() {
       .then(([enrollmentPage, occ]) => {
         setEnrollments(enrollmentPage.items)
         setOccupancy({ capacity: occ.capacity, enrolled: occ.enrolled })
-        Promise.all(
-          enrollmentPage.items.map((enrollment) =>
-            getStudentSummary(enrollment.student_id, controller.signal)
-              .then((student) => [enrollment.student_id, student.full_name] as const)
-              .catch(() => [enrollment.student_id, 'Estudante não encontrado'] as const),
-          ),
-        ).then((pairs) => setStudentNames(Object.fromEntries(pairs)))
+        getStudentNames(
+          enrollmentPage.items.map((enrollment) => enrollment.student_id),
+          controller.signal,
+        )
+          .then((result) => setStudentNames(result.names))
+          .catch(() => {})
       })
       .catch((caught: unknown) => {
         if ((caught as Error)?.name !== 'AbortError') setError(friendlyMessage(caught))
@@ -112,14 +111,10 @@ export function EnrollmentsPage() {
     ])
     setEnrollments(enrollmentPage.items)
     setOccupancy({ capacity: occ.capacity, enrolled: occ.enrolled })
-    const pairs = await Promise.all(
-      enrollmentPage.items.map((enrollment) =>
-        getStudentSummary(enrollment.student_id)
-          .then((student) => [enrollment.student_id, student.full_name] as const)
-          .catch(() => [enrollment.student_id, 'Estudante não encontrado'] as const),
-      ),
-    )
-    setStudentNames(Object.fromEntries(pairs))
+    const result = await getStudentNames(
+      enrollmentPage.items.map((enrollment) => enrollment.student_id),
+    ).catch(() => ({ names: {} as Record<string, string> }))
+    setStudentNames(result.names)
   }
 
   async function handleAdd(studentId: string) {

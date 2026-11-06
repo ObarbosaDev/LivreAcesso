@@ -21,10 +21,10 @@ vi.mock('@/features/enrollments/api', () => ({
 }))
 
 const listStudentsMock = vi.fn()
-const getStudentSummaryMock = vi.fn()
+const getStudentNamesMock = vi.fn()
 vi.mock('@/features/students/api', () => ({
   listStudents: (...args: unknown[]) => listStudentsMock(...args),
-  getStudentSummary: (...args: unknown[]) => getStudentSummaryMock(...args),
+  getStudentNames: (...args: unknown[]) => getStudentNamesMock(...args),
 }))
 
 const schoolClass = {
@@ -71,7 +71,7 @@ function setupBaseMocks() {
     enrolled: 1,
     available: 19,
   })
-  getStudentSummaryMock.mockResolvedValue(student)
+  getStudentNamesMock.mockResolvedValue({ names: { 'student-1': student.full_name } })
 }
 
 describe('EnrollmentsPage', () => {
