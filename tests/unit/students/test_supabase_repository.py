@@ -39,6 +39,7 @@ from backend.app.shared.application.exceptions import (
     PersistenceUnavailableError,
 )
 from backend.app.shared.application.request_context import RequestContext
+from backend.app.shared.domain.institute import Unit
 from backend.app.shared.infrastructure.supabase_rpc import SupabaseRPCGateway
 
 _PROJECT_URL = "https://project-ref.supabase.co"
@@ -130,6 +131,27 @@ def test_search_maps_only_masked_projection() -> None:
         assert result.items[0].guardian_phone_masked == "(61) *****-1234"
 
     asyncio.run(search())
+
+
+def test_search_sends_unit_and_modality_filters() -> None:
+    captured_payload: dict[str, object] = {}
+    modality_id = UUID("00000000-0000-4000-8000-000000000099")
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        captured_payload.update(json.loads(request.content))
+        return httpx2.Response(200, json={"items": [], "total": 0})
+
+    async def search() -> None:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
+            await SupabaseStudentRepository(gateway, context()).search(
+                StudentSearchCriteria(unit=Unit.AGUA_QUENTE, modality_id=modality_id)
+            )
+
+    asyncio.run(search())
+
+    assert captured_payload["p_unit"] == "agua_quente"
+    assert captured_payload["p_modality_id"] == str(modality_id)
 
 
 @pytest.mark.parametrize(

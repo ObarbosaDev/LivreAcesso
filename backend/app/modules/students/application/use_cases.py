@@ -39,6 +39,7 @@ from backend.app.modules.students.domain.value_objects import (
     StatusChangeReason,
 )
 from backend.app.shared.application.event_bus import EventPublisher
+from backend.app.shared.domain.institute import Unit
 
 
 def _publish_pending_events(student: Student, publisher: EventPublisher) -> None:
@@ -155,12 +156,16 @@ class ListStudents:
         self,
         *,
         status: StudentStatus | None = None,
+        unit: Unit | None = None,
+        modality_id: UUID | None = None,
         query: str | None = None,
         page: int = 1,
         page_size: int = 25,
     ) -> StudentPageOutput:
         criteria = StudentSearchCriteria(
             status=status,
+            unit=unit,
+            modality_id=modality_id,
             query=query,
             offset=(page - 1) * page_size,
             limit=page_size,

@@ -331,6 +331,10 @@ class SupabaseStudentRepository:
         )
         payload: dict[str, object] = {
             "p_status": database_status.value if database_status else None,
+            "p_unit": criteria.unit.value if criteria.unit is not None else None,
+            "p_modality_id": (
+                str(criteria.modality_id) if criteria.modality_id is not None else None
+            ),
             "p_query": criteria.query,
             "p_limit": criteria.limit,
             "p_offset": criteria.offset,

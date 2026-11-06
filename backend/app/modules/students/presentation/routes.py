@@ -24,6 +24,7 @@ from backend.app.modules.students.application.dtos import (
 )
 from backend.app.modules.students.domain.entities import StudentStatus
 from backend.app.shared.application.request_context import RequestContext
+from backend.app.shared.domain.institute import Unit
 from backend.app.shared.presentation.problem_details import ProblemDetail
 
 _PROBLEM_RESPONSE = {"model": ProblemDetail}
@@ -66,6 +67,14 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
     async def list_students(
         context: Annotated[RequestContext, Depends(require_request_context)],
         student_status: Annotated[StudentStatus | None, Query(alias="status")] = None,
+        unit: Annotated[
+            Unit | None,
+            Query(description="Filtra por unidade via turma com matrícula ativa."),
+        ] = None,
+        modality_id: Annotated[
+            UUID | None,
+            Query(description="Filtra por modalidade via turma com matrícula ativa."),
+        ] = None,
         query: Annotated[
             str | None,
             Query(
@@ -84,6 +93,8 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
         services = container.students_for(context)
         return await services.list_students.execute(
             status=student_status,
+            unit=unit,
+            modality_id=modality_id,
             query=query,
             page=page,
             page_size=page_size,

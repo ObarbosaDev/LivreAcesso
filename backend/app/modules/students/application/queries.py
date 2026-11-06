@@ -6,6 +6,7 @@ from typing import Protocol
 from uuid import UUID
 
 from backend.app.modules.students.domain.entities import GuardianRelationship, StudentStatus
+from backend.app.shared.domain.institute import Unit
 
 
 @dataclass(frozen=True, slots=True)
@@ -13,6 +14,12 @@ class StudentSearchCriteria:
     """Critérios limitados para evitar consultas sem paginação."""
 
     status: StudentStatus | None = None
+    # Escopo via matrícula ativa numa turma da unidade/modalidade. O
+    # adaptador em memória ignora estes dois campos (não conhece turmas);
+    # só o adaptador Supabase, com acesso direto às tabelas relacionadas,
+    # consegue aplicá-los de verdade.
+    unit: Unit | None = None
+    modality_id: UUID | None = None
     query: str | None = None
     offset: int = 0
     limit: int = 25
