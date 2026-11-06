@@ -23,6 +23,14 @@ from backend.app.shared.infrastructure.supabase_rpc import (
 )
 
 
+def _agenda_event_payload(payload: AgendaEventInput) -> dict[str, object]:
+    # Os nomes de parâmetro no Postgres levam o prefixo p_; model_dump() sozinho
+    # devolve os nomes dos campos do DTO, que o PostgREST rejeita por não bater
+    # com nenhuma assinatura de função.
+    body = payload.model_dump(mode="json")
+    return {f"p_{key}": value for key, value in body.items()}
+
+
 class SupabaseAgendaRepository(AgendaRepository):
     def __init__(self, gateway: SupabaseRPCGateway) -> None:
         self.gateway = gateway
@@ -51,8 +59,10 @@ class SupabaseAgendaRepository(AgendaRepository):
             raise PersistenceUnavailableError from error
 
     async def create(self, payload: AgendaEventInput, context: RequestContext) -> AgendaEventOutput:
-        body = payload.model_dump(mode="json")
-        body.update({"p_request_id": str(context.request_id)})
+        body = {
+            **_agenda_event_payload(payload),
+            "p_request_id": str(context.request_id),
+        }
         result = await self._call("create_agenda_event", body, context)
         try:
             return AgendaEventOutput.model_validate(result)
@@ -66,14 +76,12 @@ class SupabaseAgendaRepository(AgendaRepository):
         payload: AgendaEventInput,
         context: RequestContext,
     ) -> AgendaEventOutput:
-        body = payload.model_dump(mode="json")
-        body.update(
-            {
-                "p_event_id": str(event_id),
-                "p_expected_updated_at": expected_updated_at.isoformat(),
-                "p_request_id": str(context.request_id),
-            }
-        )
+        body = {
+            "p_event_id": str(event_id),
+            "p_expected_updated_at": expected_updated_at.isoformat(),
+            **_agenda_event_payload(payload),
+            "p_request_id": str(context.request_id),
+        }
         result = await self._call("update_agenda_event", body, context)
         try:
             return AgendaEventOutput.model_validate(result)
