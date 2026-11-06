@@ -6,14 +6,6 @@ from enum import StrEnum
 from itertools import pairwise
 from uuid import UUID, uuid4
 
-from backend.app.modules.classes.domain.events import (
-    ClassActivationChanged,
-    ClassCreated,
-    ClassUpdated,
-    ModalityActivationChanged,
-    ModalityCreated,
-    ModalityUpdated,
-)
 from backend.app.modules.classes.domain.exceptions import (
     InvalidCapacityError,
     InvalidClassDataError,
@@ -133,7 +125,6 @@ class Modality:
             created_at=now,
             updated_at=now,
         )
-        modality._events.append(ModalityCreated(modality_id=modality.id))
         return modality
 
     def update(self, *, name: str, description: str | None) -> tuple[str, ...]:
@@ -152,17 +143,13 @@ class Modality:
         if self.description != candidate.description:
             self.description = candidate.description
             changed.append("description")
-        result = tuple(changed)
-        if result:
-            self._events.append(ModalityUpdated(modality_id=self.id, changed_fields=result))
-        return result
+        return tuple(changed)
 
     def change_activation(self, active: bool, reason: ClassChangeReason) -> bool:
         if self.active is active:
             return False
         self.active = active
         del reason
-        self._events.append(ModalityActivationChanged(modality_id=self.id, active=active))
         return True
 
     def mark_created(self, created_at: datetime, updated_at: datetime) -> None:
@@ -259,7 +246,6 @@ class ClassGroup:
             created_at=now,
             updated_at=now,
         )
-        group._events.append(ClassCreated(class_id=group.id, modality_id=modality_id))
         return group
 
     def update(
@@ -302,10 +288,7 @@ class ClassGroup:
             if getattr(self, field_name) != getattr(candidate, field_name):
                 setattr(self, field_name, getattr(candidate, field_name))
                 changed.append(field_name)
-        result = tuple(changed)
-        if result:
-            self._events.append(ClassUpdated(class_id=self.id, changed_fields=result))
-        return result
+        return tuple(changed)
 
     def change_activation(self, active: bool, reason: ClassChangeReason) -> bool:
         if self.active is active:
@@ -314,7 +297,6 @@ class ClassGroup:
         # nunca pode ser reativada parcialmente configurada.
         self.active = active
         del reason
-        self._events.append(ClassActivationChanged(class_id=self.id, active=active))
         return True
 
     def mark_created(self, created_at: datetime, updated_at: datetime) -> None:

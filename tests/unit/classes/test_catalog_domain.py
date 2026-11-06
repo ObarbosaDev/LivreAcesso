@@ -12,13 +12,6 @@ from backend.app.modules.classes.domain.entities import (
     Modality,
     Weekday,
 )
-from backend.app.modules.classes.domain.events import (
-    ClassActivationChanged,
-    ClassUpdated,
-    ModalityActivationChanged,
-    ModalityCreated,
-    ModalityUpdated,
-)
 from backend.app.modules.classes.domain.exceptions import (
     InvalidCapacityError,
     InvalidClassDataError,
@@ -52,15 +45,11 @@ def group() -> ClassGroup:
     )
 
 
-def test_modality_normalizes_text_and_emits_identifier_only() -> None:
+def test_modality_normalizes_text() -> None:
     modality = Modality.create(name="  Capoeira   Infantil ", description="  Movimento  e ritmo ")
-
-    event = modality.pull_events()[0]
 
     assert modality.name == "Capoeira Infantil"
     assert modality.description == "Movimento e ritmo"
-    assert isinstance(event, ModalityCreated)
-    assert "Capoeira" not in repr(event)
 
 
 def test_class_orders_schedules_and_rejects_overlap() -> None:
@@ -127,7 +116,6 @@ def test_class_rejects_capacity_age_and_duplicate_instructor() -> None:
 
 def test_class_update_reports_fields_without_values() -> None:
     current = group()
-    current.pull_events()
 
     changed = current.update(
         modality_id=current.modality_id,
@@ -139,12 +127,8 @@ def test_class_update_reports_fields_without_values() -> None:
         schedules=current.schedules,
         instructors=current.instructors,
     )
-    event = current.pull_events()[0]
 
     assert changed == ("capacity", "location")
-    assert isinstance(event, ClassUpdated)
-    assert event.changed_fields == changed
-    assert "Sala 3" not in repr(event)
 
 
 def test_catalog_timestamps_require_timezone() -> None:
@@ -213,20 +197,15 @@ def test_schedule_and_instructor_value_objects_reject_invalid_data() -> None:
         )
 
 
-def test_catalog_activation_and_persistence_events_are_consumed() -> None:
+def test_catalog_activation_is_idempotent() -> None:
     modality = Modality.create(name="Teatro", description=None)
-    assert modality.pull_events()
     assert modality.update(name="Teatro", description="Expressão") == ("description",)
-    assert isinstance(modality.pull_events()[0], ModalityUpdated)
     reason = ClassChangeReason("Atualização confirmada pela coordenação")
     assert modality.change_activation(False, reason) is True
-    assert isinstance(modality.pull_events()[0], ModalityActivationChanged)
     assert modality.change_activation(False, reason) is False
 
     current = group()
-    current.pull_events()
     assert current.change_activation(False, reason) is True
-    assert isinstance(current.pull_events()[0], ClassActivationChanged)
     assert current.change_activation(False, reason) is False
     current.mark_created(datetime.now(UTC), datetime.now(UTC))
     current.mark_persisted(datetime.now(UTC))
