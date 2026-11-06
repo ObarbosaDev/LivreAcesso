@@ -401,11 +401,21 @@ def test_every_security_definer_function_checks_the_caller() -> None:
 
     A regra aceita qualquer evidencia de autorizacao real (helper
     centralizado, checagem inline de papel via auth.uid(), ou restricao a
-    service_role para workers) em vez de exigir um unico padrao.
+    service_role para workers) em vez de exigir um unico padrao. Comentarios
+    de linha sao removidos antes de procurar o marcador, para um `--` de
+    explicacao nao contar como se fosse a checagem.
     """
 
+    # register_student_with_guardian_v2 nao verifica papel no proprio corpo:
+    # ele delega para register_student_with_guardian, que ja checa. Nao
+    # exigimos marcador redundante, so deixamos a excecao explicita e nomeada
+    # em vez de a funcao escapar silenciosamente do regex como antes.
+    delegates_authorization_to = {
+        "public.register_student_with_guardian_v2": "public.register_student_with_guardian",
+    }
+
     function_start_pattern = re.compile(
-        r"create (?:or replace )?function (public\.[a-z_]+)\s*\(", re.IGNORECASE
+        r"create (?:or replace )?function (public\.[a-z0-9_]+)\s*\(", re.IGNORECASE
     )
     authorization_markers = ("has_any_role(", "auth.role()", "auth.uid()")
 
@@ -418,11 +428,18 @@ def test_every_security_definer_function_checks_the_caller() -> None:
             if as_index == -1:
                 continue
             end_index = text.find("$$;", as_index)
-            body = text[match.start() : end_index if end_index != -1 else match.start() + 5_000]
-            if "security definer" not in body.lower():
-                continue
-            has_authorization_check = any(marker in body for marker in authorization_markers)
-            last_definition[name] = (has_authorization_check, migration.name)
+            raw_body = text[match.start() : end_index if end_index != -1 else match.start() + 5_000]
+            is_definer = "security definer" in raw_body.lower()
+            body = re.sub(r"--[^\n]*", "", raw_body)
+            has_authorization_check = (
+                any(marker in body for marker in authorization_markers)
+                or name in delegates_authorization_to
+            )
+            # Toda definicao atualiza a entrada, nao so as "security definer":
+            # se um modulo futuro corrigir uma funcao trocando para
+            # "security invoker", a entrada antiga marcada como insegura nao
+            # pode continuar presa aqui.
+            last_definition[name] = (not is_definer or has_authorization_check, migration.name)
 
     unchecked = [
         f"{name} ({migration_name})"
