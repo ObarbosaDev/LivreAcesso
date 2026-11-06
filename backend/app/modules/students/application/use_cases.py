@@ -12,6 +12,7 @@ from backend.app.modules.students.application.dtos import (
     StudentGuardianDetailOutput,
     StudentGuardianListOutput,
     StudentGuardianUnlinkOutput,
+    StudentNamesOutput,
     StudentOutput,
     StudentPageOutput,
     UnlinkStudentGuardianInput,
@@ -81,6 +82,17 @@ class GetStudent:
         if student is None:
             raise StudentNotFoundError
         return StudentMapper.to_detail_output(student)
+
+
+@dataclass(slots=True)
+class GetStudentNames:
+    """Nomes para listas vinculadas (ex.: matrícula); nunca CPF nem contato."""
+
+    repository: StudentRepository
+
+    async def execute(self, student_ids: list[UUID]) -> StudentNamesOutput:
+        names = await self.repository.get_names(student_ids)
+        return StudentNamesOutput(names=names)
 
 
 @dataclass(slots=True)

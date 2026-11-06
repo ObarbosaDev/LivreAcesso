@@ -16,6 +16,7 @@ from backend.app.modules.students.application.dtos import (
     StudentGuardianDetailOutput,
     StudentGuardianListOutput,
     StudentGuardianUnlinkOutput,
+    StudentNamesOutput,
     StudentOutput,
     StudentPageOutput,
     UnlinkStudentGuardianInput,
@@ -99,6 +100,26 @@ def build_students_router(container: ApplicationContainer) -> APIRouter:
             page=page,
             page_size=page_size,
         )
+
+    @router.get(
+        "/names",
+        response_model=StudentNamesOutput,
+        summary="Resolver nomes de alunos por id",
+        description=(
+            "Devolve só o nome de cada id, sem CPF nem contato do responsável. "
+            "Pensada para listas que já conhecem o id (ex.: matrícula) e precisam "
+            "exibir o nome sem o detalhe sensível do cadastro completo."
+        ),
+    )
+    async def get_student_names(
+        context: Annotated[RequestContext, Depends(require_request_context)],
+        student_id: Annotated[
+            list[UUID],
+            Query(alias="student_id", description="Repita o parâmetro para cada id."),
+        ],
+    ) -> StudentNamesOutput:
+        services = container.students_for(context)
+        return await services.get_student_names.execute(student_id)
 
     @router.get(
         "/{student_id}/guardians",

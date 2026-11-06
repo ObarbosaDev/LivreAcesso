@@ -2,18 +2,23 @@
 
 import asyncio
 from datetime import date
+from uuid import UUID, uuid4
 
 import pytest
 
 from backend.app.modules.students.application.dtos import GuardianInput, RegisterStudentInput
 from backend.app.modules.students.application.queries import StudentSearchCriteria
-from backend.app.modules.students.application.use_cases import ListStudents, RegisterStudent
+from backend.app.modules.students.application.use_cases import (
+    GetStudentNames,
+    ListStudents,
+    RegisterStudent,
+)
 from backend.app.modules.students.infrastructure.repositories import InMemoryStudentRepository
 from backend.app.shared.application.event_bus import EventBus
 
 
-def register(repository: InMemoryStudentRepository, *, name: str, cpf: str) -> None:
-    asyncio.run(
+def register(repository: InMemoryStudentRepository, *, name: str, cpf: str) -> UUID:
+    output = asyncio.run(
         RegisterStudent(repository, EventBus()).execute(
             RegisterStudentInput(
                 full_name=name,
@@ -26,6 +31,7 @@ def register(repository: InMemoryStudentRepository, *, name: str, cpf: str) -> N
             )
         )
     )
+    return output.id
 
 
 def test_search_ignores_case_and_accents() -> None:
@@ -62,3 +68,12 @@ def test_page_metadata_describes_navigation() -> None:
 def test_repository_rejects_unbounded_pagination(offset: int, limit: int) -> None:
     with pytest.raises(ValueError):
         StudentSearchCriteria(offset=offset, limit=limit)
+
+
+def test_get_student_names_resolves_only_known_ids() -> None:
+    repository = InMemoryStudentRepository()
+    joao_id = register(repository, name="João da Silva", cpf="52998224725")
+
+    result = asyncio.run(GetStudentNames(repository).execute([joao_id, uuid4()]))
+
+    assert result.names == {joao_id: "João da Silva"}

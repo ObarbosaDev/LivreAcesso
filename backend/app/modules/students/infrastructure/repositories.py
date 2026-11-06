@@ -135,6 +135,14 @@ class InMemoryStudentRepository:
             # irmãos vinculados ao mesmo contato sempre observam a última versão.
             return self._hydrate_primary_guardian(student)
 
+    async def get_names(self, student_ids: list[UUID]) -> dict[UUID, str]:
+        with self._lock:
+            return {
+                student_id: self._students[student_id].full_name
+                for student_id in student_ids
+                if student_id in self._students
+            }
+
     async def update(
         self,
         student: Student,

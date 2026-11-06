@@ -154,6 +154,37 @@ def test_search_sends_unit_and_modality_filters() -> None:
     assert captured_payload["p_modality_id"] == str(modality_id)
 
 
+def test_get_names_sends_ids_and_parses_jsonb_object() -> None:
+    student_id = UUID("00000000-0000-4000-8000-000000000020")
+    captured_payload: dict[str, object] = {}
+
+    def respond(request: httpx2.Request) -> httpx2.Response:
+        captured_payload.update(json.loads(request.content))
+        return httpx2.Response(200, json={str(student_id): "Sophia Almeida Ramos"})
+
+    async def get_names() -> dict[UUID, str]:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
+            return await SupabaseStudentRepository(gateway, context()).get_names([student_id])
+
+    names = asyncio.run(get_names())
+
+    assert captured_payload["p_student_ids"] == [str(student_id)]
+    assert names == {student_id: "Sophia Almeida Ramos"}
+
+
+def test_get_names_with_empty_ids_skips_the_request() -> None:
+    def respond(_request: httpx2.Request) -> httpx2.Response:
+        raise AssertionError("Não deveria chamar a RPC sem ids.")
+
+    async def get_names() -> dict[UUID, str]:
+        async with httpx2.AsyncClient(transport=httpx2.MockTransport(respond)) as client:
+            gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
+            return await SupabaseStudentRepository(gateway, context()).get_names([])
+
+    assert asyncio.run(get_names()) == {}
+
+
 @pytest.mark.parametrize(
     ("status_code", "body", "expected_error"),
     [

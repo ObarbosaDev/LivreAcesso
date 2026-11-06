@@ -226,3 +226,9 @@ class StudentGuardianUnlinkOutput(DTO):
     student_id: UUID
     guardian_id: UUID
     student_updated_at: datetime
+
+
+class StudentNamesOutput(DTO):
+    """Só o nome, sem CPF nem contato do responsável; ids inexistentes são omitidos."""
+
+    names: dict[UUID, str]

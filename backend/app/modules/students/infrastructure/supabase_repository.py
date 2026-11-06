@@ -277,6 +277,19 @@ class SupabaseStudentRepository:
             # Qualquer divergência do banco vira indisponibilidade, não dado parcial.
             raise PersistenceUnavailableError from error
 
+    async def get_names(self, student_ids: list[UUID]) -> dict[UUID, str]:
+        if not student_ids:
+            return {}
+        result = await self._call(
+            "get_student_names",
+            {"p_student_ids": [str(student_id) for student_id in student_ids]},
+        )
+        try:
+            raw_names = TypeAdapter(dict[str, str]).validate_python(result)
+        except ValidationError as error:
+            raise PersistenceUnavailableError from error
+        return {UUID(key): value for key, value in raw_names.items()}
+
     async def update(
         self,
         student: Student,

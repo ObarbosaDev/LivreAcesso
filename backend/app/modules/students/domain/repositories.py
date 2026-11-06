@@ -73,6 +73,8 @@ class StudentRepository(Protocol):
         expected_updated_at: datetime,
     ) -> datetime: ...
 
+    async def get_names(self, student_ids: list[UUID]) -> dict[UUID, str]: ...
+
 
 class StudentGuardianRepository(Protocol):
     """Porta transacional para contatos vinculados ao cadastro do aluno."""

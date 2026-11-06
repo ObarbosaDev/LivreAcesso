@@ -90,6 +90,7 @@ from backend.app.modules.students.application.use_cases import (
     ChangeStudentStatus,
     GetStudent,
     GetStudentGuardian,
+    GetStudentNames,
     ListStudentGuardians,
     ListStudents,
     RegisterStudent,
@@ -149,6 +150,7 @@ class StudentServices:
 
     register_student: RegisterStudent
     get_student: GetStudent
+    get_student_names: GetStudentNames
     update_student: UpdateStudent
     activate_student: ChangeStudentStatus
     deactivate_student: ChangeStudentStatus
@@ -384,6 +386,7 @@ class ApplicationContainer:
         return StudentServices(
             register_student=RegisterStudent(store, self.event_bus),
             get_student=GetStudent(store),
+            get_student_names=GetStudentNames(store),
             update_student=UpdateStudent(store, self.event_bus),
             activate_student=ChangeStudentStatus(
                 store,
