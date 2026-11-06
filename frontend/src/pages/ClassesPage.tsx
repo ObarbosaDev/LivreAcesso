@@ -13,6 +13,7 @@ import { OccupancyBar } from '@/shared/ui/OccupancyBar'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { MetricCard } from '@/shared/ui/MetricCard'
 import { PageFrame } from '@/shared/ui/PageFrame'
+import { Select } from '@/shared/ui/Select'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 
 const PAGE_SIZE = 25
@@ -90,7 +91,15 @@ export function ClassesPage() {
         onChange={(event) => setQuery(event.target.value)}
         icon={<Search className="h-4 w-4" aria-hidden="true" />}
         className="max-w-md"
-      /><label className="text-xs font-medium text-white/55">Modalidade<select value={modalityId} onChange={(event) => { setModalityId(event.target.value); setPage(1) }} className="mt-2 w-full border border-white/15 bg-black px-3 py-3 text-sm text-white"><option value="">Todas as modalidades</option>{modalities.map((modality) => <option key={modality.id} value={modality.id}>{modality.name}</option>)}</select></label></div>
+      /><Select
+        label="Modalidade"
+        value={modalityId}
+        onChange={(event) => { setModalityId(event.target.value); setPage(1) }}
+        options={[
+          { value: '', label: 'Todas as modalidades' },
+          ...modalities.map((modality) => ({ value: modality.id, label: modality.name })),
+        ]}
+      /></div>
 
       <div className="mt-6">
         {loading && !data && (

@@ -19,6 +19,7 @@ import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { EmptyState } from '@/shared/ui/EmptyState'
 import { MetricCard } from '@/shared/ui/MetricCard'
 import { PageFrame } from '@/shared/ui/PageFrame'
+import { Select } from '@/shared/ui/Select'
 
 /**
  * Matrícula é escopada por turma: a API não devolve nome de aluno nem de
@@ -159,25 +160,16 @@ export function EnrollmentsPage() {
       <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turma selecionada" value={selectedClass?.name ?? '—'} icon={ClipboardList} /><MetricCard label="Vagas ocupadas" value={occupancy?.enrolled ?? '—'} icon={UsersRound} tone="blue" /><MetricCard label="Capacidade" value={occupancy?.capacity ?? '—'} icon={UsersRound} tone="amber" /></div>
 
       <div className="liquid-glass mt-6 border-t-2 border-t-brand-green/50 p-4 sm:p-5">
-        <label htmlFor="class-select" className="text-sm font-medium text-white">
-          Turma
-        </label>
-        <select
-          id="class-select"
+        <Select
+          label="Turma"
           value={selectedClassId}
           onChange={(event) => setSelectedClassId(event.target.value)}
           disabled={!classes}
-          className="mt-2 h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition focus:border-brand-green focus:bg-white/8 focus:ring-4 focus:ring-brand-green/15"
-        >
-          <option value="" className="bg-surface">
-            {classes ? 'Selecione uma turma' : 'Carregando turmas…'}
-          </option>
-          {classes?.map((schoolClass) => (
-            <option key={schoolClass.id} value={schoolClass.id} className="bg-surface">
-              {schoolClass.name}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: classes ? 'Selecione uma turma' : 'Carregando turmas…' },
+            ...(classes?.map((schoolClass) => ({ value: schoolClass.id, label: schoolClass.name })) ?? []),
+          ]}
+        />
       </div>
 
       {!selectedClassId && classes && classes.length === 0 && (

@@ -13,6 +13,7 @@ import { usePageTitle } from '@/shared/lib/usePageTitle'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { PageFrame } from '@/shared/ui/PageFrame'
+import { Select } from '@/shared/ui/Select'
 
 export function NewClassPage() {
   usePageTitle('Nova turma')
@@ -122,28 +123,17 @@ export function NewClassPage() {
       <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-8">
         <fieldset className="liquid-glass flex flex-col gap-4 rounded-2xl p-6">
           <legend className="px-1 font-display text-sm font-semibold text-white">Modalidade</legend>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="modality" className="text-sm font-medium text-white">
-              Escolher existente
-            </label>
-            <select
-              id="modality"
-              value={modalityId}
-              onChange={(event) => setModalityId(event.target.value)}
-              className="h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition focus:border-brand-green focus:bg-white/8 focus:ring-4 focus:ring-brand-green/15"
-            >
-              {modalities.length === 0 && (
-                <option value="" className="bg-surface">
-                  Nenhuma modalidade ainda
-                </option>
-              )}
-              {modalities.map((modality) => (
-                <option key={modality.id} value={modality.id} className="bg-surface">
-                  {modality.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Escolher existente"
+            id="modality"
+            value={modalityId}
+            onChange={(event) => setModalityId(event.target.value)}
+            options={
+              modalities.length === 0
+                ? [{ value: '', label: 'Nenhuma modalidade ainda' }]
+                : modalities.map((modality) => ({ value: modality.id, label: modality.name }))
+            }
+          />
           <div className="flex items-end gap-2">
             <Input
               label="Ou criar uma nova"
@@ -196,23 +186,13 @@ export function NewClassPage() {
         <fieldset className="liquid-glass flex flex-col gap-4 rounded-2xl p-6">
           <legend className="px-1 font-display text-sm font-semibold text-white">Horário</legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="flex flex-col gap-2">
-              <label htmlFor="weekday" className="text-sm font-medium text-white">
-                Dia
-              </label>
-              <select
-                id="weekday"
-                value={weekday}
-                onChange={(event) => setWeekday(event.target.value as Weekday)}
-                className="h-12 rounded-xl border border-white/10 bg-white/5 px-3 text-white outline-none transition focus:border-brand-green"
-              >
-                {WEEKDAYS.map((value) => (
-                  <option key={value} value={value} className="bg-surface">
-                    {WEEKDAY_LABELS[value]}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Dia"
+              id="weekday"
+              value={weekday}
+              onChange={(event) => setWeekday(event.target.value as Weekday)}
+              options={WEEKDAYS.map((value) => ({ value, label: WEEKDAY_LABELS[value] }))}
+            />
             <Input
               label="Início"
               type="time"

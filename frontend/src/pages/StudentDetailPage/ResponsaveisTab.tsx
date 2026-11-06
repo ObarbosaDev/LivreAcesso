@@ -9,6 +9,7 @@ import { GUARDIAN_RELATIONSHIPS, GUARDIAN_RELATIONSHIP_LABELS } from '@/entities
 import { friendlyMessage } from '@/shared/api/problemDetails'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
+import { Select } from '@/shared/ui/Select'
 
 export function ResponsaveisTab({ student }: { student: StudentDetail }) {
   const [guardians, setGuardians] = useState<GuardianListItem[] | null>(null)
@@ -242,25 +243,18 @@ function AddGuardianForm({
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
-      <div className="flex flex-col gap-2">
-        <label htmlFor="relationship" className="text-sm font-medium text-white">
-          Parentesco
-        </label>
-        <select
-          id="relationship"
-          value={relationship}
-          onChange={(event) =>
-            setRelationship(event.target.value as (typeof GUARDIAN_RELATIONSHIPS)[number])
-          }
-          className="h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition focus:border-brand-green focus:bg-white/8 focus:ring-4 focus:ring-brand-green/15"
-        >
-          {GUARDIAN_RELATIONSHIPS.map((value) => (
-            <option key={value} value={value} className="bg-surface">
-              {GUARDIAN_RELATIONSHIP_LABELS[value]}
-            </option>
-          ))}
-        </select>
-      </div>
+      <Select
+        label="Parentesco"
+        id="relationship"
+        value={relationship}
+        onChange={(event) =>
+          setRelationship(event.target.value as (typeof GUARDIAN_RELATIONSHIPS)[number])
+        }
+        options={GUARDIAN_RELATIONSHIPS.map((value) => ({
+          value,
+          label: GUARDIAN_RELATIONSHIP_LABELS[value],
+        }))}
+      />
       {error && <p className="text-sm text-danger">{error}</p>}
       <Button type="submit" loading={submitting} className="w-full sm:w-auto">
         {submitting ? 'Salvando…' : 'Adicionar responsável'}

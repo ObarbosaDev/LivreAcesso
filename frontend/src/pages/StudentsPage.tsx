@@ -12,6 +12,7 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { Input } from '@/shared/ui/Input'
 import { MetricCard } from '@/shared/ui/MetricCard'
 import { PageFrame } from '@/shared/ui/PageFrame'
+import { Select } from '@/shared/ui/Select'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 
 const PAGE_SIZE = 25
@@ -113,26 +114,17 @@ export function StudentsPage() {
           icon={<Search className="h-4 w-4" aria-hidden="true" />}
           className="sm:max-w-md"
         />
-        <div className="flex flex-col gap-2 sm:w-44">
-          <label htmlFor="status-filter" className="text-sm font-medium text-white">
-            Status
-          </label>
-          <select
-            id="status-filter"
+        <div className="sm:w-44">
+          <Select
+            label="Status"
             value={status}
             onChange={(event) => setStatus(event.target.value as StudentStatus | '')}
-            className="h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none transition focus:border-brand-green focus:bg-white/8 focus:ring-4 focus:ring-brand-green/15"
-          >
-            <option value="" className="bg-surface">
-              Todos
-            </option>
-            <option value="ativo" className="bg-surface">
-              Ativo
-            </option>
-            <option value="inativo" className="bg-surface">
-              Inativo
-            </option>
-          </select>
+            options={[
+              { value: '', label: 'Todos' },
+              { value: 'ativo', label: 'Ativo' },
+              { value: 'inativo', label: 'Inativo' },
+            ]}
+          />
         </div>
         <div className="hidden items-center gap-2 pb-3 text-xs text-white/35 sm:flex"><SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Filtros aplicados automaticamente</div>
       </div>

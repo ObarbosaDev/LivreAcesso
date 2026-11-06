@@ -9,6 +9,7 @@ import type { StudentEvaluation } from '@/entities/studentEvaluation/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
+import { Select } from '@/shared/ui/Select'
 
 const scoreLabels: Array<[keyof StudentEvaluation, string]> = [
   ['performance_score', 'Desempenho'],
@@ -229,37 +230,33 @@ function EvaluationForm({ studentId, onSaved }: { studentId: string; onSaved: ()
       </div>
       <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
         {scoreLabels.map(([key, label]) => (
-          <label key={key} className="text-xs text-white/55">
-            {label}
-            <select
-              className="mt-2 w-full border border-white/15 bg-black px-3 py-2 text-white"
-              value={form[key as keyof EvaluationFormState] as number}
-              onChange={(event) =>
-                setField(key as keyof EvaluationFormState, Number(event.target.value) as never)
-              }
-            >
-              {Array.from({ length: 10 }, (_, index) => (
-                <option key={index + 1} value={index + 1}>
-                  {index + 1}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            key={key}
+            label={label}
+            value={form[key as keyof EvaluationFormState] as number}
+            onChange={(event) =>
+              setField(key as keyof EvaluationFormState, Number(event.target.value) as never)
+            }
+            options={Array.from({ length: 10 }, (_, index) => ({
+              value: String(index + 1),
+              label: String(index + 1),
+            }))}
+          />
         ))}
       </div>
-      <label className="mt-4 block text-xs text-white/55">
-        Nível de apoio
-        <select
-          className="mt-2 w-full border border-white/15 bg-black px-3 py-2 text-white"
+      <div className="mt-4">
+        <Select
+          label="Nível de apoio"
           value={form.support_level}
           onChange={(event) => setField('support_level', event.target.value)}
-        >
-          <option value="intenso">Intenso</option>
-          <option value="moderado">Moderado</option>
-          <option value="leve">Leve</option>
-          <option value="independente">Independente</option>
-        </select>
-      </label>
+          options={[
+            { value: 'intenso', label: 'Intenso' },
+            { value: 'moderado', label: 'Moderado' },
+            { value: 'leve', label: 'Leve' },
+            { value: 'independente', label: 'Independente' },
+          ]}
+        />
+      </div>
       <div className="mt-4 grid gap-4 md:grid-cols-3">
         {(
           [

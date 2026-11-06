@@ -14,6 +14,7 @@ import { Input } from '@/shared/ui/Input'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { PageFrame } from '@/shared/ui/PageFrame'
 import { MetricCard } from '@/shared/ui/MetricCard'
+import { Select } from '@/shared/ui/Select'
 
 const ASSIGNABLE_ROLES: Exclude<UserRole, 'pendente'>[] = [
   'coordenador',
@@ -173,24 +174,15 @@ function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () =
       </div>
 
       <div className="mt-4 flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`role-${profile.id}`} className="text-xs font-medium text-white/60">
-            Novo papel
-          </label>
-          <select
-            id={`role-${profile.id}`}
-            value={role}
-            onChange={(event) => setRole(event.target.value as Exclude<UserRole, 'pendente'>)}
-            disabled={busy}
-            className="h-10 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-brand-green"
-          >
-            {ASSIGNABLE_ROLES.map((value) => (
-              <option key={value} value={value} className="bg-surface">
-                {ROLE_LABELS[value]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Novo papel"
+          id={`role-${profile.id}`}
+          value={role}
+          onChange={(event) => setRole(event.target.value as Exclude<UserRole, 'pendente'>)}
+          disabled={busy}
+          className="h-10"
+          options={ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }))}
+        />
         <Button variant="secondary" onClick={handleRoleChange} disabled={busy} className="h-10">
           Alterar papel
         </Button>
