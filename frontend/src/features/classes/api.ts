@@ -1,20 +1,22 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { ClassPage, ClassSchedule, Modality, ModalityPage } from '@/entities/class/types'
+import type { ClassPage, ClassSchedule, Modality, ModalityPage, Unit } from '@/entities/class/types'
 
 interface ListClassesParams {
   active?: boolean
   modalityId?: string
+  unit?: Unit
   query?: string
   page: number
   pageSize: number
   signal?: AbortSignal
 }
 
-export function listClasses({ active, modalityId, query, page, pageSize, signal }: ListClassesParams) {
+export function listClasses({ active, modalityId, unit, query, page, pageSize, signal }: ListClassesParams) {
   const params = new URLSearchParams()
   if (active !== undefined) params.set('active', String(active))
   if (query) params.set('query', query)
   if (modalityId) params.set('modality_id', modalityId)
+  if (unit) params.set('unit', unit)
   params.set('page', String(page))
   params.set('page_size', String(pageSize))
   return httpClient.get<ClassPage>(`/api/v1/classes?${params.toString()}`, signal)
@@ -42,6 +44,7 @@ export function createModality(payload: { name: string; description?: string }) 
 
 export interface CreateClassPayload {
   modality_id: string
+  unit: Unit
   name: string
   capacity: number
   location: string

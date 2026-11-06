@@ -1,5 +1,6 @@
 import { httpClient } from '@/shared/api/httpClient'
 import type { Student, StudentDetail, StudentPage, StudentStatus } from '@/entities/student/types'
+import type { Unit } from '@/entities/class/types'
 import type {
   GuardianDetail,
   GuardianListResult,
@@ -31,15 +32,27 @@ export function getStudentDetail(studentId: string, signal?: AbortSignal) {
 
 interface ListStudentsParams {
   status?: StudentStatus
+  unit?: Unit
+  modalityId?: string
   query?: string
   page: number
   pageSize: number
   signal?: AbortSignal
 }
 
-export function listStudents({ status, query, page, pageSize, signal }: ListStudentsParams) {
+export function listStudents({
+  status,
+  unit,
+  modalityId,
+  query,
+  page,
+  pageSize,
+  signal,
+}: ListStudentsParams) {
   const params = new URLSearchParams()
   if (status) params.set('status', status)
+  if (unit) params.set('unit', unit)
+  if (modalityId) params.set('modality_id', modalityId)
   if (query) params.set('query', query)
   params.set('page', String(page))
   params.set('page_size', String(pageSize))

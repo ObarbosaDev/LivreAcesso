@@ -20,6 +20,14 @@ export const WEEKDAY_LABELS: Record<Weekday, string> = {
   domingo: 'Domingo',
 }
 
+export const UNITS = ['ceilandia', 'agua_quente'] as const
+export type Unit = (typeof UNITS)[number]
+
+export const UNIT_LABELS: Record<Unit, string> = {
+  ceilandia: 'Ceilândia',
+  agua_quente: 'Água Quente',
+}
+
 export interface Modality {
   id: string
   name: string
@@ -51,6 +59,7 @@ export interface ClassInstructor {
 export interface SchoolClass {
   id: string
   modality_id: string
+  unit: Unit
   name: string
   capacity: number
   location: string

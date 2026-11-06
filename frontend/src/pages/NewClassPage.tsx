@@ -5,8 +5,8 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { createClass, createModality, listModalities } from '@/features/classes/api'
 import { listProfiles } from '@/features/profiles/api'
-import type { Modality, Weekday } from '@/entities/class/types'
-import { WEEKDAYS, WEEKDAY_LABELS } from '@/entities/class/types'
+import type { Modality, Unit, Weekday } from '@/entities/class/types'
+import { UNIT_LABELS, UNITS, WEEKDAYS, WEEKDAY_LABELS } from '@/entities/class/types'
 import type { Profile } from '@/entities/profile/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
@@ -21,6 +21,7 @@ export function NewClassPage() {
 
   const [modalities, setModalities] = useState<Modality[]>([])
   const [modalityId, setModalityId] = useState('')
+  const [unit, setUnit] = useState<Unit>('ceilandia')
   const [newModalityName, setNewModalityName] = useState('')
   const [creatingModality, setCreatingModality] = useState(false)
 
@@ -90,6 +91,7 @@ export function NewClassPage() {
     try {
       await createClass({
         modality_id: modalityId,
+        unit,
         name,
         capacity: Number(capacity),
         location,
@@ -157,6 +159,13 @@ export function NewClassPage() {
         <fieldset className="liquid-glass flex flex-col gap-5 rounded-2xl p-6">
           <legend className="px-1 font-display text-sm font-semibold text-white">Dados da turma</legend>
           <Input label="Nome da turma" value={name} onChange={(e) => setName(e.target.value)} />
+          <Select
+            label="Unidade"
+            id="unit"
+            value={unit}
+            onChange={(event) => setUnit(event.target.value as Unit)}
+            options={UNITS.map((value) => ({ value, label: UNIT_LABELS[value] }))}
+          />
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Capacidade"
