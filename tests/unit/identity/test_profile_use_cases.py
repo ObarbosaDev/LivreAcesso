@@ -150,7 +150,7 @@ def test_stale_role_change_is_rejected_before_mutation() -> None:
     repository = InMemoryProfileRepository()
     event_bus = EventBus()
     coordinator = profile("Coordenação Teste", UserRole.COORDINATOR, True)
-    target = profile("Consulta Teste", UserRole.READ_ONLY, True)
+    target = profile("Instrutor Teste", UserRole.INSTRUCTOR, True)
     repository.seed(coordinator)
     repository.seed(target)
     stale = target.updated_at - timedelta(seconds=1)

@@ -17,7 +17,6 @@ class AssignableRole(StrEnum):
     COORDINATOR = "coordenador"
     RECEPTIONIST = "recepcao"
     INSTRUCTOR = "instrutor"
-    READ_ONLY = "consulta"
 
 
 class UpdateMyProfileInput(DTO):
@@ -28,12 +27,12 @@ class UpdateMyProfileInput(DTO):
 class ChangeProfileRoleInput(DTO):
     expected_updated_at: AwareDatetime
     role: AssignableRole
-    reason: str = Field(min_length=10, max_length=500)
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class ChangeProfileActivationInput(DTO):
     expected_updated_at: AwareDatetime
-    reason: str = Field(min_length=10, max_length=500)
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class InviteProfileInput(DTO):

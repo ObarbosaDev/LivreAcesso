@@ -24,7 +24,6 @@ from backend.app.modules.identity.domain.exceptions import (
     ProfileVersionConflictError,
 )
 from backend.app.modules.identity.domain.repositories import ProfileRepository
-from backend.app.modules.identity.domain.value_objects import AccessChangeReason
 from backend.app.modules.identity.infrastructure.supabase_invitations import (
     SupabaseInvitationService,
 )
@@ -156,12 +155,10 @@ class ChangeProfileRole:
             raise ProfileNotFoundError
         _ensure_version(profile, dto.expected_updated_at)
 
-        reason = AccessChangeReason(dto.reason)
         target_role = UserRole(dto.role.value)
-        if profile.change_role(target_role, reason):
+        if profile.change_role(target_role):
             updated_at = await self.repository.change_role(
                 profile,
-                reason=reason,
                 expected_updated_at=dto.expected_updated_at,
             )
             profile.mark_persisted(updated_at)
@@ -187,11 +184,9 @@ class ChangeProfileActivation:
             raise ProfileNotFoundError
         _ensure_version(profile, dto.expected_updated_at)
 
-        reason = AccessChangeReason(dto.reason)
-        if profile.change_activation(self.active, reason):
+        if profile.change_activation(self.active):
             updated_at = await self.repository.change_activation(
                 profile,
-                reason=reason,
                 expected_updated_at=dto.expected_updated_at,
             )
             profile.mark_persisted(updated_at)

@@ -19,7 +19,6 @@ const ASSIGNABLE_ROLES: Exclude<UserRole, 'pendente'>[] = [
   'coordenador',
   'recepcao',
   'instrutor',
-  'consulta',
 ]
 
 const PAGE_SIZE = 25
@@ -100,27 +99,39 @@ export function ProfilesAdminPage() {
 }
 
 function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () => void }) {
+  const fallbackRole = (candidate: UserRole | null): Exclude<UserRole, 'pendente'> =>
+    candidate && candidate !== 'pendente' ? candidate : 'instrutor'
   const [role, setRole] = useState<Exclude<UserRole, 'pendente'>>(
-    profile.role === 'pendente' ? (profile.requested_role ?? 'consulta') : profile.role,
+    profile.role === 'pendente' ? fallbackRole(profile.requested_role) : fallbackRole(profile.role),
   )
-  const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isPending = profile.role === 'pendente'
 
-  async function handleRoleChange() {
-    if (reason.trim().length < 10) {
-      setError('Informe um motivo com pelo menos 10 caracteres.')
-      return
-    }
+  async function handleAccept() {
     setBusy(true)
     setError(null)
     try {
-      await changeProfileRole(profile.id, {
+      const afterRole = await changeProfileRole(profile.id, {
         expected_updated_at: profile.updated_at,
         role,
-        reason,
       })
-      setReason('')
+      await changeProfileActivation(profile.id, 'activate', {
+        expected_updated_at: afterRole.updated_at,
+      })
+      onChanged()
+    } catch (caught) {
+      setError(friendlyMessage(caught))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleRoleChange() {
+    setBusy(true)
+    setError(null)
+    try {
+      await changeProfileRole(profile.id, { expected_updated_at: profile.updated_at, role })
       onChanged()
     } catch (caught) {
       setError(friendlyMessage(caught))
@@ -130,18 +141,12 @@ function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () =
   }
 
   async function handleActivation() {
-    if (reason.trim().length < 10) {
-      setError('Informe um motivo com pelo menos 10 caracteres.')
-      return
-    }
     setBusy(true)
     setError(null)
     try {
       await changeProfileActivation(profile.id, profile.active ? 'deactivate' : 'activate', {
         expected_updated_at: profile.updated_at,
-        reason,
       })
-      setReason('')
       onChanged()
     } catch (caught) {
       setError(friendlyMessage(caught))
@@ -156,7 +161,7 @@ function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () =
         <div>
           <p className="text-sm font-medium text-white">{profile.full_name}</p>
           <p className="text-xs text-white/50">{ROLE_LABELS[profile.role]}</p>
-          {profile.role === 'pendente' && profile.requested_role && (
+          {isPending && profile.requested_role && (
             <p className="mt-1 text-xs text-brand-green">
               Pediu acesso como {ROLE_LABELS[profile.requested_role]}
             </p>
@@ -170,7 +175,7 @@ function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () =
 
       <div className="mt-4 flex flex-wrap items-end gap-3">
         <Select
-          label="Novo papel"
+          label={isPending ? 'Papel' : 'Novo papel'}
           id={`role-${profile.id}`}
           value={role}
           onChange={(event) => setRole(event.target.value as Exclude<UserRole, 'pendente'>)}
@@ -178,28 +183,27 @@ function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () =
           className="h-10"
           options={ASSIGNABLE_ROLES.map((value) => ({ value, label: ROLE_LABELS[value] }))}
         />
-        <Button variant="secondary" onClick={handleRoleChange} disabled={busy} className="h-10">
-          Alterar papel
-        </Button>
-        <Button
-          variant={profile.active ? 'danger' : 'primary'}
-          onClick={handleActivation}
-          disabled={busy}
-          className="h-10"
-        >
-          {profile.active ? 'Desativar' : 'Ativar'}
-        </Button>
+        {isPending ? (
+          <Button onClick={handleAccept} disabled={busy} className="h-10">
+            Aceitar pedido
+          </Button>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={handleRoleChange} disabled={busy} className="h-10">
+              Alterar papel
+            </Button>
+            <Button
+              variant={profile.active ? 'danger' : 'primary'}
+              onClick={handleActivation}
+              disabled={busy}
+              className="h-10"
+            >
+              {profile.active ? 'Desativar' : 'Ativar'}
+            </Button>
+          </>
+        )}
       </div>
 
-      <div className="mt-3">
-        <Input
-          label="Motivo (para qualquer ação acima)"
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-          disabled={busy}
-          hint="Entre 10 e 500 caracteres."
-        />
-      </div>
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   )

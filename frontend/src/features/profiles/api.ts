@@ -24,7 +24,6 @@ const ASSIGNABLE_ROLE_MAP: Record<Exclude<UserRole, 'pendente'>, string> = {
   coordenador: 'coordenador',
   recepcao: 'recepcao',
   instrutor: 'instrutor',
-  consulta: 'consulta',
 }
 
 export function listProfiles({ role, active, query, page, pageSize, signal }: ListProfilesParams) {
@@ -39,10 +38,10 @@ export function listProfiles({ role, active, query, page, pageSize, signal }: Li
 
 export function changeProfileRole(
   profileId: string,
-  payload: { expected_updated_at: string; role: Exclude<UserRole, 'pendente'>; reason: string },
+  payload: { expected_updated_at: string; role: Exclude<UserRole, 'pendente'> },
 ) {
   return httpClient.post<Profile>(`/api/v1/profiles/${profileId}/role`, {
-    ...payload,
+    expected_updated_at: payload.expected_updated_at,
     role: ASSIGNABLE_ROLE_MAP[payload.role],
   })
 }
@@ -50,15 +49,7 @@ export function changeProfileRole(
 export function changeProfileActivation(
   profileId: string,
   action: 'activate' | 'deactivate',
-  payload: { expected_updated_at: string; reason: string },
+  payload: { expected_updated_at: string },
 ) {
   return httpClient.post<Profile>(`/api/v1/profiles/${profileId}/${action}`, payload)
-}
-
-export function inviteProfile(payload: { email: string; full_name: string }) {
-  return httpClient.post<{ message: string }>('/api/v1/profiles/invite', payload)
-}
-
-export function generateInviteLink(payload: { email: string; full_name: string }) {
-  return httpClient.post<{ message: string; action_link: string }>('/api/v1/profiles/invite-link', payload)
 }

@@ -29,7 +29,6 @@ from backend.app.modules.identity.domain.exceptions import (
     ProfileRoleRequiredError,
     ProfileVersionConflictError,
 )
-from backend.app.modules.identity.domain.value_objects import AccessChangeReason
 from backend.app.shared.application.exceptions import (
     PermissionDeniedError,
     PersistenceRejectedError,
@@ -48,7 +47,6 @@ class _DatabaseRole(StrEnum):
     COORDINATOR = "coordinator"
     RECEPTIONIST = "receptionist"
     INSTRUCTOR = "instructor"
-    READ_ONLY = "read_only"
 
 
 _TO_DOMAIN_ROLE = {
@@ -56,7 +54,6 @@ _TO_DOMAIN_ROLE = {
     _DatabaseRole.COORDINATOR: UserRole.COORDINATOR,
     _DatabaseRole.RECEPTIONIST: UserRole.RECEPTIONIST,
     _DatabaseRole.INSTRUCTOR: UserRole.INSTRUCTOR,
-    _DatabaseRole.READ_ONLY: UserRole.READ_ONLY,
 }
 _TO_DATABASE_ROLE = {domain: database for database, domain in _TO_DOMAIN_ROLE.items()}
 
@@ -143,7 +140,6 @@ class SupabaseProfileRepository:
         self,
         profile: UserProfile,
         *,
-        reason: AccessChangeReason,
         expected_updated_at: datetime,
     ) -> datetime:
         result = await self._call(
@@ -151,7 +147,7 @@ class SupabaseProfileRepository:
             {
                 "p_profile_id": str(profile.id),
                 "p_target_role": _TO_DATABASE_ROLE[profile.role].value,
-                "p_reason": reason.value,
+                "p_reason": None,
                 "p_expected_updated_at": expected_updated_at.isoformat(),
                 "p_request_id": str(self._context.request_id),
             },
@@ -162,7 +158,6 @@ class SupabaseProfileRepository:
         self,
         profile: UserProfile,
         *,
-        reason: AccessChangeReason,
         expected_updated_at: datetime,
     ) -> datetime:
         result = await self._call(
@@ -170,7 +165,7 @@ class SupabaseProfileRepository:
             {
                 "p_profile_id": str(profile.id),
                 "p_active": profile.active,
-                "p_reason": reason.value,
+                "p_reason": None,
                 "p_expected_updated_at": expected_updated_at.isoformat(),
                 "p_request_id": str(self._context.request_id),
             },

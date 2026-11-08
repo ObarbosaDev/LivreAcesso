@@ -15,7 +15,6 @@ from backend.app.modules.identity.domain.exceptions import (
     LastActiveCoordinatorError,
     ProfileVersionConflictError,
 )
-from backend.app.modules.identity.domain.value_objects import AccessChangeReason
 from backend.app.modules.identity.infrastructure.supabase_profiles import SupabaseProfileRepository
 from backend.app.shared.application.exceptions import (
     PermissionDeniedError,
@@ -119,7 +118,7 @@ def test_profile_list_maps_portuguese_role_and_total() -> None:
 
 def test_role_change_sends_reason_version_and_database_role() -> None:
     profile = domain_profile()
-    profile.role = UserRole.READ_ONLY
+    profile.role = UserRole.INSTRUCTOR
     captured: dict[str, object] = {}
     returned_version = profile.updated_at + timedelta(seconds=1)
 
@@ -132,13 +131,12 @@ def test_role_change_sends_reason_version_and_database_role() -> None:
             gateway = SupabaseRPCGateway(_PROJECT_URL, "publishable", http_client=client)
             result = await SupabaseProfileRepository(gateway, context()).change_role(
                 profile,
-                reason=AccessChangeReason("Mudança aprovada pela coordenação responsável"),
                 expected_updated_at=profile.updated_at,
             )
         assert result == returned_version
 
     asyncio.run(change())
-    assert captured["p_target_role"] == "read_only"
+    assert captured["p_target_role"] == "instructor"
     assert captured["p_request_id"] == str(context().request_id)
     assert "p_email" not in captured
 
@@ -167,7 +165,6 @@ def test_stable_database_errors_are_translated(
             with pytest.raises(expected_error):
                 await repository.change_role(
                     domain_profile(),
-                    reason=AccessChangeReason("Mudança aprovada pela coordenação responsável"),
                     expected_updated_at=domain_profile().updated_at,
                 )
 

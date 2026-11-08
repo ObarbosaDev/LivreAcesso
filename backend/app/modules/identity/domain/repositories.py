@@ -5,7 +5,6 @@ from typing import Protocol
 from uuid import UUID
 
 from backend.app.modules.identity.domain.entities import UserProfile
-from backend.app.modules.identity.domain.value_objects import AccessChangeReason
 
 
 class ProfileRepository(Protocol):
@@ -24,7 +23,6 @@ class ProfileRepository(Protocol):
         self,
         profile: UserProfile,
         *,
-        reason: AccessChangeReason,
         expected_updated_at: datetime,
     ) -> datetime: ...
 
@@ -32,6 +30,5 @@ class ProfileRepository(Protocol):
         self,
         profile: UserProfile,
         *,
-        reason: AccessChangeReason,
         expected_updated_at: datetime,
     ) -> datetime: ...

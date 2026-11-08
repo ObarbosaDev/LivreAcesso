@@ -182,7 +182,6 @@ def test_catalog_timestamps_require_timezone() -> None:
 def test_operational_roles_receive_only_needed_class_capabilities() -> None:
     assert Capability.CLASSES_MANAGE in capabilities_for_role(UserRole.COORDINATOR)
     assert Capability.CLASSES_READ in capabilities_for_role(UserRole.RECEPTIONIST)
-    assert Capability.CLASSES_READ in capabilities_for_role(UserRole.READ_ONLY)
     assert capabilities_for_role(UserRole.INSTRUCTOR) == (
         Capability.CLASSES_LIST,
         Capability.CLASSES_READ,

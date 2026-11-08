@@ -7,12 +7,10 @@ import pytest
 
 from backend.app.modules.identity.domain.entities import Capability, UserProfile, UserRole
 from backend.app.modules.identity.domain.exceptions import (
-    InvalidAccessChangeReasonError,
     InvalidProfileDataError,
     InvalidProfileRoleError,
     ProfileRoleRequiredError,
 )
-from backend.app.modules.identity.domain.value_objects import AccessChangeReason
 
 
 def profile(
@@ -29,10 +27,6 @@ def profile(
         created_at=now,
         updated_at=now,
     )
-
-
-def reason() -> AccessChangeReason:
-    return AccessChangeReason("Alteração confirmada pela coordenação responsável")
 
 
 def test_active_coordinator_receives_all_implemented_capabilities() -> None:
@@ -57,25 +51,23 @@ def test_rename_changes_full_name() -> None:
 
 def test_role_change_updates_role() -> None:
     current = profile()
-    protected_reason = reason()
 
-    assert current.change_role(UserRole.RECEPTIONIST, protected_reason) is True
+    assert current.change_role(UserRole.RECEPTIONIST) is True
     assert current.role is UserRole.RECEPTIONIST
-    assert current.change_role(UserRole.RECEPTIONIST, protected_reason) is False
+    assert current.change_role(UserRole.RECEPTIONIST) is False
 
 
 def test_activation_change_updates_active_flag() -> None:
     current = profile()
-    protected_reason = reason()
 
-    assert current.change_activation(False, protected_reason) is True
+    assert current.change_activation(False) is True
     assert current.active is False
-    assert current.change_activation(False, protected_reason) is False
+    assert current.change_activation(False) is False
 
 
 def test_pending_role_cannot_be_assigned_as_operational_role() -> None:
     with pytest.raises(InvalidProfileRoleError):
-        profile().change_role(UserRole.PENDING, reason())
+        profile().change_role(UserRole.PENDING)
 
 
 def test_pending_profile_cannot_be_active() -> None:
@@ -83,17 +75,12 @@ def test_pending_profile_cannot_be_active() -> None:
         profile(role=UserRole.PENDING, active=True)
 
 
-def test_short_access_reason_is_rejected() -> None:
-    with pytest.raises(InvalidAccessChangeReasonError):
-        AccessChangeReason("curto")
-
-
 def test_naive_timestamps_are_rejected() -> None:
     with pytest.raises(InvalidProfileDataError, match="fuso horário"):
         UserProfile(
             id=uuid4(),
             full_name="Perfil Teste",
-            role=UserRole.READ_ONLY,
+            role=UserRole.INSTRUCTOR,
             active=False,
             created_at=datetime(2026, 10, 23),
             updated_at=datetime.now(UTC),

@@ -12,7 +12,6 @@ from backend.app.modules.identity.domain.exceptions import (
     LastActiveCoordinatorError,
     ProfileVersionConflictError,
 )
-from backend.app.modules.identity.domain.value_objects import AccessChangeReason
 from backend.app.modules.identity.infrastructure.repositories import InMemoryProfileRepository
 
 
@@ -28,23 +27,18 @@ def profile(name: str, role: UserRole, active: bool) -> UserProfile:
     )
 
 
-def reason() -> AccessChangeReason:
-    return AccessChangeReason("Alteração confirmada pela coordenação responsável")
-
-
 def test_last_active_coordinator_cannot_change_role() -> None:
     repository = InMemoryProfileRepository()
     coordinator = profile("Coordenação Teste", UserRole.COORDINATOR, True)
     repository.seed(coordinator)
     changed = asyncio.run(repository.get_by_id(coordinator.id))
     assert changed is not None
-    changed.change_role(UserRole.RECEPTIONIST, reason())
+    changed.change_role(UserRole.RECEPTIONIST)
 
     with pytest.raises(LastActiveCoordinatorError):
         asyncio.run(
             repository.change_role(
                 changed,
-                reason=reason(),
                 expected_updated_at=coordinator.updated_at,
             )
         )
@@ -56,13 +50,12 @@ def test_last_active_coordinator_cannot_be_deactivated() -> None:
     repository.seed(coordinator)
     changed = asyncio.run(repository.get_by_id(coordinator.id))
     assert changed is not None
-    changed.change_activation(False, reason())
+    changed.change_activation(False)
 
     with pytest.raises(LastActiveCoordinatorError):
         asyncio.run(
             repository.change_activation(
                 changed,
-                reason=reason(),
                 expected_updated_at=coordinator.updated_at,
             )
         )
@@ -76,12 +69,11 @@ def test_one_of_two_coordinators_can_be_deactivated() -> None:
     repository.seed(second)
     changed = asyncio.run(repository.get_by_id(second.id))
     assert changed is not None
-    changed.change_activation(False, reason())
+    changed.change_activation(False)
 
     updated_at = asyncio.run(
         repository.change_activation(
             changed,
-            reason=reason(),
             expected_updated_at=second.updated_at,
         )
     )

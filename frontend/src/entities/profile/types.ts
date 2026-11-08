@@ -1,5 +1,5 @@
 /** Espelha ProfileOutput do backend (backend/app/modules/identity/application/dtos.py). */
-export type UserRole = 'pendente' | 'coordenador' | 'recepcao' | 'instrutor' | 'consulta'
+export type UserRole = 'pendente' | 'coordenador' | 'recepcao' | 'instrutor'
 
 export type Capability =
   | 'profiles:read'
@@ -32,5 +32,4 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   coordenador: 'Coordenação',
   recepcao: 'Recepção',
   instrutor: 'Instrutor',
-  consulta: 'Consulta',
 }

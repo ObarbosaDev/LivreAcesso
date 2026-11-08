@@ -36,7 +36,6 @@ from backend.app.modules.identity.application.authentication import (
     AuthenticationUnavailableError,
 )
 from backend.app.modules.identity.domain.exceptions import (
-    InvalidAccessChangeReasonError,
     InvalidProfileDataError,
     InvalidProfileRoleError,
     LastActiveCoordinatorError,
@@ -313,9 +312,7 @@ def install_problem_handlers(application: FastAPI) -> None:
                 code=exception.code,
             )
 
-        if isinstance(exception, InvalidAccessChangeReasonError):
-            field = "reason"
-        elif isinstance(exception, (InvalidProfileRoleError, ProfileRoleRequiredError)):
+        if isinstance(exception, (InvalidProfileRoleError, ProfileRoleRequiredError)):
             field = "role"
         elif isinstance(exception, InvalidProfileDataError):
             field = "full_name"

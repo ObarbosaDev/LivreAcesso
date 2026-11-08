@@ -10,7 +10,6 @@ from backend.app.modules.identity.domain.exceptions import (
     InvalidProfileRoleError,
     ProfileRoleRequiredError,
 )
-from backend.app.modules.identity.domain.value_objects import AccessChangeReason
 from backend.app.shared.domain.events import DomainEvent
 
 
@@ -21,7 +20,6 @@ class UserRole(StrEnum):
     COORDINATOR = "coordenador"
     RECEPTIONIST = "recepcao"
     INSTRUCTOR = "instrutor"
-    READ_ONLY = "consulta"
 
 
 class Capability(StrEnum):
@@ -56,11 +54,6 @@ _ROLE_CAPABILITIES: dict[UserRole, tuple[Capability, ...]] = {
         Capability.AGENDA_MANAGE,
     ),
     UserRole.INSTRUCTOR: (
-        Capability.CLASSES_LIST,
-        Capability.CLASSES_READ,
-    ),
-    UserRole.READ_ONLY: (
-        Capability.STUDENTS_LIST,
         Capability.CLASSES_LIST,
         Capability.CLASSES_READ,
     ),
@@ -118,25 +111,22 @@ class UserProfile:
         self.full_name = normalized
         return True
 
-    def change_role(self, target_role: UserRole, reason: AccessChangeReason) -> bool:
+    def change_role(self, target_role: UserRole) -> bool:
         if target_role is UserRole.PENDING:
             raise InvalidProfileRoleError
         if target_role is self.role:
             return False
 
         self.role = target_role
-        # O motivo segue somente para o histórico privado no repositório.
-        del reason
         return True
 
-    def change_activation(self, active: bool, reason: AccessChangeReason) -> bool:
+    def change_activation(self, active: bool) -> bool:
         if active and self.role is UserRole.PENDING:
             raise ProfileRoleRequiredError
         if active is self.active:
             return False
 
         self.active = active
-        del reason
         return True
 
     def mark_persisted(self, updated_at: datetime) -> None:

@@ -440,8 +440,8 @@ def test_receptionist_cannot_list_or_manage_profiles() -> None:
     application = build_application(role=UserRole.RECEPTIONIST)
     target = seed_profile(
         application,
-        full_name="Consulta Teste",
-        role=UserRole.READ_ONLY,
+        full_name="Instrutor Teste",
+        role=UserRole.INSTRUCTOR,
         active=True,
     )
 

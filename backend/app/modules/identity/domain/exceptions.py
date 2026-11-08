@@ -11,13 +11,6 @@ class InvalidProfileDataError(ProfileDomainError):
     code = "invalid_profile_data"
 
 
-class InvalidAccessChangeReasonError(ProfileDomainError):
-    code = "invalid_access_change_reason"
-
-    def __init__(self) -> None:
-        super().__init__("Informe um motivo entre 10 e 500 caracteres.")
-
-
 class InvalidProfileRoleError(ProfileDomainError):
     code = "invalid_profile_role"
 

@@ -20,14 +20,12 @@ const REQUESTED_ROLE_DB_VALUE: Record<Exclude<UserRole, 'pendente'>, string> = {
   coordenador: 'coordinator',
   recepcao: 'receptionist',
   instrutor: 'instructor',
-  consulta: 'read_only',
 }
 
 const SUGGESTABLE_ROLES: Exclude<UserRole, 'pendente'>[] = [
   'instrutor',
   'recepcao',
   'coordenador',
-  'consulta',
 ]
 
 interface FieldErrors {

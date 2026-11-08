@@ -17,7 +17,6 @@ from backend.app.modules.identity.domain.exceptions import (
     ProfileNotFoundError,
     ProfileVersionConflictError,
 )
-from backend.app.modules.identity.domain.value_objects import AccessChangeReason
 
 
 def _search_key(value: str) -> str:
@@ -41,7 +40,6 @@ class InMemoryProfileRepository:
 
     def __init__(self) -> None:
         self._profiles: dict[UUID, UserProfile] = {}
-        self._reasons: list[tuple[UUID, str, str]] = []
         self._lock = RLock()
 
     def seed(self, profile: UserProfile) -> None:
@@ -71,7 +69,6 @@ class InMemoryProfileRepository:
         self,
         profile: UserProfile,
         *,
-        reason: AccessChangeReason,
         expected_updated_at: datetime,
     ) -> datetime:
         with self._lock:
@@ -84,15 +81,12 @@ class InMemoryProfileRepository:
             ):
                 raise LastActiveCoordinatorError
 
-            updated_at = self._save(profile, expected_updated_at=expected_updated_at)
-            self._reasons.append((profile.id, "role", reason.value))
-            return updated_at
+            return self._save(profile, expected_updated_at=expected_updated_at)
 
     async def change_activation(
         self,
         profile: UserProfile,
         *,
-        reason: AccessChangeReason,
         expected_updated_at: datetime,
     ) -> datetime:
         with self._lock:
@@ -105,9 +99,7 @@ class InMemoryProfileRepository:
             ):
                 raise LastActiveCoordinatorError
 
-            updated_at = self._save(profile, expected_updated_at=expected_updated_at)
-            self._reasons.append((profile.id, "activation", reason.value))
-            return updated_at
+            return self._save(profile, expected_updated_at=expected_updated_at)
 
     async def search(self, criteria: ProfileSearchCriteria) -> ProfileSearchResult:
         with self._lock:
