@@ -18,6 +18,7 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((module) => ({
 const ProfilesAdminPage = lazy(() => import('@/pages/ProfilesAdminPage').then((module) => ({ default: module.ProfilesAdminPage })))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage').then((module) => ({ default: module.ReportsPage })))
+const SignupPage = lazy(() => import('@/pages/SignupPage').then((module) => ({ default: module.SignupPage })))
 const StudentDetailPage = lazy(() => import('@/pages/StudentDetailPage').then((module) => ({ default: module.StudentDetailPage })))
 const StudentsPage = lazy(() => import('@/pages/StudentsPage').then((module) => ({ default: module.StudentsPage })))
 const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage').then((module) => ({ default: module.UnauthorizedPage })))
@@ -28,6 +29,7 @@ export function AppRoutes() {
       <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/entrar" element={<LoginPage />} />
+      <Route path="/cadastro" element={<SignupPage />} />
       <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
       <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
       <Route path="/sem-acesso" element={<UnauthorizedPage />} />

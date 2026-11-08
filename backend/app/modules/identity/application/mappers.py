@@ -16,6 +16,7 @@ class ProfileMapper:
             capabilities=list(profile.capabilities),
             created_at=profile.created_at,
             updated_at=profile.updated_at,
+            requested_role=profile.requested_role,
         )
 
     @staticmethod
@@ -31,4 +32,5 @@ class ProfileMapper:
             capabilities=capabilities,
             created_at=item.created_at,
             updated_at=item.updated_at,
+            requested_role=item.requested_role,
         )

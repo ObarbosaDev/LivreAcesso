@@ -24,6 +24,7 @@ export interface Profile {
   capabilities: Capability[]
   created_at: string
   updated_at: string
+  requested_role: Exclude<UserRole, 'pendente'> | null
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {

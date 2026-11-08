@@ -70,6 +70,7 @@ class _ProfileRow(BaseModel):
     active: bool
     created_at: AwareDatetime
     updated_at: AwareDatetime
+    requested_role: _DatabaseRole | None = None
 
     @model_validator(mode="after")
     def pending_profile_must_be_inactive(self) -> Self:
@@ -248,6 +249,7 @@ class SupabaseProfileRepository:
             active=row.active,
             created_at=row.created_at,
             updated_at=row.updated_at,
+            requested_role=_TO_DOMAIN_ROLE[row.requested_role] if row.requested_role else None,
         )
 
     @staticmethod
@@ -259,4 +261,5 @@ class SupabaseProfileRepository:
             active=row.active,
             created_at=row.created_at,
             updated_at=row.updated_at,
+            requested_role=_TO_DOMAIN_ROLE[row.requested_role] if row.requested_role else None,
         )

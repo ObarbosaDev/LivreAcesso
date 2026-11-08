@@ -90,6 +90,7 @@ class UserProfile:
     active: bool
     created_at: datetime
     updated_at: datetime
+    requested_role: UserRole | None = None
     _events: list[DomainEvent] = field(
         default_factory=list,
         init=False,

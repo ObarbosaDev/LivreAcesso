@@ -132,6 +132,7 @@ class InMemoryProfileRepository:
                         active=profile.active,
                         created_at=profile.created_at,
                         updated_at=profile.updated_at,
+                        requested_role=profile.requested_role,
                     )
                     for profile in page_items
                 ),

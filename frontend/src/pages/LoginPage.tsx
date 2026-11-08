@@ -171,8 +171,11 @@ export function LoginPage() {
         </form>
 
         <p className="mt-8 text-xs leading-relaxed text-white/35">
-          O acesso é administrado pela coordenação. Procure a equipe do instituto se precisar de uma
-          conta.
+          Ainda não tem conta?{' '}
+          <Link to="/cadastro" className="font-medium text-white/50 hover:text-brand-green">
+            Peça acesso aqui
+          </Link>
+          . A coordenação precisa aceitar antes de você poder entrar.
         </p>
       </AuthPanel>
     </div>

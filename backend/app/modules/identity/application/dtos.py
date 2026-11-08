@@ -54,6 +54,7 @@ class ProfileOutput(DTO):
     capabilities: list[Capability]
     created_at: datetime
     updated_at: datetime
+    requested_role: UserRole | None = None
 
 
 class ProfilePageOutput(DTO):

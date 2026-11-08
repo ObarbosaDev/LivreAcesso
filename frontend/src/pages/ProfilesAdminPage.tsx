@@ -1,8 +1,7 @@
-import { Check, Loader2, MailPlus, Search, ShieldCheck } from 'lucide-react'
+import { Loader2, Search, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
 
-import { changeProfileActivation, changeProfileRole, generateInviteLink, listProfiles } from '@/features/profiles/api'
+import { changeProfileActivation, changeProfileRole, listProfiles } from '@/features/profiles/api'
 import type { Profile, UserRole } from '@/entities/profile/types'
 import { ROLE_LABELS } from '@/entities/profile/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
@@ -34,7 +33,6 @@ export function ProfilesAdminPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [inviteOpen, setInviteOpen] = useState(false)
 
   async function reload() {
     try {
@@ -61,8 +59,7 @@ export function ProfilesAdminPage() {
   }, [debouncedQuery])
 
   return (
-    <PageFrame eyebrow="Acesso e responsabilidades" title="Equipe" description="Administre quem pode operar cada parte do Instituto Livre Acesso." actions={<Button onClick={() => setInviteOpen((value) => !value)}><MailPlus className="h-4 w-4" />{inviteOpen ? 'Fechar convite' : 'Convidar membro'}</Button>}>
-      {inviteOpen && <InviteForm onSent={() => setInviteOpen(false)} />}
+    <PageFrame eyebrow="Acesso e responsabilidades" title="Equipe" description="Administre quem pode operar cada parte do Instituto Livre Acesso.">
       <p className="mt-2 text-sm text-white/55">
         {profiles ? `${total} ${total === 1 ? 'conta' : 'contas'}` : 'Carregando…'} · administre papel
         e ativação de cada conta.
@@ -90,7 +87,7 @@ export function ProfilesAdminPage() {
           <EmptyState
             icon={ShieldCheck}
             title="Nenhuma conta encontrada"
-            description="Tente outro termo de busca ou convide um novo membro da equipe."
+            description="Tente outro termo de busca. Para ganhar acesso, a pessoa pede pelo link /cadastro."
           />
         )}
         {!loading &&
@@ -102,16 +99,9 @@ export function ProfilesAdminPage() {
   )
 }
 
-function InviteForm({ onSent }: { onSent: () => void }) {
-  const [fullName, setFullName] = useState(''); const [email, setEmail] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null); const [link, setLink] = useState<string | null>(null); const [copied, setCopied] = useState(false)
-  async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); setError(null); setCopied(false); try { const result = await generateInviteLink({ full_name: fullName, email }); setLink(result.action_link) } catch (caught) { setError(friendlyMessage(caught)) } finally { setBusy(false) } }
-  async function copyLink() { if (!link) return; await navigator.clipboard.writeText(link); setCopied(true); window.setTimeout(() => setCopied(false), 2200) }
-  return <form onSubmit={submit} className="mb-6 border border-brand-green/40 bg-brand-green/[.04] p-5"><div className="grid gap-4 md:grid-cols-2"><Input label="Nome completo" required minLength={3} value={fullName} onChange={(event) => setFullName(event.target.value)} /><Input label="E-mail institucional" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></div><p className="mt-3 text-xs text-white/45">Gere um link para a pessoa definir a própria senha. O acesso começa pendente.</p>{error && <p className="mt-3 text-sm text-danger">{error}</p>}{link && <div className="mt-4 border border-brand-green/30 p-3"><p className="text-xs text-brand-green">Link gerado — compartilhe somente com a pessoa convidada.</p><input readOnly value={link} className="mt-2 w-full border border-white/15 bg-black px-3 py-2 text-xs text-white" /><button type="button" className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-brand-green hover:text-white" onClick={() => void copyLink()}>{copied && <Check className="h-3.5 w-3.5" />}{copied ? 'Link copiado' : 'Copiar link'}</button></div>}<div className="mt-4 flex flex-wrap gap-3"><Button type="submit" loading={busy}>Gerar link</Button><Button type="button" variant="secondary" onClick={onSent}>Fechar</Button></div></form>
-}
-
 function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () => void }) {
   const [role, setRole] = useState<Exclude<UserRole, 'pendente'>>(
-    profile.role === 'pendente' ? 'consulta' : profile.role,
+    profile.role === 'pendente' ? (profile.requested_role ?? 'consulta') : profile.role,
   )
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
@@ -166,6 +156,11 @@ function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () =
         <div>
           <p className="text-sm font-medium text-white">{profile.full_name}</p>
           <p className="text-xs text-white/50">{ROLE_LABELS[profile.role]}</p>
+          {profile.role === 'pendente' && profile.requested_role && (
+            <p className="mt-1 text-xs text-brand-green">
+              Pediu acesso como {ROLE_LABELS[profile.requested_role]}
+            </p>
+          )}
         </div>
         <StatusBadge
           label={profile.active ? 'Ativo' : 'Inativo'}

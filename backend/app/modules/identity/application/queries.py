@@ -33,6 +33,7 @@ class ProfileListItem:
     active: bool
     created_at: datetime
     updated_at: datetime
+    requested_role: UserRole | None = None
 
 
 @dataclass(frozen=True, slots=True)
