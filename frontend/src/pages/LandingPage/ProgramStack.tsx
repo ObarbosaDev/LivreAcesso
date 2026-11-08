@@ -14,14 +14,17 @@ function ProgramCard({ program, index, total }: ProgramCardProps) {
   const ref = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
+  const isCovered = total - 1 - index > 0
   const targetScale = 1 - (total - 1 - index) * 0.04
+  const targetOpacity = isCovered ? 0.85 : 1
   const scale = useTransform(scrollYProgress, [0, 1], [1, reduceMotion ? 1 : targetScale])
+  const opacity = useTransform(scrollYProgress, [0, 1], [1, reduceMotion ? 1 : targetOpacity])
 
   return (
     <div ref={ref} className="sticky top-20 h-[80vh]" style={{ top: 80 + index * 24 }}>
       <motion.article
-        style={{ scale }}
-        className="h-full border-2 border-brand-green/30 bg-surface-raised p-5 sm:p-8 lg:p-10"
+        style={{ scale, opacity }}
+        className="h-full border border-white/10 bg-surface-raised p-5 shadow-[0_0_60px_-20px_var(--color-brand-green)] sm:p-8 lg:p-10"
       >
         <div className="flex items-baseline gap-4 border-b border-white/10 pb-6">
           <span className="font-kanit text-5xl font-black text-brand-green/40 sm:text-7xl">{program.number}</span>

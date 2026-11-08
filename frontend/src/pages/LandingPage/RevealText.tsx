@@ -22,8 +22,8 @@ export function RevealText({ text, className }: RevealTextProps) {
       {words.map((word, index) => (
         <motion.span
           key={`${word}-${index}`}
-          initial={{ opacity: 0.2 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0.2, y: 4 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-10% 0px' }}
           transition={{ duration: 0.4, delay: index * 0.012 }}
           className="inline-block"

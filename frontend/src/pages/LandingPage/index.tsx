@@ -1,5 +1,5 @@
-import { ArrowUp, LogIn, Menu, X } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { ArrowUp, ChevronDown, LogIn, Menu, X } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
@@ -35,7 +35,9 @@ function Marquee() {
         {row.map((word, index) => (
           <span
             key={`${word}-${index}`}
-            className="font-kanit text-2xl font-extrabold uppercase tracking-tight text-white/25 sm:text-4xl"
+            className={`font-kanit font-extrabold uppercase tracking-tight text-white/25 ${
+              index % 2 === 0 ? 'text-2xl sm:text-4xl' : 'text-xl sm:text-3xl'
+            }`}
           >
             {word}
           </span>
@@ -81,7 +83,7 @@ export function LandingPage() {
           >
             <a href="#instituto" onClick={() => setMenuOpen(false)} className="py-2 font-mono text-xs uppercase tracking-[0.14em] text-white/55 hover:text-brand-green">O instituto</a>
             <a href="#modalidades" onClick={() => setMenuOpen(false)} className="py-2 font-mono text-xs uppercase tracking-[0.14em] text-white/55 hover:text-brand-green">Projetos</a>
-            <Link to="/entrar" className="mt-3 inline-flex items-center justify-center gap-2 border border-brand-green px-4 py-3 font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand-green lg:mt-0">Entrar <LogIn size={14} /></Link>
+            <Link to="/entrar" className="mt-3 inline-flex items-center justify-center gap-2.5 border border-brand-green px-5 py-3 font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand-green transition hover:bg-brand-green/10 lg:mt-0">Entrar <LogIn size={14} /></Link>
           </nav>
           <button type="button" className="border border-white/20 p-2 text-white lg:hidden" onClick={() => setMenuOpen((open) => !open)} aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}>
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -108,12 +110,13 @@ export function LandingPage() {
               ONG desde 2010 que usa a dança, a música e o esporte para abrir caminhos de cultura, educação e
               cidadania para crianças e adolescentes de Ceilândia.
             </motion.p>
-            <motion.div {...fade} variants={fadeUp} className="mt-14 overflow-hidden border border-white/10">
+            <motion.div {...fade} variants={fadeUp} className="relative mt-14 overflow-hidden">
               <img
                 src={programs[0].image.src}
                 alt={programs[0].image.alt}
                 className="h-[260px] w-full object-cover sm:h-[380px] lg:h-[460px]"
               />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink to-transparent" aria-hidden="true" />
             </motion.div>
           </div>
         </section>
@@ -132,7 +135,7 @@ export function LandingPage() {
         </section>
 
         {/* Lista numerada dos dois projetos */}
-        <section id="modalidades" className="scroll-mt-8 border-b border-white/10 px-6 py-16 lg:px-12 lg:py-24">
+        <section id="modalidades" className="scroll-mt-8 px-6 pb-10 pt-16 lg:px-12 lg:pb-14 lg:pt-24">
           <div className="mx-auto max-w-[1440px]">
             <motion.div {...fade} variants={fadeUp} className="mb-14">
               <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-brand-green">Nossos projetos</p>
@@ -155,15 +158,31 @@ export function LandingPage() {
                 </motion.div>
               ))}
             </div>
+            <div className="flex justify-center pt-8">
+              <ChevronDown className="h-5 w-5 animate-bounce text-white/25" aria-hidden="true" />
+            </div>
           </div>
         </section>
 
         {/* Cards empilhados com a foto e o texto completo de cada projeto */}
-        <section className="px-6 py-16 lg:px-12 lg:py-24">
+        <section className="px-6 pb-16 pt-2 lg:px-12 lg:pb-24">
           <div className="mx-auto max-w-[1440px]">
             <ProgramStack programs={programs} />
           </div>
         </section>
+
+        {/* Fechamento: retoma o tom do hero antes do rodapé, pra página não cortar seco */}
+        <motion.section
+          {...fade}
+          variants={fadeUp}
+          className="border-t border-white/10 px-6 py-20 text-center lg:px-12 lg:py-28"
+        >
+          <p className="font-kanit text-[clamp(1.6rem,4.5vw,3rem)] font-black uppercase leading-tight tracking-tight text-white/80">
+            Cultura, educação e esporte.
+            <br />
+            <span className="landing-gradient-text">Desde 2010, em Ceilândia.</span>
+          </p>
+        </motion.section>
       </main>
 
       <footer className="border-t border-white/10 px-6 py-6 lg:px-12">
@@ -173,15 +192,21 @@ export function LandingPage() {
         </div>
       </footer>
 
-      {showBackToTop && (
-        <a
-          href="#topo"
-          aria-label="Voltar ao topo"
-          className="fixed bottom-6 right-6 z-30 inline-flex h-12 w-12 items-center justify-center border border-brand-green bg-ink text-brand-green shadow-[4px_4px_0_var(--color-brand-green)] transition hover:-translate-y-1 hover:bg-brand-green hover:text-ink"
-        >
-          <ArrowUp size={20} />
-        </a>
-      )}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.a
+            href="#topo"
+            aria-label="Voltar ao topo"
+            initial={reduceMotion ? undefined : { opacity: 0, scale: 0.8 }}
+            animate={reduceMotion ? undefined : { opacity: 1, scale: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-20 right-6 z-30 inline-flex h-12 w-12 items-center justify-center border border-brand-green bg-ink text-brand-green shadow-[4px_4px_0_var(--color-brand-green)] transition hover:-translate-y-1 hover:bg-brand-green hover:text-ink"
+          >
+            <ArrowUp size={20} />
+          </motion.a>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
