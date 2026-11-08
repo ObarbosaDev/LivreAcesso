@@ -11,9 +11,9 @@ __pycache__/
 *.py[cod]
 .coverage
 htmlcov/
-tests/
-docs/
-supabase/
-artifacts/
+/tests/
+/docs/
+/supabase/
+/artifacts/
 *.pdf
 scripts/build_backend_task_pdf.py
