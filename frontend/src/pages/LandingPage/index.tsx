@@ -1,4 +1,4 @@
-import { ArrowUp, LogIn, Menu, X } from 'lucide-react'
+import { ArrowUp, LogIn, Menu, MessageCircle, X } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
@@ -6,7 +6,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
 
-import { aboutParagraph, coreValues, programs } from './content'
+import { aboutParagraph, coreValues, donationWhatsAppUrl, programs } from './content'
 import { ProgramPanel } from './ProgramPanel'
 import { RevealText } from './RevealText'
 
@@ -146,6 +146,30 @@ export function LandingPage() {
             Desde 2010, em Ceilândia<span className="text-brand-green">.</span>
           </p>
         </motion.section>
+
+        {/* CTA para empresas: doação com benefício fiscal, contato direto via WhatsApp */}
+        <section id="contribua" className="scroll-mt-8 border-t border-white/10 px-6 py-20 text-center lg:px-12 lg:py-28">
+          <motion.div {...fade} variants={fadeUp} className="mx-auto flex max-w-2xl flex-col items-center">
+            <p className="mb-5 font-mono text-xs font-bold uppercase tracking-[0.2em] text-brand-green">Para empresas</p>
+            <SectionTitle>Transforme imposto em futuro.</SectionTitle>
+            <p className="mt-8 font-mono text-sm leading-7 text-white/60 sm:text-base">
+              Empresas tributadas pelo lucro real podem deduzir doações ao Instituto como despesa
+              operacional, dentro do limite legal previsto na Lei 9.249/95. Fale com a gente e
+              descubra como contribuir com responsabilidade social — e benefício fiscal real.
+            </p>
+            <p className="mt-3 font-mono text-xs italic text-white/35">
+              Consulte seu contador para validar o enquadramento tributário da sua empresa.
+            </p>
+            <a
+              href={donationWhatsAppUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-10 inline-flex items-center gap-2.5 border border-brand-green px-7 py-4 font-mono text-xs font-bold uppercase tracking-[0.14em] text-brand-green transition hover:bg-brand-green/10"
+            >
+              Entre em contato <MessageCircle size={16} />
+            </a>
+          </motion.div>
+        </section>
       </main>
 
       <footer className="border-t border-white/10 px-6 py-6 lg:px-12">

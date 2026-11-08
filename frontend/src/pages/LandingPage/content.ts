@@ -24,6 +24,10 @@ export interface Program {
   image: { src: string; alt: string; position?: string }
 }
 
+export const donationWhatsAppUrl =
+  'https://wa.me/5561996168855?text=' +
+  encodeURIComponent('Olá! Vim pelo site do Instituto Livre Acesso e quero saber mais sobre como contribuir.')
+
 export const programs: Program[] = [
   {
     number: '01',
