@@ -4,16 +4,7 @@
  * (balé e música juntos) e Livre Acesso ao Esporte (Jiu-Jitsu).
  */
 
-export const marqueeWords = [
-  'CUIDADO',
-  'COMUNIDADE',
-  'ARTE',
-  'ESPORTE',
-  'DESDE 2010',
-  'CEILÂNDIA',
-  'CIDADANIA',
-  'PERTENCIMENTO',
-]
+export const coreValues = ['Cuidado', 'Comunidade', 'Arte', 'Esporte', 'Cidadania']
 
 export const aboutParagraph =
   'O Instituto Livre Acesso é uma organização não governamental criada em agosto de 2010, ' +
@@ -30,7 +21,7 @@ export interface Program {
   summary: string
   description: string
   methodology?: string[]
-  image: { src: string; alt: string }
+  image: { src: string; alt: string; position?: string }
 }
 
 export const programs: Program[] = [
@@ -65,6 +56,10 @@ export const programs: Program[] = [
       'protagonistas do próprio aprendizado, estimulando autonomia e motivação. A programação ' +
       'inclui práticas corporais e conteúdos teóricos, individuais e coletivos, respeitando o ' +
       'conhecimento prévio de cada aluno, com acompanhamento de profissionais especializados.',
-    image: { src: '/landing/jiujitsu-equipe.webp', alt: 'Equipe de Jiu-Jitsu do Instituto Livre Acesso reunida' },
+    image: {
+      src: '/landing/jiujitsu-equipe.webp',
+      alt: 'Equipe de Jiu-Jitsu do Instituto Livre Acesso reunida',
+      position: 'center 30%',
+    },
   },
 ]

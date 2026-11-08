@@ -20,14 +20,10 @@ export function LogoMark({ className, markOnly = false }: LogoMarkProps) {
   }
 
   return (
-    <div className={cn('flex items-center gap-3', className)} role="img" aria-label="Instituto Livre Acesso">
-      <img src="/brand/icon-livre-acesso.png" alt="" aria-hidden="true" className="h-10 w-10 shrink-0 object-contain" />
-      <span className="logo-wordmark font-display leading-tight" aria-hidden="true">
-        <span className="logo-wordmark-muted block text-[0.6rem] font-semibold tracking-[0.14em]">
-          INSTITUTO
-        </span>
-        <span className="block text-base font-bold tracking-tight">LIVRE ACESSO</span>
-      </span>
-    </div>
+    <img
+      src="/brand/logo-livre-acesso-full.png"
+      alt="Instituto Livre Acesso"
+      className={cn('h-11 w-auto object-contain', className)}
+    />
   )
 }
