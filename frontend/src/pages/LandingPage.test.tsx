@@ -9,7 +9,7 @@ vi.mock('@/app/providers/AuthProvider', () => ({
 }))
 
 describe('LandingPage', () => {
-  it('apresenta propósito, modalidades e acesso ao sistema', () => {
+  it('apresenta o instituto e os dois projetos reais, com acesso só pelo Entrar da navbar', () => {
     render(
       <MemoryRouter>
         <LandingPage />
@@ -17,14 +17,11 @@ describe('LandingPage', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Cuidado que abre caminhos.' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Movimento para descobrir possibilidades.' })).toBeInTheDocument()
-    expect(screen.getByText('Jiu-Jitsu')).toBeInTheDocument()
-    expect(screen.getByText('Música')).toBeInTheDocument()
-    expect(screen.getByText('Balé')).toBeInTheDocument()
-    expect(screen.getByText('Uma visão inteira de cada aluno')).toBeInTheDocument()
-    expect(screen.getByText('A equipe no mesmo ritmo')).toBeInTheDocument()
-    expect(screen.getByText('Relatórios que ajudam a decidir')).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: /Entrar/ }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Sobre o Instituto' })).toBeInTheDocument()
+    expect(screen.getAllByText('SoulBallet').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Livre Acesso ao Esporte').length).toBeGreaterThan(0)
+    // Só um ponto de acesso ao sistema: o "Entrar" da navbar.
+    expect(screen.getAllByRole('link', { name: /Entrar/ })).toHaveLength(1)
     expect(screen.getByRole('link', { name: 'Pular para o conteúdo' })).toHaveAttribute('href', '#conteudo-principal')
   })
 })
