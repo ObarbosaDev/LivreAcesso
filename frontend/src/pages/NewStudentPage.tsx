@@ -41,15 +41,18 @@ export function NewStudentPage() {
     setSubmitting(true)
 
     try {
+      const hasGuardian = guardianName.trim() !== '' || guardianPhone.trim() !== ''
       await registerStudent({
         full_name: fullName,
-        cpf,
-        birth_date: birthDate,
-        guardian: {
-          full_name: guardianName,
-          phone: guardianPhone,
-          email: guardianEmail || undefined,
-        },
+        cpf: cpf || undefined,
+        birth_date: birthDate || undefined,
+        guardian: hasGuardian
+          ? {
+              full_name: guardianName,
+              phone: guardianPhone,
+              email: guardianEmail || undefined,
+            }
+          : undefined,
       })
       navigate('/estudantes')
     } catch (caught) {
@@ -78,8 +81,8 @@ export function NewStudentPage() {
       </Link>
 
       <p className="mt-2 text-sm text-white/55">
-        Cria o cadastro pessoal e o responsável principal. A matrícula em uma turma é feita depois,
-        em um passo separado.
+        Apenas o nome completo do estudante é obrigatório. Os demais dados podem ser completados
+        depois; a matrícula em uma turma é feita em um passo separado.
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-8">
@@ -96,7 +99,7 @@ export function NewStudentPage() {
             icon={<User className="h-4 w-4" aria-hidden="true" />}
           />
           <Input
-            label="CPF"
+            label="CPF (opcional)"
             placeholder="000.000.000-00"
             value={cpf}
             onChange={(event) => setCpf(event.target.value)}
@@ -105,7 +108,7 @@ export function NewStudentPage() {
             hint="Com ou sem pontuação."
           />
           <Input
-            label="Data de nascimento"
+            label="Data de nascimento (opcional)"
             type="date"
             value={birthDate}
             onChange={(event) => setBirthDate(event.target.value)}
@@ -115,7 +118,9 @@ export function NewStudentPage() {
         </fieldset>
 
         <fieldset className="liquid-glass flex flex-col gap-5 rounded-2xl p-6">
-          <legend className="px-1 font-display text-sm font-semibold text-white">Responsável</legend>
+          <legend className="px-1 font-display text-sm font-semibold text-white">
+            Responsável (opcional)
+          </legend>
           <Input
             label="Nome completo"
             value={guardianName}

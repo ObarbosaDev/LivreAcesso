@@ -42,9 +42,9 @@ class StudentListItem:
 
     id: UUID
     full_name: str
-    cpf_masked: str
-    birth_date: date
-    age: int
+    cpf_masked: str | None
+    birth_date: date | None
+    age: int | None
     status: StudentStatus
     guardian_name: str | None
     guardian_phone_masked: str | None

@@ -64,12 +64,12 @@ def _to_list_item(student: Student) -> StudentListItem:
     return StudentListItem(
         id=student.id,
         full_name=student.full_name,
-        cpf_masked=student.cpf.masked,
+        cpf_masked=student.cpf.masked if student.cpf else None,
         birth_date=student.birth_date,
         age=student.age_on(),
         status=student.status,
-        guardian_name=student.guardian.full_name,
-        guardian_phone_masked=student.guardian.phone.masked,
+        guardian_name=student.guardian.full_name if student.guardian else None,
+        guardian_phone_masked=student.guardian.phone.masked if student.guardian else None,
         created_at=student.created_at,
         updated_at=student.updated_at,
     )
@@ -105,22 +105,24 @@ class InMemoryStudentRepository:
         with self._lock:
             # A verificação e a escrita compartilham o mesmo lock. Isso reproduz,
             # em menor escala, a garantia do índice único que existe no Postgres.
-            if student.cpf.value in self._student_ids_by_cpf:
+            if student.cpf is not None and student.cpf.value in self._student_ids_by_cpf:
                 raise DuplicateCPFError
             self._students[student.id] = _persistent_snapshot(student)
-            self._student_ids_by_cpf[student.cpf.value] = student.id
-            self._guardians[student.guardian.id] = deepcopy(student.guardian)
-            self._guardian_versions[student.guardian.id] = student.created_at
-            self._guardian_links[(student.id, student.guardian.id)] = StudentGuardian(
-                student_id=student.id,
-                guardian=deepcopy(student.guardian),
-                relationship=GuardianRelationship.RESPONSIBLE_CONTACT,
-                is_primary=True,
-                receives_communications=True,
-                active=True,
-                linked_at=student.created_at,
-                guardian_updated_at=student.created_at,
-            )
+            if student.cpf is not None:
+                self._student_ids_by_cpf[student.cpf.value] = student.id
+            if student.guardian is not None:
+                self._guardians[student.guardian.id] = deepcopy(student.guardian)
+                self._guardian_versions[student.guardian.id] = student.created_at
+                self._guardian_links[(student.id, student.guardian.id)] = StudentGuardian(
+                    student_id=student.id,
+                    guardian=deepcopy(student.guardian),
+                    relationship=GuardianRelationship.RESPONSIBLE_CONTACT,
+                    is_primary=True,
+                    receives_communications=True,
+                    active=True,
+                    linked_at=student.created_at,
+                    guardian_updated_at=student.created_at,
+                )
             return PersistedStudentVersion(
                 created_at=student.created_at,
                 updated_at=student.updated_at,
@@ -499,7 +501,9 @@ class InMemoryStudentRepository:
             ),
             None,
         )
-        if primary is None:
-            raise PrimaryGuardianRequiredError
-        hydrated.guardian = deepcopy(self._guardians[primary.guardian.id])
+        # Aluno sem nenhum responsável vinculado é um estado válido: fica
+        # com guardian=None até alguém completar o cadastro depois.
+        hydrated.guardian = (
+            deepcopy(self._guardians[primary.guardian.id]) if primary is not None else None
+        )
         return hydrated

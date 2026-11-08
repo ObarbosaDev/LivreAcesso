@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from enum import StrEnum
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import (
     AwareDatetime,
@@ -96,9 +96,9 @@ class _StudentListRow(BaseModel):
 
     id: UUID
     full_name: str
-    cpf_masked: str = Field(pattern=r"^\*{3}\.\*{3}\.\*{3}-\d{2}$")
-    birth_date: date
-    age: int = Field(ge=0, le=120)
+    cpf_masked: str | None = Field(default=None, pattern=r"^\*{3}\.\*{3}\.\*{3}-\d{2}$")
+    birth_date: date | None
+    age: int | None = Field(default=None, ge=0, le=120)
     status: _DatabaseStudentStatus
     guardian_name: str | None
     guardian_phone_masked: str | None
@@ -131,10 +131,10 @@ class _StudentDetailRow(BaseModel):
 
     id: UUID
     full_name: str
-    cpf: str = Field(pattern=r"^\d{11}$")
-    birth_date: date
+    cpf: str | None = Field(default=None, pattern=r"^\d{11}$")
+    birth_date: date | None
     status: _DatabaseStudentStatus
-    guardian: _GuardianDetailRow
+    guardian: _GuardianDetailRow | None
     created_at: AwareDatetime
     updated_at: AwareDatetime
 
@@ -227,16 +227,19 @@ class SupabaseStudentRepository:
         self._context = context
 
     async def add(self, student: Student) -> PersistedStudentVersion:
+        # Guardian_id precisa existir mesmo sem responsável: a RPC só usa
+        # esse UUID quando de fato cria um contato.
+        guardian_id = student.guardian.id if student.guardian is not None else uuid4()
         payload: dict[str, object] = {
             "p_student_id": str(student.id),
-            "p_guardian_id": str(student.guardian.id),
+            "p_guardian_id": str(guardian_id),
             "p_request_id": str(self._context.request_id),
             "p_full_name": student.full_name,
-            "p_cpf": student.cpf.value,
-            "p_birth_date": student.birth_date.isoformat(),
-            "p_guardian_full_name": student.guardian.full_name,
-            "p_guardian_phone": student.guardian.phone.value,
-            "p_guardian_email": student.guardian.email,
+            "p_cpf": student.cpf.value if student.cpf is not None else None,
+            "p_birth_date": student.birth_date.isoformat() if student.birth_date else None,
+            "p_guardian_full_name": student.guardian.full_name if student.guardian else None,
+            "p_guardian_phone": student.guardian.phone.value if student.guardian else None,
+            "p_guardian_email": student.guardian.email if student.guardian else None,
             # "Contato responsável" é neutro. Declarar parentesco ou guarda
             # legal sem confirmação produziria um dado potencialmente falso.
             "p_relationship": "responsible_contact",
@@ -296,6 +299,9 @@ class SupabaseStudentRepository:
         *,
         expected_updated_at: datetime,
     ) -> datetime:
+        # update_student exige uma data válida; só CPF e o cadastro inicial
+        # aceitam ausência. Quem chama este método sempre fornece a data.
+        assert student.birth_date is not None
         result = await self._call(
             "update_student",
             {
@@ -569,13 +575,17 @@ class SupabaseStudentRepository:
         return Student(
             id=row.id,
             full_name=row.full_name,
-            cpf=CPF(row.cpf),
+            cpf=CPF(row.cpf) if row.cpf else None,
             birth_date=row.birth_date,
-            guardian=Guardian(
-                id=row.guardian.id,
-                full_name=row.guardian.full_name,
-                phone=Phone(row.guardian.phone),
-                email=str(row.guardian.email) if row.guardian.email else None,
+            guardian=(
+                Guardian(
+                    id=row.guardian.id,
+                    full_name=row.guardian.full_name,
+                    phone=Phone(row.guardian.phone),
+                    email=str(row.guardian.email) if row.guardian.email else None,
+                )
+                if row.guardian is not None
+                else None
             ),
             status=status,
             created_at=row.created_at,

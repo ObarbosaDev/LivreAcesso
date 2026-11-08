@@ -29,16 +29,17 @@ class GuardianRelationship(StrEnum):
     OTHER = "outro"
 
 
-def _normalize_student_data(full_name: str, birth_date: date) -> str:
+def _normalize_student_data(full_name: str, birth_date: date | None) -> str:
     normalized_name = " ".join(full_name.split())
     today = date.today()
 
     if len(normalized_name) < 3:
         raise InvalidStudentDataError("Informe o nome completo do aluno.")
-    if birth_date >= today:
-        raise InvalidStudentDataError("A data de nascimento deve estar no passado.")
-    if birth_date.year < today.year - 120:
-        raise InvalidStudentDataError("A data de nascimento informada é inválida.")
+    if birth_date is not None:
+        if birth_date >= today:
+            raise InvalidStudentDataError("A data de nascimento deve estar no passado.")
+        if birth_date.year < today.year - 120:
+            raise InvalidStudentDataError("A data de nascimento informada é inválida.")
     return normalized_name
 
 
@@ -93,9 +94,9 @@ class Student:
 
     id: UUID
     full_name: str
-    cpf: CPF
-    birth_date: date
-    guardian: Guardian
+    cpf: CPF | None
+    birth_date: date | None
+    guardian: Guardian | None
     status: StudentStatus = StudentStatus.ACTIVE
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -116,9 +117,9 @@ class Student:
         cls,
         *,
         full_name: str,
-        cpf: CPF,
-        birth_date: date,
-        guardian: Guardian,
+        cpf: CPF | None,
+        birth_date: date | None,
+        guardian: Guardian | None,
     ) -> "Student":
         # O status inicial pertence ao ciclo do domínio e não ao payload HTTP.
         # Dessa forma, nenhum cliente consegue criar um cadastro já inativo.
@@ -187,9 +188,11 @@ class Student:
             raise InvalidStudentDataError("A versão do cadastro precisa informar o fuso horário.")
         self.updated_at = updated_at
 
-    def age_on(self, reference_date: date | None = None) -> int:
+    def age_on(self, reference_date: date | None = None) -> int | None:
         """Calcula idade civil na data informada sem armazenar valor derivado."""
 
+        if self.birth_date is None:
+            return None
         reference = reference_date or date.today()
         before_birthday = (reference.month, reference.day) < (
             self.birth_date.month,

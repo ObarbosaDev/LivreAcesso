@@ -41,25 +41,33 @@ class GuardianInput(DTO):
 
 
 class RegisterStudentInput(DTO):
-    """Dados necessários somente para criar o cadastro pessoal do aluno."""
+    """Somente o nome do aluno é obrigatório; os demais dados podem ser
+    completados depois, em telas próprias de edição e de responsáveis."""
 
     full_name: str = Field(
         min_length=3,
         max_length=120,
         description="Nome completo do aluno.",
     )
-    cpf: str = Field(
+    cpf: str | None = Field(
+        default=None,
         min_length=11,
         max_length=14,
         description="CPF com ou sem pontuação; nunca deve ser enviado para logs.",
     )
-    birth_date: date = Field(description="Data de nascimento no formato AAAA-MM-DD.")
-    guardian: GuardianInput
+    birth_date: date | None = Field(
+        default=None,
+        description="Data de nascimento no formato AAAA-MM-DD.",
+    )
+    guardian: GuardianInput | None = Field(
+        default=None,
+        description="Responsável principal; pode ser vinculado depois, se não informado agora.",
+    )
 
     @field_validator("birth_date")
     @classmethod
-    def birth_date_must_be_in_the_past(cls, value: date) -> date:
-        if value >= date.today():
+    def birth_date_must_be_in_the_past(cls, value: date | None) -> date | None:
+        if value is not None and value >= date.today():
             raise ValueError("A data de nascimento deve estar no passado.")
         return value
 
@@ -137,9 +145,9 @@ class StudentOutput(DTO):
 
     id: UUID
     full_name: str
-    cpf_masked: str
-    birth_date: date
-    age: int
+    cpf_masked: str | None
+    birth_date: date | None
+    age: int | None
     status: StudentStatus
     guardian_name: str | None
     guardian_phone_masked: str | None
@@ -161,11 +169,11 @@ class StudentDetailOutput(DTO):
 
     id: UUID
     full_name: str
-    cpf_masked: str
-    birth_date: date
-    age: int
+    cpf_masked: str | None
+    birth_date: date | None
+    age: int | None
     status: StudentStatus
-    guardian: GuardianDetailOutput
+    guardian: GuardianDetailOutput | None
     created_at: datetime
     updated_at: datetime
 

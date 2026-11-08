@@ -68,8 +68,11 @@ export function StudentEvaluationReport({ student }: { student: StudentDetail })
 
       <div className="grid gap-4 sm:grid-cols-3">
         <ReportFact label="Situação cadastral" value={STUDENT_STATUS_LABELS[student.status]} />
-        <ReportFact label="Idade" value={`${student.age} anos`} />
-        <ReportFact label="Responsável principal" value={student.guardian.full_name} />
+        <ReportFact label="Idade" value={student.age != null ? `${student.age} anos` : 'Não informada'} />
+        <ReportFact
+          label="Responsável principal"
+          value={student.guardian?.full_name ?? 'Não informado'}
+        />
       </div>
 
       <div className="flex flex-col gap-4 border-y border-white/10 py-4 sm:flex-row sm:items-center sm:justify-between">

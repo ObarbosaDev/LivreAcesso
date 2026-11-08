@@ -4,9 +4,9 @@ export type StudentStatus = 'ativo' | 'inativo'
 export interface Student {
   id: string
   full_name: string
-  cpf_masked: string
-  birth_date: string
-  age: number
+  cpf_masked: string | null
+  birth_date: string | null
+  age: number | null
   status: StudentStatus
   guardian_name: string | null
   guardian_phone_masked: string | null
@@ -32,16 +32,16 @@ export const STUDENT_STATUS_LABELS: Record<StudentStatus, string> = {
 export interface StudentDetail {
   id: string
   full_name: string
-  cpf_masked: string
-  birth_date: string
-  age: number
+  cpf_masked: string | null
+  birth_date: string | null
+  age: number | null
   status: StudentStatus
   guardian: {
     id: string
     full_name: string
     phone: string
     email: string | null
-  }
+  } | null
   created_at: string
   updated_at: string
 }

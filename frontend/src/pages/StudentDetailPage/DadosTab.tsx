@@ -10,7 +10,7 @@ import { Input } from '@/shared/ui/Input'
 
 export function DadosTab({ student, onChanged }: { student: StudentDetail; onChanged: () => void }) {
   const [fullName, setFullName] = useState(student.full_name)
-  const [birthDate, setBirthDate] = useState(student.birth_date)
+  const [birthDate, setBirthDate] = useState(student.birth_date ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)

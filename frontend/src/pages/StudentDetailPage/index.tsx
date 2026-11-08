@@ -17,6 +17,12 @@ import { StudentEvaluationReport } from './StudentEvaluationReport'
 
 type Tab = 'dados' | 'responsaveis' | 'relatorio'
 
+function summaryLine(student: StudentDetail): string {
+  const age = student.age != null ? `${student.age} anos` : 'Idade não informada'
+  const cpf = student.cpf_masked ? `CPF ${student.cpf_masked}` : 'CPF não informado'
+  return `${age} · ${cpf}`
+}
+
 const TAB_LABELS: Record<Tab, string> = {
   dados: 'Dados',
   responsaveis: 'Responsáveis',
@@ -69,7 +75,7 @@ export function StudentDetailPage() {
     <PageFrame
       eyebrow="Prontuário operacional"
       title={student.full_name}
-      description={`${student.age} anos · CPF ${student.cpf_masked}`}
+      description={summaryLine(student)}
     >
       <Link
         to="/estudantes"
@@ -81,9 +87,7 @@ export function StudentDetailPage() {
 
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="mt-1 text-sm text-white/55">
-            {student.age} anos · CPF {student.cpf_masked}
-          </p>
+          <p className="mt-1 text-sm text-white/55">{summaryLine(student)}</p>
         </div>
         <StatusBadge
           label={STUDENT_STATUS_LABELS[student.status]}

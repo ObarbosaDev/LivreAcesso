@@ -9,9 +9,9 @@ import type {
 
 export interface RegisterStudentPayload {
   full_name: string
-  cpf: string
-  birth_date: string
-  guardian: {
+  cpf?: string
+  birth_date?: string
+  guardian?: {
     full_name: string
     phone: string
     email?: string

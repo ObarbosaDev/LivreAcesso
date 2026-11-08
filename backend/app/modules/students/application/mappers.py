@@ -26,14 +26,20 @@ class StudentMapper:
     def to_domain(dto: RegisterStudentInput) -> Student:
         # A conversão cria value objects antes da entidade para que CPF e telefone
         # inválidos nunca alcancem o repositório ou sejam publicados em eventos.
-        guardian = Guardian(
-            full_name=dto.guardian.full_name,
-            phone=Phone(dto.guardian.phone),
-            email=str(dto.guardian.email) if dto.guardian.email else None,
+        # Só o nome do aluno é obrigatório: os demais dados ficam None quando
+        # não informados e podem ser completados depois.
+        guardian = (
+            Guardian(
+                full_name=dto.guardian.full_name,
+                phone=Phone(dto.guardian.phone),
+                email=str(dto.guardian.email) if dto.guardian.email else None,
+            )
+            if dto.guardian is not None
+            else None
         )
         return Student.register(
             full_name=dto.full_name,
-            cpf=CPF(dto.cpf),
+            cpf=CPF(dto.cpf) if dto.cpf else None,
             birth_date=dto.birth_date,
             guardian=guardian,
         )
@@ -45,12 +51,12 @@ class StudentMapper:
         return StudentOutput(
             id=student.id,
             full_name=student.full_name,
-            cpf_masked=student.cpf.masked,
+            cpf_masked=student.cpf.masked if student.cpf else None,
             birth_date=student.birth_date,
             age=student.age_on(),
             status=student.status,
-            guardian_name=student.guardian.full_name,
-            guardian_phone_masked=student.guardian.phone.masked,
+            guardian_name=student.guardian.full_name if student.guardian else None,
+            guardian_phone_masked=student.guardian.phone.masked if student.guardian else None,
             created_at=student.created_at,
             updated_at=student.updated_at,
         )
@@ -62,15 +68,19 @@ class StudentMapper:
         return StudentDetailOutput(
             id=student.id,
             full_name=student.full_name,
-            cpf_masked=student.cpf.masked,
+            cpf_masked=student.cpf.masked if student.cpf else None,
             birth_date=student.birth_date,
             age=student.age_on(),
             status=student.status,
-            guardian=GuardianDetailOutput(
-                id=student.guardian.id,
-                full_name=student.guardian.full_name,
-                phone=student.guardian.phone.value,
-                email=student.guardian.email,
+            guardian=(
+                GuardianDetailOutput(
+                    id=student.guardian.id,
+                    full_name=student.guardian.full_name,
+                    phone=student.guardian.phone.value,
+                    email=student.guardian.email,
+                )
+                if student.guardian is not None
+                else None
             ),
             created_at=student.created_at,
             updated_at=student.updated_at,

@@ -43,8 +43,8 @@ describe('NewStudentPage', () => {
 
     const [studentName, guardianName] = screen.getAllByLabelText('Nome completo')
     await userEvent.type(studentName, 'Sophia Almeida Ramos')
-    await userEvent.type(screen.getByLabelText('CPF'), '529.982.247-25')
-    await userEvent.type(screen.getByLabelText('Data de nascimento'), '2015-05-10')
+    await userEvent.type(screen.getByLabelText('CPF (opcional)'), '529.982.247-25')
+    await userEvent.type(screen.getByLabelText('Data de nascimento (opcional)'), '2015-05-10')
     await userEvent.type(guardianName, 'Camila Ramos')
     await userEvent.type(screen.getByLabelText('Telefone'), '(61) 99999-1234')
     await userEvent.type(screen.getByLabelText('E-mail (opcional)'), 'camila@example.com')
@@ -64,6 +64,29 @@ describe('NewStudentPage', () => {
     expect(navigateMock).toHaveBeenCalledWith('/estudantes')
   })
 
+  it('cadastra só com o nome, sem CPF, data de nascimento ou responsável', async () => {
+    registerStudentMock.mockResolvedValueOnce({ id: 'student-1' })
+
+    render(
+      <MemoryRouter>
+        <NewStudentPage />
+      </MemoryRouter>,
+    )
+
+    const [studentName] = screen.getAllByLabelText('Nome completo')
+    await userEvent.type(studentName, 'Sophia Almeida Ramos')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cadastrar estudante' }))
+
+    expect(registerStudentMock).toHaveBeenCalledWith({
+      full_name: 'Sophia Almeida Ramos',
+      cpf: undefined,
+      birth_date: undefined,
+      guardian: undefined,
+    })
+    expect(navigateMock).toHaveBeenCalledWith('/estudantes')
+  })
+
   it('mostra o erro de CPF duplicado no campo certo e não navega', async () => {
     registerStudentMock.mockRejectedValueOnce(
       problem({
@@ -79,8 +102,8 @@ describe('NewStudentPage', () => {
 
     const [studentName, guardianName] = screen.getAllByLabelText('Nome completo')
     await userEvent.type(studentName, 'Sophia Almeida Ramos')
-    await userEvent.type(screen.getByLabelText('CPF'), '529.982.247-25')
-    await userEvent.type(screen.getByLabelText('Data de nascimento'), '2015-05-10')
+    await userEvent.type(screen.getByLabelText('CPF (opcional)'), '529.982.247-25')
+    await userEvent.type(screen.getByLabelText('Data de nascimento (opcional)'), '2015-05-10')
     await userEvent.type(guardianName, 'Camila Ramos')
     await userEvent.type(screen.getByLabelText('Telefone'), '(61) 99999-1234')
 
@@ -107,8 +130,8 @@ describe('NewStudentPage', () => {
 
     const [studentName, guardianName] = screen.getAllByLabelText('Nome completo')
     await userEvent.type(studentName, 'Sophia Almeida Ramos')
-    await userEvent.type(screen.getByLabelText('CPF'), '529.982.247-25')
-    await userEvent.type(screen.getByLabelText('Data de nascimento'), '2015-05-10')
+    await userEvent.type(screen.getByLabelText('CPF (opcional)'), '529.982.247-25')
+    await userEvent.type(screen.getByLabelText('Data de nascimento (opcional)'), '2015-05-10')
     await userEvent.type(guardianName, 'Camila Ramos')
     await userEvent.type(screen.getByLabelText('Telefone'), '(61) 99999-1234')
 
