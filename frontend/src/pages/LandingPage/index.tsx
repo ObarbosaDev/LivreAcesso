@@ -107,7 +107,7 @@ export function LandingPage() {
         {/* Faixa fixa de valores — uma frase, sem rolagem infinita. */}
         <div className="border-b border-white/10 px-6 py-5 lg:px-12">
           <p className="mx-auto max-w-[1440px] font-mono text-xs uppercase tracking-[0.2em] text-white/35 sm:text-sm">
-            {coreValues.join(' · ')} — desde 2010, em Ceilândia.
+            {coreValues.join(' · ')}, desde 2010, em Ceilândia.
           </p>
         </div>
 
@@ -155,7 +155,7 @@ export function LandingPage() {
             <p className="mt-8 font-mono text-sm leading-7 text-white/60 sm:text-base">
               Empresas tributadas pelo lucro real podem deduzir doações ao Instituto como despesa
               operacional, dentro do limite legal previsto na Lei 9.249/95. Fale com a gente e
-              descubra como contribuir com responsabilidade social — e benefício fiscal real.
+              descubra como contribuir com responsabilidade social e benefício fiscal real.
             </p>
             <p className="mt-3 font-mono text-xs italic text-white/35">
               Consulte seu contador para validar o enquadramento tributário da sua empresa.

@@ -42,9 +42,9 @@ export const programs: Program[] = [
       'desenvolve a linguagem e a capacidade perceptiva dos alunos pela consciência corporal, ' +
       'pelo ritmo e pela resposta do corpo ao movimento.',
     methodology: [
-      'Balé clássico — técnica de Agrippina Vaganova',
-      'Dança contemporânea — estudos de movimento de Rudolf Laban',
-      'Dança espanhola — Escola Bolera, flamenco e clássico espanhol',
+      'Balé clássico: técnica de Agrippina Vaganova',
+      'Dança contemporânea: estudos de movimento de Rudolf Laban',
+      'Dança espanhola: Escola Bolera, flamenco e clássico espanhol',
     ],
     image: { src: '/landing/soulballet-recital.webp', alt: 'Turma do SoulBallet reunida no palco após um recital' },
   },
@@ -54,7 +54,7 @@ export const programs: Program[] = [
     since: 'Jiu-Jitsu',
     summary: 'Jiu-Jitsu como resposta ativa, com o aluno no centro do próprio aprendizado.',
     description:
-      'O Projeto Livre Acesso ao Esporte – Jiu-Jitsu une esforços articulados para transformar ' +
+      'O Projeto Livre Acesso ao Esporte: Jiu-Jitsu une esforços articulados para transformar ' +
       'a trajetória de crianças e adolescentes da região, abrindo espaço para novas ' +
       'oportunidades. Por meio de uma metodologia ativa, colocamos os participantes como ' +
       'protagonistas do próprio aprendizado, estimulando autonomia e motivação. A programação ' +
