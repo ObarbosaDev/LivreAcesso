@@ -8,7 +8,6 @@ import { ROLE_LABELS } from '@/entities/profile/types'
 import { cn } from '@/shared/lib/cn'
 import { Button } from '@/shared/ui/Button'
 import { LogoMark } from '@/shared/ui/LogoMark'
-import { ThemeToggle } from '@/shared/ui/ThemeToggle'
 
 const NAV_ITEMS: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean; capability?: Capability }[] = [
   { to: '/', label: 'Início', icon: LayoutDashboard, end: true },
@@ -195,7 +194,6 @@ export function AppLayout() {
 
           <button type="button" onClick={() => setCommandOpen(true)} className="hidden h-10 min-w-64 items-center gap-3 border border-white/10 bg-surface px-3 text-left text-sm text-white/35 transition hover:border-brand-green/40 hover:text-white/60 md:flex"><Search className="h-4 w-4" aria-hidden="true" /><span className="flex-1">Ir para uma área...</span><kbd className="border border-white/10 px-1.5 py-0.5 text-[10px] text-white/35">CTRL K</kbd></button>
           <div className="ml-auto flex items-center gap-3">
-            <ThemeToggle />
             {profile && (
             <Link to="/perfil" className="group flex items-center gap-3 border-l border-white/10 py-1 pl-3 pr-1 transition hover:border-brand-green">
                 <span className="flex h-9 w-9 items-center justify-center border border-brand-green bg-brand-green text-sm font-bold text-ink">{profile.full_name.slice(0, 1).toUpperCase()}</span>

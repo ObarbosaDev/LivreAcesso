@@ -188,7 +188,7 @@ export function LandingPage() {
             animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: 8 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-20 right-6 z-30 inline-flex h-12 w-12 items-center justify-center border border-white/20 bg-ink/80 text-white/70 backdrop-blur transition hover:border-brand-green hover:text-brand-green"
+            className="fixed bottom-6 right-6 z-30 hidden h-12 w-12 items-center justify-center border border-white/20 bg-ink/80 text-white/70 backdrop-blur transition hover:border-brand-green hover:text-brand-green sm:inline-flex"
           >
             <ArrowUp size={20} />
           </motion.a>
