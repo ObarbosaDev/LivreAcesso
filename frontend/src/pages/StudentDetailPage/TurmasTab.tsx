@@ -219,17 +219,14 @@ export function TurmasTab({ studentId }: { studentId: string }) {
                       tone={enrollment.status === 'ativa' ? 'success' : 'neutral'}
                     />
                     {canManageEnrollments && (
-                      <button
+                      <Button
                         type="button"
+                        size="sm"
+                        variant={enrollment.status === 'ativa' ? 'danger' : 'primary'}
                         onClick={() => setChangingEnrollmentId(enrollment.id)}
-                        className={
-                          enrollment.status === 'ativa'
-                            ? 'text-xs font-medium text-danger/80 hover:text-danger'
-                            : 'text-xs font-medium text-brand-green hover:text-brand-green-soft'
-                        }
                       >
                         {enrollment.status === 'ativa' ? 'Remover' : 'Reativar'}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>

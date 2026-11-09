@@ -63,7 +63,7 @@ export function AgendaPage() {
               </div>
               <div className="flex items-center gap-4">
                 <p className="font-display text-xs text-white/55">{new Date(event.starts_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p>
-                {canManageAgenda && <button type="button" onClick={() => setCancelingEventId(event.id)} className="text-xs text-danger/70 hover:text-danger">Cancelar</button>}
+                {canManageAgenda && <Button type="button" size="sm" variant="danger" onClick={() => setCancelingEventId(event.id)}>Cancelar</Button>}
               </div>
             </div>
             {cancelingEventId === event.id && (

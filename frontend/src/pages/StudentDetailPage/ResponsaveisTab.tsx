@@ -99,21 +99,18 @@ export function ResponsaveisTab({ student }: { student: StudentDetail }) {
             </div>
             {!guardian.is_primary && (
               <div className="mt-4 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleSetPrimary(guardian.id)}
-                  className="text-xs font-medium text-brand-green hover:text-brand-green-soft"
-                >
+                <Button type="button" size="sm" variant="primary" onClick={() => handleSetPrimary(guardian.id)}>
                   Tornar principal
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  size="sm"
+                  variant="danger"
                   onClick={() => setUnlinkingGuardianId(guardian.id)}
-                  className="flex items-center gap-1 text-xs font-medium text-danger/80 hover:text-danger"
                 >
                   <UserMinus className="h-3 w-3" aria-hidden="true" />
                   Desvincular
-                </button>
+                </Button>
               </div>
             )}
             {unlinkingGuardianId === guardian.id && (

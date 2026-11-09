@@ -1,5 +1,5 @@
 import { ArrowLeft, ClipboardList, Download, Loader2, Search, UserPlus } from 'lucide-react'
-import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -23,6 +23,7 @@ import type { Enrollment } from '@/entities/enrollment/types'
 import type { Profile } from '@/entities/profile/types'
 import type { Student } from '@/entities/student/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
+import { addPdfFooter, createBrandedPdf, PDF_TABLE_THEME } from '@/shared/lib/pdf'
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
 import { Button } from '@/shared/ui/Button'
@@ -199,8 +200,8 @@ function ClassEditForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col items-start gap-6">
+      <div className="flex w-full flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/35">Dados da turma</p>
           <h2 className="mt-1 font-display text-xl font-semibold text-white">Editar</h2>
@@ -222,7 +223,7 @@ function ClassEditForm({
 
       <fieldset
         disabled={!canManageClasses || submitting}
-        className="liquid-glass flex flex-col gap-5 rounded-2xl p-6 disabled:opacity-60"
+        className="liquid-glass flex w-full flex-col gap-5 rounded-2xl p-6 disabled:opacity-60"
       >
         <legend className="px-1 font-display text-sm font-semibold text-white">Modalidade e unidade</legend>
         <Select
@@ -266,7 +267,7 @@ function ClassEditForm({
 
       <fieldset
         disabled={!canManageClasses || submitting}
-        className="liquid-glass flex flex-col gap-4 rounded-2xl p-6 disabled:opacity-60"
+        className="liquid-glass flex w-full flex-col gap-4 rounded-2xl p-6 disabled:opacity-60"
       >
         <legend className="px-1 font-display text-sm font-semibold text-white">Horário</legend>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -283,7 +284,7 @@ function ClassEditForm({
 
       <fieldset
         disabled={!canManageClasses || submitting}
-        className="liquid-glass flex flex-col gap-3 rounded-2xl p-6 disabled:opacity-60"
+        className="liquid-glass flex w-full flex-col gap-3 rounded-2xl p-6 disabled:opacity-60"
       >
         <legend className="px-1 font-display text-sm font-semibold text-white">Instrutores</legend>
         {instructors.length === 0 && (
@@ -311,7 +312,7 @@ function ClassEditForm({
       )}
 
       {canManageClasses && (
-        <Button type="submit" loading={submitting} className="w-full sm:w-auto">
+        <Button type="submit" loading={submitting}>
           {submitting ? 'Salvando…' : 'Salvar alterações'}
         </Button>
       )}
@@ -424,21 +425,23 @@ function ClassRoster({
   function handleExportPdf() {
     if (!enrollments) return
     const active = enrollments.filter((enrollment) => enrollment.status === 'ativa')
-    const doc = new jsPDF()
-    doc.setFontSize(14)
-    doc.text(className, 14, 18)
-    doc.setFontSize(10)
-    doc.text(`Lista de matrícula · ${active.length} estudante${active.length === 1 ? '' : 's'} ativo${active.length === 1 ? '' : 's'}`, 14, 25)
-    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, 30)
-    let y = 42
-    active.forEach((enrollment, index) => {
-      doc.text(`${index + 1}. ${studentNames[enrollment.student_id] ?? 'Estudante'}`, 14, y)
-      y += 7
-      if (y > 280) {
-        doc.addPage()
-        y = 20
-      }
+    const doc = createBrandedPdf(
+      className,
+      `${active.length} estudante${active.length === 1 ? '' : 's'} ativo${active.length === 1 ? '' : 's'}`,
+    )
+    autoTable(doc, {
+      startY: 34,
+      margin: { left: 14, right: 14 },
+      head: [['#', 'Estudante', 'Matriculado em']],
+      body: active.map((enrollment, index) => [
+        String(index + 1).padStart(2, '0'),
+        studentNames[enrollment.student_id] ?? 'Estudante',
+        new Date(enrollment.created_at).toLocaleDateString('pt-BR'),
+      ]),
+      columnStyles: { 0: { cellWidth: 12 }, 2: { cellWidth: 36 } },
+      ...PDF_TABLE_THEME,
     })
+    addPdfFooter(doc)
     doc.save(`${className.replace(/[^\w\- ]/g, '').trim() || 'turma'}-matriculas.pdf`)
   }
 
@@ -544,17 +547,14 @@ function ClassRoster({
                     tone={enrollment.status === 'ativa' ? 'success' : 'neutral'}
                   />
                   {canManageEnrollments && (
-                    <button
+                    <Button
                       type="button"
+                      size="sm"
+                      variant={enrollment.status === 'ativa' ? 'danger' : 'primary'}
                       onClick={() => setChangingEnrollmentId(enrollment.id)}
-                      className={
-                        enrollment.status === 'ativa'
-                          ? 'text-xs font-medium text-danger/80 hover:text-danger'
-                          : 'text-xs font-medium text-brand-green hover:text-brand-green-soft'
-                      }
                     >
                       {enrollment.status === 'ativa' ? 'Remover' : 'Reativar'}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
