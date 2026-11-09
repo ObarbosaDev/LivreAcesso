@@ -44,7 +44,7 @@ export function ChamadaPage() {
 
       {selectedClassId && (
         <div className="mt-6">
-          <AttendanceSection classId={selectedClassId} canTakeAttendance={canTakeAttendance} />
+          <AttendanceSection classId={selectedClassId} canTakeAttendance={canTakeAttendance} showHeader={false} />
         </div>
       )}
     </PageFrame>

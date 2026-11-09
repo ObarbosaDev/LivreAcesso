@@ -30,19 +30,31 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function AttendanceSection({ classId, canTakeAttendance }: { classId: string; canTakeAttendance: boolean }) {
+export function AttendanceSection({
+  classId,
+  canTakeAttendance,
+  showHeader = true,
+}: {
+  classId: string
+  canTakeAttendance: boolean
+  showHeader?: boolean
+}) {
   const [view, setView] = useState<View>('chamada')
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/35">Frequência</p>
-          <h2 className="mt-1 font-display text-xl font-semibold text-white">Chamada</h2>
-          <p className="mt-1 text-xs text-white/45">
-            Chamadas ficam detalhadas por até 6 meses; depois disso viram um resumo mensal por estudante.
-          </p>
-        </div>
+        {showHeader ? (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/35">Frequência</p>
+            <h2 className="mt-1 font-display text-xl font-semibold text-white">Chamada</h2>
+            <p className="mt-1 text-xs text-white/45">
+              Chamadas ficam detalhadas por até 6 meses; depois disso viram um resumo mensal por estudante.
+            </p>
+          </div>
+        ) : (
+          <div />
+        )}
         <div className="flex gap-2">
           <Button type="button" size="sm" variant={view === 'chamada' ? 'primary' : 'secondary'} onClick={() => setView('chamada')}>
             <CalendarCheck className="h-3.5 w-3.5" aria-hidden="true" /> Tirar chamada
