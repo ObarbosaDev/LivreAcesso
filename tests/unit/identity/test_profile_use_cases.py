@@ -45,14 +45,12 @@ def role_input(current: UserProfile, role: AssignableRole) -> ChangeProfileRoleI
     return ChangeProfileRoleInput(
         expected_updated_at=current.updated_at,
         role=role,
-        reason="Acesso aprovado pela coordenação responsável",
     )
 
 
 def activation_input(current: UserProfile) -> ChangeProfileActivationInput:
     return ChangeProfileActivationInput(
         expected_updated_at=current.updated_at,
-        reason="Acesso aprovado pela coordenação responsável",
     )
 
 
@@ -162,7 +160,6 @@ def test_stale_role_change_is_rejected_before_mutation() -> None:
                 ChangeProfileRoleInput(
                     expected_updated_at=stale,
                     role=AssignableRole.INSTRUCTOR,
-                    reason="Alteração aprovada pela coordenação responsável",
                 ),
             )
         )

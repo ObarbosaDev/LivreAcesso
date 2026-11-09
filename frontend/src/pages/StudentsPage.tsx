@@ -238,7 +238,7 @@ export function StudentsPage() {
                     aria-label={`Ver detalhes de ${student.full_name}`}
                     className="group cursor-pointer border-b border-white/5 transition hover:bg-white/[.045] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green"
                   >
-                    <td className="px-4 py-4"><span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/15 text-sm font-bold text-brand-green">{student.full_name.slice(0, 1).toUpperCase()}</span><span><span className="block font-semibold text-white">{student.full_name}</span><span className="block text-xs text-white/35">{student.cpf_masked}</span></span></span></td>
+                    <td className="px-4 py-4"><span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/15 text-sm font-bold text-brand-green">{student.full_name.slice(0, 1).toUpperCase()}</span><span><span className="block font-semibold text-white">{student.full_name}</span><span className="block text-xs text-white/35">{student.cpf_masked ?? 'CPF não informado'}</span></span></span></td>
                     <td className="py-4"><StatusBadge
                       label={STUDENT_STATUS_LABELS[student.status]}
                       tone={student.status === 'ativo' ? 'success' : 'neutral'}

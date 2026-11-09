@@ -416,14 +416,12 @@ def test_coordinator_lists_and_assigns_pending_profile() -> None:
             json={
                 "expected_updated_at": pending.updated_at.isoformat(),
                 "role": "recepcao",
-                "reason": "Acesso aprovado pela coordenação responsável",
             },
         )
         activated = client.post(
             f"/api/v1/profiles/{pending.id}/activate",
             json={
                 "expected_updated_at": assigned.json()["updated_at"],
-                "reason": "Acesso aprovado pela coordenação responsável",
             },
         )
 
@@ -454,7 +452,6 @@ def test_receptionist_cannot_list_or_manage_profiles() -> None:
             f"/api/v1/profiles/{target.id}/deactivate",
             json={
                 "expected_updated_at": target.updated_at.isoformat(),
-                "reason": "Bloqueio solicitado pela coordenação responsável",
             },
         )
 
@@ -470,7 +467,6 @@ def test_last_active_coordinator_cannot_be_deactivated() -> None:
             f"/api/v1/profiles/{_TEST_USER_ID}/deactivate",
             json={
                 "expected_updated_at": current["updated_at"],
-                "reason": "Bloqueio solicitado pela coordenação responsável",
             },
         )
 

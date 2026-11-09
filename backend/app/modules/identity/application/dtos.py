@@ -27,22 +27,10 @@ class UpdateMyProfileInput(DTO):
 class ChangeProfileRoleInput(DTO):
     expected_updated_at: AwareDatetime
     role: AssignableRole
-    reason: str | None = Field(default=None, max_length=500)
 
 
 class ChangeProfileActivationInput(DTO):
     expected_updated_at: AwareDatetime
-    reason: str | None = Field(default=None, max_length=500)
-
-
-class InviteProfileInput(DTO):
-    email: str = Field(min_length=5, max_length=320)
-    full_name: str = Field(min_length=3, max_length=120)
-
-
-class InviteProfileOutput(DTO):
-    message: str
-    action_link: str | None = None
 
 
 class ProfileOutput(DTO):

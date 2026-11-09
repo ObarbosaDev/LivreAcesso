@@ -397,14 +397,12 @@ def test_profile_management_crosses_fastapi_and_supabase_rpcs() -> None:
             json={
                 "expected_updated_at": target_version.isoformat(),
                 "role": "recepcao",
-                "reason": "Acesso aprovado pela coordenação responsável",
             },
         )
         activated = client.post(
             f"/api/v1/profiles/{target_id}/activate",
             json={
                 "expected_updated_at": role_version.isoformat(),
-                "reason": "Acesso aprovado pela coordenação responsável",
             },
         )
 

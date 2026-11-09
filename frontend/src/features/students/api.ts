@@ -30,7 +30,7 @@ export function getStudentDetail(studentId: string, signal?: AbortSignal) {
   return httpClient.get<StudentDetail>(`/api/v1/students/${studentId}`, signal)
 }
 
-/** Só o nome por id (sem CPF nem contato do responsável); liberado também para instrutor e consulta. */
+/** Só o nome por id (sem CPF nem contato do responsável); liberado também para instrutor. */
 export function getStudentNames(studentIds: string[], signal?: AbortSignal) {
   if (studentIds.length === 0) return Promise.resolve({ names: {} as Record<string, string> })
   const params = new URLSearchParams()
