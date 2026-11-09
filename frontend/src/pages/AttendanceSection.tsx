@@ -127,14 +127,14 @@ export function AttendanceSection({
         </div>
       )}
 
-      <div className="flex gap-1 border-b border-white/10">
+      <div className="flex gap-1 overflow-x-auto border-b border-white/10">
         {TABS.map(({ value, label, icon: Icon }) => (
           <button
             key={value}
             type="button"
             onClick={() => setView(value)}
             className={cn(
-              'flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition',
+              'flex shrink-0 items-center gap-2 px-4 py-2.5 text-sm font-medium transition',
               view === value ? 'border-b-2 border-brand-green text-white' : 'text-white/50 hover:text-white',
             )}
           >
@@ -321,8 +321,8 @@ function TakeAttendance({ classId, canTakeAttendance }: { classId: string; canTa
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
-            <p className="font-display text-sm font-semibold capitalize text-white">
-              {viewDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+            <p className="font-display text-sm font-semibold text-white">
+              {formatMonthYear(`${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-01`)}
             </p>
             <button
               type="button"
@@ -582,7 +582,7 @@ function AttendanceJournal({ classId }: { classId: string }) {
         >
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </button>
-        <p className="font-display text-sm font-semibold capitalize text-white">{formatMonthYear(`${monthPrefix}-01`)}</p>
+        <p className="font-display text-sm font-semibold text-white">{formatMonthYear(`${monthPrefix}-01`)}</p>
         <button
           type="button"
           onClick={() => !isViewingCurrentMonth && shiftMonth(1)}
