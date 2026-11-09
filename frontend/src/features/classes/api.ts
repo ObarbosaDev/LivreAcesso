@@ -1,5 +1,5 @@
 import { httpClient } from '@/shared/api/httpClient'
-import type { ClassPage, ClassSchedule, Modality, ModalityPage, Unit } from '@/entities/class/types'
+import type { ClassPage, ClassSchedule, Modality, ModalityPage, SchoolClass, Unit } from '@/entities/class/types'
 
 interface ListClassesParams {
   active?: boolean
