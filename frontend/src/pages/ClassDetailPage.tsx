@@ -1,4 +1,5 @@
-import { ArrowLeft, ClipboardList, Loader2, Search, UserPlus } from 'lucide-react'
+import { ArrowLeft, ClipboardList, Download, Loader2, Search, UserPlus } from 'lucide-react'
+import { jsPDF } from 'jspdf'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -94,6 +95,7 @@ export function ClassDetailPage() {
           />
           <ClassRoster
             classId={classId}
+            className={schoolClass.name}
             canCreateEnrollments={canCreateEnrollments}
             canManageEnrollments={canManageEnrollments}
           />
@@ -319,10 +321,12 @@ function ClassEditForm({
 
 function ClassRoster({
   classId,
+  className,
   canCreateEnrollments,
   canManageEnrollments,
 }: {
   classId: string
+  className: string
   canCreateEnrollments: boolean
   canManageEnrollments: boolean
 }) {
@@ -417,6 +421,27 @@ function ClassRoster({
     }
   }
 
+  function handleExportPdf() {
+    if (!enrollments) return
+    const active = enrollments.filter((enrollment) => enrollment.status === 'ativa')
+    const doc = new jsPDF()
+    doc.setFontSize(14)
+    doc.text(className, 14, 18)
+    doc.setFontSize(10)
+    doc.text(`Lista de matrícula · ${active.length} estudante${active.length === 1 ? '' : 's'} ativo${active.length === 1 ? '' : 's'}`, 14, 25)
+    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, 14, 30)
+    let y = 42
+    active.forEach((enrollment, index) => {
+      doc.text(`${index + 1}. ${studentNames[enrollment.student_id] ?? 'Estudante'}`, 14, y)
+      y += 7
+      if (y > 280) {
+        doc.addPage()
+        y = 20
+      }
+    })
+    doc.save(`${className.replace(/[^\w\- ]/g, '').trim() || 'turma'}-matriculas.pdf`)
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {occupancy && (
@@ -437,12 +462,20 @@ function ClassRoster({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/35">Lista da turma</p>
           <h2 className="mt-1 font-display text-xl font-semibold text-white">Estudantes matriculados</h2>
         </div>
-        {canCreateEnrollments && (
-          <Button variant="secondary" onClick={() => setShowAddForm((value) => !value)} className="gap-2">
-            <UserPlus className="h-4 w-4" aria-hidden="true" />
-            Matricular estudante
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {enrollments && enrollments.length > 0 && (
+            <Button variant="secondary" onClick={handleExportPdf} className="gap-2">
+              <Download className="h-4 w-4" aria-hidden="true" />
+              Exportar PDF
+            </Button>
+          )}
+          {canCreateEnrollments && (
+            <Button variant="secondary" onClick={() => setShowAddForm((value) => !value)} className="gap-2">
+              <UserPlus className="h-4 w-4" aria-hidden="true" />
+              Matricular estudante
+            </Button>
+          )}
+        </div>
       </div>
 
       {showAddForm && canCreateEnrollments && (

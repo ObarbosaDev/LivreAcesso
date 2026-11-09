@@ -14,8 +14,9 @@ import { PageFrame } from '@/shared/ui/PageFrame'
 import { DadosTab } from './DadosTab'
 import { ResponsaveisTab } from './ResponsaveisTab'
 import { StudentEvaluationReport } from './StudentEvaluationReport'
+import { TurmasTab } from './TurmasTab'
 
-type Tab = 'dados' | 'responsaveis' | 'relatorio'
+type Tab = 'dados' | 'turmas' | 'responsaveis' | 'relatorio'
 
 function summaryLine(student: StudentDetail): string {
   const age = student.age != null ? `${student.age} anos` : 'Idade não informada'
@@ -25,6 +26,7 @@ function summaryLine(student: StudentDetail): string {
 
 const TAB_LABELS: Record<Tab, string> = {
   dados: 'Dados',
+  turmas: 'Turmas',
   responsaveis: 'Responsáveis',
   relatorio: 'Relatório do aluno',
 }
@@ -115,6 +117,8 @@ export function StudentDetailPage() {
       <div className="mt-6">
         {tab === 'dados' ? (
           <DadosTab student={student} onChanged={reload} />
+        ) : tab === 'turmas' ? (
+          <TurmasTab studentId={student.id} />
         ) : tab === 'responsaveis' ? (
           <ResponsaveisTab student={student} />
         ) : (

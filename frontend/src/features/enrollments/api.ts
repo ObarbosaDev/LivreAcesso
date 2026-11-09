@@ -2,16 +2,18 @@ import { httpClient } from '@/shared/api/httpClient'
 import type { Enrollment } from '@/entities/enrollment/types'
 
 interface ListEnrollmentsParams {
-  classId: string
+  classId?: string
+  studentId?: string
   status?: 'ativa' | 'cancelada'
   page: number
   pageSize: number
   signal?: AbortSignal
 }
 
-export function listEnrollments({ classId, status, page, pageSize, signal }: ListEnrollmentsParams) {
+export function listEnrollments({ classId, studentId, status, page, pageSize, signal }: ListEnrollmentsParams) {
   const params = new URLSearchParams()
-  params.set('class_id', classId)
+  if (classId) params.set('class_id', classId)
+  if (studentId) params.set('student_id', studentId)
   if (status) params.set('status_filter', status)
   params.set('page', String(page))
   params.set('page_size', String(pageSize))
