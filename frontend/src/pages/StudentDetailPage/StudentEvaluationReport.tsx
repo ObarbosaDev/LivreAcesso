@@ -1,4 +1,5 @@
-import { Printer } from 'lucide-react'
+import autoTable from 'jspdf-autotable'
+import { Download } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
@@ -7,6 +8,7 @@ import type { StudentDetail } from '@/entities/student/types'
 import { STUDENT_STATUS_LABELS } from '@/entities/student/types'
 import type { StudentEvaluation } from '@/entities/studentEvaluation/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
+import { addPdfFooter, createBrandedPdf, PDF_TABLE_THEME } from '@/shared/lib/pdf'
 import { Button } from '@/shared/ui/Button'
 import { Input } from '@/shared/ui/Input'
 import { Select } from '@/shared/ui/Select'
@@ -43,6 +45,67 @@ export function StudentEvaluationReport({ student }: { student: StudentDetail })
     void reload()
   }, [reload])
 
+  function downloadPdf() {
+    const doc = createBrandedPdf(`Relatório de ${student.full_name}`, `${items.length} avaliação${items.length === 1 ? '' : 'ões'} registrada${items.length === 1 ? '' : 's'}`)
+    autoTable(doc, {
+      startY: 34,
+      margin: { left: 14, right: 14 },
+      head: [['Situação cadastral', 'Idade', 'Responsável principal']],
+      body: [[
+        STUDENT_STATUS_LABELS[student.status],
+        student.age != null ? `${student.age} anos` : 'Não informada',
+        student.guardian?.full_name ?? 'Não informado',
+      ]],
+      ...PDF_TABLE_THEME,
+    })
+
+    let cursorY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 50
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+
+    for (const evaluation of items) {
+      if (cursorY > pageHeight - 70) {
+        doc.addPage()
+        cursorY = 20
+      }
+      cursorY += 10
+      doc.setFont('courier', 'bold')
+      doc.setFontSize(10)
+      doc.setTextColor(17, 17, 17)
+      doc.text(`${evaluation.period_start} -> ${evaluation.period_end}  ·  Apoio ${evaluation.support_level}`, 14, cursorY)
+
+      autoTable(doc, {
+        startY: cursorY + 4,
+        margin: { left: 14, right: 14 },
+        head: [scoreLabels.map(([, label]) => label)],
+        body: [scoreLabels.map(([key]) => String(evaluation[key] as number))],
+        ...PDF_TABLE_THEME,
+      })
+      cursorY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? cursorY + 20
+
+      const notes: Array<[string, string]> = [
+        ['Observações', evaluation.observations],
+        ['Estratégias eficazes', evaluation.effective_strategies],
+        ['Próximo objetivo', evaluation.next_objective],
+      ]
+      doc.setFont('courier', 'normal')
+      doc.setFontSize(8.5)
+      doc.setTextColor(60, 60, 60)
+      for (const [label, value] of notes) {
+        cursorY += 7
+        doc.setFont('courier', 'bold')
+        doc.text(`${label}:`, 14, cursorY)
+        doc.setFont('courier', 'normal')
+        const wrapped = doc.splitTextToSize(value, pageWidth - 28)
+        doc.text(wrapped, 14, cursorY + 4)
+        cursorY += 4 + wrapped.length * 4
+      }
+    }
+
+    addPdfFooter(doc)
+    doc.save(`relatorio-${student.full_name.toLowerCase().replace(/[^\w]+/g, '-')}.pdf`)
+  }
+
   return (
     <div className="student-report space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
@@ -57,13 +120,9 @@ export function StudentEvaluationReport({ student }: { student: StudentDetail })
             Escala contextual, observações e estratégias — sem comparação entre estudantes.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-brand-green hover:text-brand-green"
-        >
-          <Printer className="h-4 w-4" aria-hidden="true" /> Imprimir relatório
-        </button>
+        <Button type="button" variant="secondary" onClick={downloadPdf}>
+          <Download className="h-4 w-4" aria-hidden="true" /> Exportar PDF
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

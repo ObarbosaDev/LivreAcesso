@@ -1,4 +1,5 @@
-import { BarChart3, Download, FileText, Printer, UsersRound } from 'lucide-react'
+import autoTable from 'jspdf-autotable'
+import { BarChart3, Download, FileText, UsersRound } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { getClassOccupancy, listClasses } from '@/features/classes/api'
@@ -6,6 +7,7 @@ import { listStudents } from '@/features/students/api'
 import type { SchoolClass } from '@/entities/class/types'
 import type { Student } from '@/entities/student/types'
 import { friendlyMessage } from '@/shared/api/problemDetails'
+import { addPdfFooter, createBrandedPdf, PDF_TABLE_THEME } from '@/shared/lib/pdf'
 import { usePageTitle } from '@/shared/lib/usePageTitle'
 import { Button } from '@/shared/ui/Button'
 import { EmptyState } from '@/shared/ui/EmptyState'
@@ -49,7 +51,33 @@ export function ReportsPage() {
     const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'relatorio-operacional.csv'; anchor.click(); URL.revokeObjectURL(url)
   }
 
-  return <div className="report-page"><PageFrame eyebrow="Leitura da operação" title="Relatórios" description="Acompanhe os números que orientam decisões de cadastro, capacidade e atendimento." actions={<><Button variant="secondary" onClick={() => window.print()} disabled={loading}><Printer className="h-4 w-4" aria-hidden="true" /> Imprimir / PDF</Button><Button variant="secondary" onClick={downloadCsv} disabled={loading || reportRows.length === 0}><Download className="h-4 w-4" aria-hidden="true" /> Exportar CSV</Button></>}>
+  function downloadPdf() {
+    const doc = createBrandedPdf('Relatório operacional', `Gerado com ${classes.length} turma${classes.length === 1 ? '' : 's'} ativa${classes.length === 1 ? '' : 's'}`)
+    autoTable(doc, {
+      startY: 34,
+      margin: { left: 14, right: 14 },
+      head: [['Indicador', 'Valor']],
+      body: [
+        ['Estudantes ativos', String(activeStudents)],
+        ['Estudantes inativos', String(inactiveStudents)],
+        ['Turmas ativas', String(classes.length)],
+        ['Ocupação geral', `${occupancyRate}%`],
+      ],
+      ...PDF_TABLE_THEME,
+    })
+    const firstTableEnd = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 60
+    autoTable(doc, {
+      startY: firstTableEnd + 10,
+      margin: { left: 14, right: 14 },
+      head: [['Turma', 'Local', 'Matrículas', 'Capacidade', 'Ocupação']],
+      body: reportRows.map((row) => [row.name, row.location, String(row.enrolled), String(row.capacity), `${row.rate}%`]),
+      ...PDF_TABLE_THEME,
+    })
+    addPdfFooter(doc)
+    doc.save('relatorio-operacional.pdf')
+  }
+
+  return <div className="report-page"><PageFrame eyebrow="Leitura da operação" title="Relatórios" description="Acompanhe os números que orientam decisões de cadastro, capacidade e atendimento." actions={<><Button variant="secondary" onClick={downloadPdf} disabled={loading}><Download className="h-4 w-4" aria-hidden="true" /> Exportar PDF</Button><Button variant="secondary" onClick={downloadCsv} disabled={loading || reportRows.length === 0}><Download className="h-4 w-4" aria-hidden="true" /> Exportar CSV</Button></>}>
     {error && <div className="border border-danger/40 bg-danger/10 p-4 text-sm text-danger" role="alert">{error}</div>}
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><MetricCard label="Estudantes ativos" value={loading ? '—' : activeStudents} icon={UsersRound} /><MetricCard label="Estudantes inativos" value={loading ? '—' : inactiveStudents} icon={UsersRound} tone="amber" /><MetricCard label="Turmas ativas" value={loading ? '—' : classes.length} icon={BarChart3} tone="blue" /><MetricCard label="Ocupação geral" value={loading ? '—' : `${occupancyRate}%`} icon={BarChart3} tone="green" /></div>
     <section className="liquid-glass mt-6 p-4 sm:p-6"><div className="flex items-center gap-3 border-b border-white/10 pb-5"><FileText className="h-5 w-5 text-brand-green" aria-hidden="true" /><div><h2 className="font-display text-xl font-semibold text-white">Ocupação por turma</h2><p className="mt-1 text-sm text-white/45">Capacidade registrada e matrículas ativas no momento da consulta.</p></div></div>{!loading && reportRows.length === 0 ? <div className="pt-6"><EmptyState icon={FileText} title="Ainda não há dados para reportar" description="Cadastre estudantes e turmas para gerar a primeira leitura operacional." /></div> : <><div className="mt-5 hidden overflow-x-auto sm:block"><table className="w-full text-left text-sm"><thead><tr className="border-b border-white/10 text-[11px] uppercase tracking-[0.14em] text-white/35"><th className="px-3 py-3">Turma</th><th className="py-3">Local</th><th className="py-3">Matrículas</th><th className="py-3">Capacidade</th><th className="py-3 pr-3">Ocupação</th></tr></thead><tbody>{reportRows.map((row) => <tr key={row.name} className="border-b border-white/8"><td className="px-3 py-4 font-semibold text-white">{row.name}</td><td className="py-4 text-white/55">{row.location}</td><td className="py-4 text-white">{row.enrolled}</td><td className="py-4 text-white/55">{row.capacity}</td><td className="py-4 pr-3"><div className="flex items-center gap-3"><span className="h-1.5 w-24 bg-white/10"><span className="block h-full bg-brand-green" style={{ width: `${Math.min(row.rate, 100)}%` }} /></span><span className="text-xs text-white/55">{row.rate}%</span></div></td></tr>)}</tbody></table></div><div className="mt-5 grid gap-3 sm:hidden">{reportRows.map((row) => <article key={row.name} className="border-l-2 border-brand-green/60 bg-white/[.02] p-4"><div className="flex items-start justify-between gap-3"><h3 className="font-display text-sm font-semibold text-white">{row.name}</h3><span className="font-display text-sm text-brand-green">{row.rate}%</span></div><p className="mt-2 text-xs text-white/45">{row.location}</p><div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-3 text-xs"><div><p className="text-white/35">Matrículas</p><p className="mt-1 text-white">{row.enrolled}</p></div><div><p className="text-white/35">Capacidade</p><p className="mt-1 text-white">{row.capacity}</p></div></div><div className="mt-3 h-1.5 bg-white/10"><span className="block h-full bg-brand-green" style={{ width: `${Math.min(row.rate, 100)}%` }} /></div></article>)}</div></>}</section>
