@@ -1,4 +1,4 @@
-import { BarChart3, CalendarRange, CalendarDays, ClipboardList, LayoutDashboard, Menu, Search, ShieldCheck, Users, X } from 'lucide-react'
+import { BarChart3, CalendarCheck, CalendarRange, CalendarDays, ClipboardList, LayoutDashboard, Menu, Search, ShieldCheck, Users, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 
@@ -15,6 +15,7 @@ const NAV_ITEMS: { to: string; label: string; icon: typeof LayoutDashboard; end?
   { to: '/turmas', label: 'Turmas', icon: CalendarRange },
   { to: '/agenda', label: 'Agenda', icon: CalendarDays },
   { to: '/matriculas', label: 'Matrículas', icon: ClipboardList },
+  { to: '/chamada', label: 'Chamada', icon: CalendarCheck, capability: 'attendance:manage' },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ]
 const QUICK_ACTIONS: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean; capability?: Capability }[] = [

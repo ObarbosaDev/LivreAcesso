@@ -7,6 +7,7 @@ import { FullScreenState } from '@/shared/ui/FullScreenState'
 
 const ClassesPage = lazy(() => import('@/pages/ClassesPage').then((module) => ({ default: module.ClassesPage })))
 const ClassDetailPage = lazy(() => import('@/pages/ClassDetailPage').then((module) => ({ default: module.ClassDetailPage })))
+const ChamadaPage = lazy(() => import('@/pages/ChamadaPage').then((module) => ({ default: module.ChamadaPage })))
 const AgendaPage = lazy(() => import('@/pages/AgendaPage').then((module) => ({ default: module.AgendaPage })))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((module) => ({ default: module.DashboardPage })))
 const EnrollmentsPage = lazy(() => import('@/pages/EnrollmentsPage').then((module) => ({ default: module.EnrollmentsPage })))
@@ -46,6 +47,7 @@ export function AppRoutes() {
           <Route path="/turmas/nova" element={<NewClassPage />} />
           <Route path="/turmas/:classId" element={<ClassDetailPage />} />
           <Route path="/matriculas" element={<EnrollmentsPage />} />
+          <Route path="/chamada" element={<ChamadaPage />} />
           <Route path="/relatorios" element={<ReportsPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/equipe" element={<ProfilesAdminPage />} />
