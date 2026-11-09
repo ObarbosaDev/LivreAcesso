@@ -127,7 +127,7 @@ export function ResetPasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((value) => !value)}
-                  className="absolute right-3 top-9 flex h-8 w-8 items-center justify-center rounded-md text-white/50 transition hover:text-white"
+                  className="absolute right-3 top-9 flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition hover:text-white"
                   aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 >
                   {showPassword ? (

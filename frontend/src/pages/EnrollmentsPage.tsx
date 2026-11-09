@@ -156,9 +156,11 @@ export function EnrollmentsPage() {
 
   return (
     <PageFrame eyebrow="Vínculos e ocupação" title="Matrículas" description="Acompanhe quem está em cada turma, controle vagas e registre mudanças com histórico.">
-      <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turma selecionada" value={selectedClass?.name ?? '—'} icon={ClipboardList} /><MetricCard label="Vagas ocupadas" value={occupancy?.enrolled ?? '—'} icon={UsersRound} tone="blue" /><MetricCard label="Capacidade" value={occupancy?.capacity ?? '—'} icon={UsersRound} tone="amber" /></div>
+      {selectedClassId && (
+        <div className="grid gap-4 md:grid-cols-3"><MetricCard label="Turma selecionada" value={selectedClass?.name ?? '—'} icon={ClipboardList} /><MetricCard label="Vagas ocupadas" value={occupancy?.enrolled ?? '—'} icon={UsersRound} tone="blue" /><MetricCard label="Capacidade" value={occupancy?.capacity ?? '—'} icon={UsersRound} tone="amber" /></div>
+      )}
 
-      <div className="liquid-glass mt-6 border-t-2 border-t-brand-green/50 p-4 sm:p-5">
+      <div className={`liquid-glass border-t-2 border-t-brand-green/50 p-4 sm:p-5 ${selectedClassId ? 'mt-6' : ''}`}>
         <Select
           label="Turma"
           value={selectedClassId}

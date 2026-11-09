@@ -145,15 +145,11 @@ export function AppLayout() {
 
       <aside className="fixed inset-y-0 left-0 hidden w-[272px] flex-col border-r border-white/8 bg-surface py-6 lg:flex">
         <div className="mb-10 px-6">
-          <Link to="/" aria-label="Ir para o início" className="inline-flex rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green"><LogoMark /></Link>
+          <Link to="/" aria-label="Ir para o início" className="inline-flex rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green"><LogoMark /></Link>
         </div>
         <div className="mb-4 px-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">Operação</div>
         {navLinks}
         <SidebarStatus capabilities={profile?.capabilities} />
-        <div className="hidden mx-4 rounded-2xl border border-brand-green/15 bg-brand-green/[.06] p-4">
-          <p className="text-xs font-semibold text-brand-green">Livre Acesso</p>
-          <p className="mt-1 text-xs leading-5 text-white/40">Gestão com cuidado, dados e presença.</p>
-        </div>
       </aside>
 
       {drawerOpen && (
@@ -166,12 +162,12 @@ export function AppLayout() {
           />
           <aside className="liquid-glass absolute inset-y-0 left-0 flex w-72 flex-col py-6">
             <div className="relative mb-8 flex items-center justify-center px-4">
-              <Link to="/" aria-label="Ir para o início" onClick={() => setDrawerOpen(false)} className="inline-flex rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green"><LogoMark /></Link>
+              <Link to="/" aria-label="Ir para o início" onClick={() => setDrawerOpen(false)} className="inline-flex rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green"><LogoMark /></Link>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Fechar menu"
-                className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-md text-white/60 hover:text-white"
+                className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-lg text-white/60 hover:text-white"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -187,7 +183,7 @@ export function AppLayout() {
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-label="Abrir menu"
-            className="flex h-9 w-9 items-center justify-center rounded-md text-white/70 hover:text-white lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:text-white lg:hidden"
           >
             <Menu className="h-5 w-5" aria-hidden="true" />
           </button>

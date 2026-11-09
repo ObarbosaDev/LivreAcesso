@@ -57,3 +57,29 @@ export interface CreateClassPayload {
 export function createClass(payload: CreateClassPayload) {
   return httpClient.post('/api/v1/classes', payload)
 }
+
+export function getClass(classId: string, signal?: AbortSignal) {
+  return httpClient.get<SchoolClass>(`/api/v1/classes/${classId}`, signal)
+}
+
+export interface UpdateClassPayload extends CreateClassPayload {
+  expected_updated_at: string
+}
+
+export function updateClass(classId: string, payload: UpdateClassPayload) {
+  return httpClient.put<SchoolClass>(`/api/v1/classes/${classId}`, payload)
+}
+
+export function activateClass(classId: string, expectedUpdatedAt: string, reason: string) {
+  return httpClient.post<SchoolClass>(`/api/v1/classes/${classId}/activate`, {
+    expected_updated_at: expectedUpdatedAt,
+    reason,
+  })
+}
+
+export function deactivateClass(classId: string, expectedUpdatedAt: string, reason: string) {
+  return httpClient.post<SchoolClass>(`/api/v1/classes/${classId}/deactivate`, {
+    expected_updated_at: expectedUpdatedAt,
+    reason,
+  })
+}

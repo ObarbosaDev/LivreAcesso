@@ -175,7 +175,7 @@ function ProfileCard({ profile, onChanged }: { profile: Profile; onChanged: () =
 
       <div className="mt-4 flex flex-wrap items-end gap-3">
         <Select
-          label={isPending ? 'Papel' : 'Novo papel'}
+          label={isPending ? 'Papel' : 'Alterar papel para'}
           id={`role-${profile.id}`}
           value={role}
           onChange={(event) => setRole(event.target.value as Exclude<UserRole, 'pendente'>)}

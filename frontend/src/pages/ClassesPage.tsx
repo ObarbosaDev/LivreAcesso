@@ -137,7 +137,7 @@ export function ClassesPage() {
             {data.items.map((schoolClass, index) => {
               const occ = occupancy[schoolClass.id]
               return (
-                  <div key={schoolClass.id} className="liquid-glass group flex flex-col gap-4 border-l-2 border-l-brand-green/60 p-5 transition hover:border-brand-green">
+                  <Link to={`/turmas/${schoolClass.id}`} key={schoolClass.id} className="liquid-glass group flex flex-col gap-4 border-l-2 border-l-brand-green/60 p-5 transition hover:border-brand-green">
                   <div className="flex items-start justify-between gap-3"><div className="flex items-start gap-3"><span className="font-display text-xs text-white/30">{String(index + 1).padStart(2, '0')}</span><h2 className="font-display text-base font-semibold text-white">{schoolClass.name}</h2></div><StatusBadge label="Ativa" tone="success" /></div>
 
                   <p className="flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-brand-green"><span>{modalities.find((modality) => modality.id === schoolClass.modality_id)?.name ?? 'Modalidade não identificada'}</span><span className="text-white/30">·</span><span className="text-white/45">{UNIT_LABELS[schoolClass.unit]}</span></p>
@@ -167,7 +167,7 @@ export function ClassesPage() {
                     capacity={occ?.capacity ?? schoolClass.capacity}
                     enrolled={occ?.enrolled ?? 0}
                   />
-                </div>
+                </Link>
               )
             })}
           </div>

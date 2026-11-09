@@ -82,7 +82,7 @@ export function AuthHero({ title, description, showModules = true }: AuthHeroPro
 
       <motion.div {...motionProps} variants={container}>
         <motion.div variants={item}>
-          <Link to="/" aria-label="Voltar para o Instituto Livre Acesso" className="inline-flex rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green">
+          <Link to="/" aria-label="Voltar para o Instituto Livre Acesso" className="inline-flex rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green">
             <LogoMark className="relative" />
           </Link>
         </motion.div>
@@ -128,7 +128,7 @@ export function AuthPanel({ children }: { children: ReactNode }) {
         className="liquid-glass w-full max-w-sm rounded-2xl p-8 sm:p-10"
       >
         <div className="mb-8 lg:hidden">
-          <Link to="/" aria-label="Voltar para o Instituto Livre Acesso" className="inline-flex rounded-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green">
+          <Link to="/" aria-label="Voltar para o Instituto Livre Acesso" className="inline-flex rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-green">
             <LogoMark />
           </Link>
         </div>
