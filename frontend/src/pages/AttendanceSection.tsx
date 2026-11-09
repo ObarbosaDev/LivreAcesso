@@ -7,6 +7,7 @@ import {
   ClipboardList,
   History,
   Loader2,
+  Table2,
   Users,
   XCircle,
 } from 'lucide-react'
@@ -37,13 +38,22 @@ import { EmptyState } from '@/shared/ui/EmptyState'
 import { Input } from '@/shared/ui/Input'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 
-type View = 'chamada' | 'historico' | 'resumo'
+type View = 'chamada' | 'historico' | 'resumo' | 'diario'
 
 const TABS: { value: View; label: string; icon: LucideIcon }[] = [
   { value: 'chamada', label: 'Tirar chamada', icon: CalendarCheck },
+  { value: 'diario', label: 'Diário', icon: Table2 },
   { value: 'historico', label: 'Histórico', icon: History },
   { value: 'resumo', label: 'Resumo mensal', icon: ClipboardList },
 ]
+
+const JOURNAL_CELL_LABEL: Record<AttendanceMarkStatus, string> = { presente: 'P', ausente: 'F', justificada: 'J' }
+
+const JOURNAL_CELL_TONE: Record<AttendanceMarkStatus, string> = {
+  presente: 'border-brand-green/40 bg-brand-green/15 text-brand-green',
+  ausente: 'border-danger/40 bg-danger/15 text-danger',
+  justificada: 'border-warning/40 bg-warning/15 text-warning',
+}
 
 const MARK_TONE: Record<AttendanceMarkStatus, string> = {
   presente: 'border-brand-green bg-brand-green text-ink',
@@ -135,6 +145,7 @@ export function AttendanceSection({
       </div>
 
       {view === 'chamada' && <TakeAttendance classId={classId} canTakeAttendance={canTakeAttendance} />}
+      {view === 'diario' && <AttendanceJournal classId={classId} />}
       {view === 'historico' && <AttendanceHistory classId={classId} />}
       {view === 'resumo' && <AttendanceSummaryView classId={classId} />}
     </div>
@@ -489,6 +500,168 @@ function TallyChip({
       <span className="font-display font-semibold">{value}</span>
       <span className="text-white/45">{label}</span>
     </span>
+  )
+}
+
+function AttendanceJournal({ classId }: { classId: string }) {
+  const [viewDate, setViewDate] = useState(() => new Date(`${todayISO()}T00:00:00`))
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+  const [studentNames, setStudentNames] = useState<Record<string, string>>({})
+  const [sessions, setSessions] = useState<AttendanceSessionSummary[]>([])
+  const [marksBySession, setMarksBySession] = useState<Record<string, AttendanceMark[]>>({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const monthPrefix = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}`
+
+  useEffect(() => {
+    const controller = new AbortController()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true)
+    setError(null)
+    Promise.all([
+      listEnrollments({ classId, status: 'ativa', page: 1, pageSize: 100, signal: controller.signal }),
+      listAttendanceSessions(classId, 100, 0, controller.signal),
+    ])
+      .then(async ([enrollmentPage, sessionPage]) => {
+        setEnrollments(enrollmentPage.items)
+        const names = await getStudentNames(enrollmentPage.items.map((item) => item.student_id), controller.signal)
+        setStudentNames(names.names)
+
+        const monthSessions = sessionPage.items
+          .filter((session) => session.session_date.startsWith(monthPrefix))
+          .sort((a, b) => (a.session_date < b.session_date ? -1 : 1))
+        setSessions(monthSessions)
+
+        const marksEntries = await Promise.all(
+          monthSessions.map((session) =>
+            getAttendanceSessionMarks(session.id, controller.signal).then((marks) => [session.id, marks] as const),
+          ),
+        )
+        setMarksBySession(Object.fromEntries(marksEntries))
+      })
+      .catch((caught: unknown) => {
+        if ((caught as Error)?.name !== 'AbortError') setError(friendlyMessage(caught))
+      })
+      .finally(() => setLoading(false))
+    return () => controller.abort()
+  }, [classId, monthPrefix])
+
+  function shiftMonth(delta: number) {
+    setViewDate((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1))
+  }
+
+  const isViewingCurrentMonth =
+    viewDate.getFullYear() === Number(todayISO().slice(0, 4)) && viewDate.getMonth() === Number(todayISO().slice(5, 7)) - 1
+
+  const totals = useMemo(() => {
+    const map: Record<string, { present: number; total: number }> = {}
+    for (const enrollment of enrollments) {
+      let present = 0
+      let total = 0
+      for (const session of sessions) {
+        const mark = marksBySession[session.id]?.find((item) => item.enrollment_id === enrollment.id)
+        if (mark) {
+          total += 1
+          if (mark.status === 'presente') present += 1
+        }
+      }
+      map[enrollment.id] = { present, total }
+    }
+    return map
+  }, [enrollments, sessions, marksBySession])
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => shiftMonth(-1)}
+          className="flex h-8 w-8 items-center justify-center border border-white/15 text-white/55 transition hover:border-brand-green hover:text-brand-green"
+          aria-label="Mês anterior"
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <p className="font-display text-sm font-semibold capitalize text-white">{formatMonthYear(`${monthPrefix}-01`)}</p>
+        <button
+          type="button"
+          onClick={() => !isViewingCurrentMonth && shiftMonth(1)}
+          disabled={isViewingCurrentMonth}
+          className="flex h-8 w-8 items-center justify-center border border-white/15 text-white/55 transition hover:border-brand-green hover:text-brand-green disabled:pointer-events-none disabled:opacity-30"
+          aria-label="Próximo mês"
+        >
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-white/50">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          Carregando diário…
+        </div>
+      )}
+
+      {error && <p className="text-sm text-danger">{error}</p>}
+
+      {!loading && !error && enrollments.length === 0 && (
+        <EmptyState icon={Table2} title="Sem estudantes ativos" description="Matricule estudantes nesta turma para ver o diário." />
+      )}
+
+      {!loading && !error && enrollments.length > 0 && sessions.length === 0 && (
+        <EmptyState icon={Table2} title="Nenhuma chamada neste mês" description="O diário mostra os dias em que a chamada foi tirada neste mês." />
+      )}
+
+      {!loading && !error && enrollments.length > 0 && sessions.length > 0 && (
+        <div className="liquid-glass overflow-x-auto p-2">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr>
+                <th className="sticky left-0 z-10 whitespace-nowrap bg-surface px-3 py-2 text-left font-medium text-white/45">
+                  Estudante
+                </th>
+                {sessions.map((session) => (
+                  <th key={session.id} className="px-1 py-2 text-center font-medium text-white/45">
+                    {Number(session.session_date.slice(8, 10))}
+                  </th>
+                ))}
+                <th className="whitespace-nowrap px-3 py-2 text-right font-medium text-white/45">Presença</th>
+              </tr>
+            </thead>
+            <tbody>
+              {enrollments.map((enrollment) => {
+                const total = totals[enrollment.id]
+                const rate = total && total.total > 0 ? Math.round((total.present / total.total) * 100) : null
+                return (
+                  <tr key={enrollment.id} className="border-t border-white/8">
+                    <td className="sticky left-0 z-10 whitespace-nowrap bg-surface px-3 py-2 text-white">
+                      {studentNames[enrollment.student_id] ?? 'Carregando…'}
+                    </td>
+                    {sessions.map((session) => {
+                      const mark = marksBySession[session.id]?.find((item) => item.enrollment_id === enrollment.id)
+                      return (
+                        <td key={session.id} className="px-1 py-2 text-center">
+                          <span
+                            className={cn(
+                              'mx-auto flex h-6 w-6 items-center justify-center border text-[10px] font-semibold',
+                              mark ? JOURNAL_CELL_TONE[mark.status] : 'border-white/10 text-white/20',
+                            )}
+                          >
+                            {mark ? JOURNAL_CELL_LABEL[mark.status] : '–'}
+                          </span>
+                        </td>
+                      )
+                    })}
+                    <td className="whitespace-nowrap px-3 py-2 text-right font-display text-white">
+                      {rate !== null ? `${rate}%` : '—'}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   )
 }
 
