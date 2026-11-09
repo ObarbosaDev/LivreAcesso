@@ -30,6 +30,7 @@ class Settings:
     supabase_url: str | None = None
     supabase_publishable_key: str | None = field(default=None, repr=False)
     supabase_service_role_key: str | None = field(default=None, repr=False)
+    cron_secret: str | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         environment = self.environment.strip().lower()
@@ -60,12 +61,14 @@ class Settings:
         service_role_key = (
             self.supabase_service_role_key.strip() if self.supabase_service_role_key else None
         )
+        cron_secret = self.cron_secret.strip() if self.cron_secret else None
 
         object.__setattr__(self, "environment", environment)
         object.__setattr__(self, "cors_origins", normalized_origins)
         object.__setattr__(self, "supabase_url", supabase_url)
         object.__setattr__(self, "supabase_publishable_key", publishable_key)
         object.__setattr__(self, "supabase_service_role_key", service_role_key)
+        object.__setattr__(self, "cron_secret", cron_secret)
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -85,6 +88,7 @@ class Settings:
             supabase_url=os.getenv("SUPABASE_URL") or None,
             supabase_publishable_key=os.getenv("SUPABASE_PUBLISHABLE_KEY") or None,
             supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY") or None,
+            cron_secret=os.getenv("CRON_SECRET") or None,
         )
 
 

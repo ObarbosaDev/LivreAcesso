@@ -15,3 +15,6 @@ class AttendanceRepository(ABC):
 
     @abstractmethod
     async def update(self, session: AttendanceSession) -> AttendanceSession: ...
+
+    @abstractmethod
+    async def list_by_class(self, class_id: UUID) -> list[AttendanceSession]: ...

@@ -10,10 +10,16 @@ from backend.app.modules.alerts.infrastructure.supabase_repository import Supaba
 from backend.app.modules.attendance.application.dtos import (
     AttendanceMarkInput,
     AttendanceSessionOutput,
+    AttendanceSessionPageOutput,
+    AttendanceSummaryPageOutput,
     OpenAttendanceInput,
 )
 from backend.app.modules.attendance.application.use_cases import (
+    ArchiveOldAttendance,
     CloseAttendance,
+    GetAttendanceSessionMarks,
+    GetAttendanceSummary,
+    ListAttendanceSessions,
     OpenAttendance,
     RecordAttendance,
 )
@@ -199,6 +205,10 @@ class AttendanceServices:
     open_case: OpenAttendance | None = None
     record_case: RecordAttendance | None = None
     close_case: CloseAttendance | None = None
+    list_case: ListAttendanceSessions | None = None
+    summary_case: GetAttendanceSummary | None = None
+    marks_case: GetAttendanceSessionMarks | None = None
+    archive_case: ArchiveOldAttendance | None = None
     remote: SupabaseAttendanceRepository | None = None
 
     async def open(self, payload: OpenAttendanceInput) -> AttendanceSessionOutput:
@@ -223,6 +233,36 @@ class AttendanceServices:
         if self.close_case is None:
             raise RuntimeError("O serviço de fechamento de chamada não está configurado.")
         return await self.close_case.execute(session_id)
+
+    async def list_sessions(
+        self, class_id: UUID, *, limit: int, offset: int
+    ) -> AttendanceSessionPageOutput:
+        if self.remote is not None:
+            return await self.remote.list_sessions(class_id, limit=limit, offset=offset)
+        if self.list_case is None:
+            raise RuntimeError("O serviço de histórico de chamada não está configurado.")
+        return await self.list_case.execute(class_id, limit=limit, offset=offset)
+
+    async def summary(self, class_id: UUID) -> AttendanceSummaryPageOutput:
+        if self.remote is not None:
+            return await self.remote.summary(class_id)
+        if self.summary_case is None:
+            raise RuntimeError("O serviço de resumo de chamada não está configurado.")
+        return await self.summary_case.execute(class_id)
+
+    async def session_marks(self, session_id: UUID) -> tuple[AttendanceMarkInput, ...]:
+        if self.remote is not None:
+            return await self.remote.session_marks(session_id)
+        if self.marks_case is None:
+            raise RuntimeError("O serviço de marcas de chamada não está configurado.")
+        return await self.marks_case.execute(session_id)
+
+    async def archive_old_sessions(self) -> int:
+        if self.remote is not None:
+            return await self.remote.archive_old_sessions()
+        if self.archive_case is None:
+            raise RuntimeError("O serviço de arquivamento de chamada não está configurado.")
+        return await self.archive_case.execute()
 
 
 @dataclass(frozen=True, slots=True)
@@ -452,7 +492,17 @@ class ApplicationContainer:
             open_case=OpenAttendance(store),
             record_case=RecordAttendance(store),
             close_case=CloseAttendance(store),
+            list_case=ListAttendanceSessions(store),
+            summary_case=GetAttendanceSummary(),
+            marks_case=GetAttendanceSessionMarks(store),
+            archive_case=ArchiveOldAttendance(),
         )
+
+    def attendance_archiver(self) -> AttendanceServices:
+        """Variante sem RequestContext: só o job agendado (service_role) usa."""
+        if self.supabase_gateway is not None:
+            return AttendanceServices(remote=SupabaseAttendanceRepository(self.supabase_gateway))
+        return AttendanceServices(archive_case=ArchiveOldAttendance())
 
     def waiting_list_for(self, context: RequestContext) -> WaitingListServices:
         if self.supabase_gateway is not None:

@@ -22,3 +22,8 @@ class InMemoryAttendanceRepository(AttendanceRepository):
     async def update(self, session: AttendanceSession) -> AttendanceSession:
         self._items[session.id] = deepcopy(session)
         return deepcopy(session)
+
+    async def list_by_class(self, class_id: UUID) -> list[AttendanceSession]:
+        items = [session for session in self._items.values() if session.class_id == class_id]
+        items.sort(key=lambda session: session.session_date, reverse=True)
+        return deepcopy(items)

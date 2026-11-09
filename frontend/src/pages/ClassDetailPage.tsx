@@ -22,6 +22,7 @@ import { ENROLLMENT_STATUS_LABELS } from '@/entities/enrollment/types'
 import type { Enrollment } from '@/entities/enrollment/types'
 import type { Profile } from '@/entities/profile/types'
 import type { Student } from '@/entities/student/types'
+import { AttendanceSection } from '@/pages/AttendanceSection'
 import { friendlyMessage } from '@/shared/api/problemDetails'
 import { addPdfFooter, createBrandedPdf, PDF_TABLE_THEME } from '@/shared/lib/pdf'
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue'
@@ -40,6 +41,7 @@ export function ClassDetailPage() {
   const canManageClasses = profile?.capabilities.includes('classes:manage') ?? false
   const canCreateEnrollments = profile?.capabilities.includes('enrollments:create') ?? false
   const canManageEnrollments = profile?.capabilities.includes('enrollments:manage') ?? false
+  const canTakeAttendance = profile?.capabilities.includes('attendance:manage') ?? false
 
   usePageTitle('Turma')
 
@@ -100,6 +102,7 @@ export function ClassDetailPage() {
             canCreateEnrollments={canCreateEnrollments}
             canManageEnrollments={canManageEnrollments}
           />
+          <AttendanceSection classId={classId} canTakeAttendance={canTakeAttendance} />
         </div>
       )}
     </PageFrame>

@@ -38,6 +38,7 @@ class Capability(StrEnum):
     ENROLLMENTS_CREATE = "enrollments:create"
     ENROLLMENTS_MANAGE = "enrollments:manage"
     AGENDA_MANAGE = "agenda:manage"
+    ATTENDANCE_MANAGE = "attendance:manage"
 
 
 _ROLE_CAPABILITIES: dict[UserRole, tuple[Capability, ...]] = {
@@ -52,10 +53,12 @@ _ROLE_CAPABILITIES: dict[UserRole, tuple[Capability, ...]] = {
         Capability.CLASSES_READ,
         Capability.ENROLLMENTS_CREATE,
         Capability.AGENDA_MANAGE,
+        Capability.ATTENDANCE_MANAGE,
     ),
     UserRole.INSTRUCTOR: (
         Capability.CLASSES_LIST,
         Capability.CLASSES_READ,
+        Capability.ATTENDANCE_MANAGE,
     ),
 }
 

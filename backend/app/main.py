@@ -122,7 +122,7 @@ def create_app(
         prefix=current_settings.api_prefix,
     )
     application.include_router(
-        build_attendance_router(current_container),
+        build_attendance_router(current_container, current_settings),
         prefix=current_settings.api_prefix,
     )
     application.include_router(

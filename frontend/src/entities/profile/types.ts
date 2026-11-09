@@ -15,6 +15,7 @@ export type Capability =
   | 'enrollments:create'
   | 'enrollments:manage'
   | 'agenda:manage'
+  | 'attendance:manage'
 
 export interface Profile {
   id: string
